@@ -651,7 +651,7 @@ function openChat(seller, color, accent, initials) {
       <div style="width:36px;height:36px;border-radius:10px;background:${color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;flex-shrink:0;">${initials}</div>
       <div><div style="color:#fff;font-weight:700;font-size:15px;">@${seller}</div><div style="color:${accent};font-size:11px;font-weight:600;">● Online</div></div>
     </div>
-    <div style="padding:16px;display:flex;flex-direction:column;gap:12px;padding-bottom:100px;">
+    <div id="chat-messages" style="padding:16px;display:flex;flex-direction:column;gap:12px;padding-bottom:100px;">
       ${msgs.map(m=>`
         <div style="display:flex;flex-direction:column;align-items:${m.f==='me'?'flex-end':'flex-start'};gap:3px;">
           <div style="max-width:75%;background:${m.f==='me'?'linear-gradient(135deg,#FF3B30,#C0392B)':'rgba(255,255,255,.08)'};border-radius:${m.f==='me'?'18px 18px 4px 18px':'18px 18px 18px 4px'};padding:10px 14px;">
@@ -693,8 +693,7 @@ async function sendMsg() {
   input.value = '';
 
   // Find message area
-  const chatBody = document.getElementById('chat-body');
-  const msgArea = chatBody.querySelector('div[style*="padding:16px"]');
+  const msgArea = document.getElementById('chat-messages');
 
   // Add user message
   addMessageToChat(text, true, msgArea);
