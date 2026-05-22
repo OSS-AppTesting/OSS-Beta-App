@@ -640,6 +640,9 @@ function showDetail(id) {
   go('detail');
 }
 
+let currentSeller = '';
+let chatHistory = [];
+
 function openChat(seller, color, accent, initials) {
   currentSeller = seller;
   chatHistory = [];
@@ -669,10 +672,6 @@ function openChat(seller, color, accent, initials) {
   go('chat');
 }
 
-
-// ── AI CHAT ────────────────────────────────────────────────────────────────────
-let currentSeller = '';
-let chatHistory = [];
 
 function addMessageToChat(text, fromMe, msgArea) {
   const div = document.createElement('div');
