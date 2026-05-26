@@ -321,7 +321,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 </div>
 
 <!-- CHAT -->
-<div id="s-chat" class="screen"><div id="chat-body"></div></div>
+<div id="s-chat" class="screen" style="padding-bottom:0!important;"><div id="chat-body"></div></div>
 
 <!-- PROFILE -->
 <div id="s-profile" class="screen">
@@ -456,6 +456,8 @@ function go(name) {
   const nb = document.getElementById('nb-' + name);
   if (nb) nb.classList.add('active');
   if (!['detail','chat','all'].includes(name)) prevScreen = name;
+  // Hide bottom nav on chat so the input bar is never covered
+  document.getElementById('nav').style.display = name === 'chat' ? 'none' : '';
   window.scrollTo(0,0);
 }
 
