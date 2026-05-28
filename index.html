@@ -2625,9 +2625,119 @@ function submitReport() {
 
 // ── MAKE AN OFFER ─────────────────────────────────────────────────────────────
 
-const OFFERS = []; // live offer log
+const OFFERS = [
+  {
+    id: 'OFF-1001',
+    productId: 5,
+    title: 'Adidas x Ivy Park Stan Smith',
+    img: I['adidas_ivy_park'],
+    seller: 'ivyparklover',
+    listedPrice: 150,
+    offerAmount: 120,
+    counterAmount: 135,
+    currency: 'USD',
+    message: 'Love these! Would you take $120?',
+    status: 'Countered',
+    date: '10:32 AM',
+  },
+  {
+    id: 'OFF-1002',
+    productId: 14,
+    title: 'Y2K Betsey Johnson Summer Dress',
+    img: I['betsey_dress'],
+    seller: 'vintagequeen',
+    listedPrice: 125,
+    offerAmount: 95,
+    counterAmount: null,
+    currency: 'USD',
+    message: 'Been looking for this forever!',
+    status: 'Pending',
+    date: '9:15 AM',
+  },
+  {
+    id: 'OFF-1003',
+    productId: 11,
+    title: 'Metallic Gold Long-Sleeve Shirt',
+    img: I['gold_shirt'],
+    seller: 'goldenthread',
+    listedPrice: 25,
+    offerAmount: 18,
+    counterAmount: null,
+    currency: 'SB',
+    message: '',
+    status: 'Accepted',
+    date: 'Yesterday',
+  },
+  {
+    id: 'OFF-1004',
+    productId: 8,
+    title: 'Metallic Silver Pants',
+    img: I['silver_pants'],
+    seller: 'silverstyle',
+    listedPrice: 10,
+    offerAmount: 6,
+    counterAmount: null,
+    currency: 'USD',
+    message: 'Can you do $6?',
+    status: 'Declined',
+    date: 'Yesterday',
+  },
+  {
+    id: 'OFF-1005',
+    productId: 15,
+    title: '80s Sequin Vest',
+    img: I['sequin_vest'],
+    seller: 'retrofinds',
+    listedPrice: 20,
+    offerAmount: 16,
+    counterAmount: null,
+    currency: 'SB',
+    message: 'Great piece! 16 SB work for you?',
+    status: 'Pending',
+    date: '8:44 AM',
+  },
+  {
+    id: 'OFF-1006',
+    productId: 2,
+    title: 'Puma Black Leather Platform',
+    img: I['puma_black'],
+    seller: 'styledrops',
+    listedPrice: 35,
+    offerAmount: 25,
+    counterAmount: null,
+    currency: 'USD',
+    message: '',
+    status: 'Declined',
+    date: '2 days ago',
+  },
+  {
+    id: 'OFF-1007',
+    productId: 10,
+    title: 'Rodarte x Target Sheer Top',
+    img: I['rodarte_sheer'],
+    seller: 'designerdrops',
+    listedPrice: 35,
+    offerAmount: 30,
+    counterAmount: null,
+    currency: 'USD',
+    message: 'Would love this for $30!',
+    status: 'Completed',
+    date: '3 days ago',
+  },
+];
 let currentOfferProductId = null;
 let currentCounterOfferId = null;
+
+function reOffer(offerId) {
+  const offer = OFFERS.find(o => o.id === offerId);
+  if (!offer) return;
+  // Remove the declined offer so openMakeOffer doesn't block it
+  const idx = OFFERS.indexOf(offer);
+  if (idx > -1) OFFERS.splice(idx, 1);
+  // Go to detail page and open offer modal
+  showDetail(offer.productId);
+  setTimeout(() => openMakeOffer(offer.productId), 300);
+}
 
 function openMakeOffer(productId) {
   const p = PRODS.find(x => x.id === productId);
@@ -3109,6 +3219,8 @@ function renderOffers(filter) {
             <span style="color:rgba(255,255,255,.3);font-size:12px;">Waiting for seller...</span>` :
           o.status === 'Completed' ? `
             <span style="color:#00C864;font-size:12px;font-weight:600;">Purchase completed ✓</span>` :
+          o.status === 'Declined' ? `
+            <button onclick="reOffer('${o.id}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer Again</button>` :
           `<span style="color:rgba(255,255,255,.3);font-size:12px;">No further action needed</span>`}
         </div>
       </div>`;
