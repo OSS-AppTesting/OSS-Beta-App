@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v21</title>
+<title>OneStopSwap v22</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -679,12 +679,13 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     </div>
     <!-- Filter tabs -->
     <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;">
-      <div class="offer-tab active-offer-tab" onclick="filterOffers('all',this)" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:#FF3B30;font-size:13px;font-weight:700;">All</span></div>
+      <div class="offer-tab active-offer-tab" onclick="filterOffers('all',this)" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:#FF3B30;font-size:13px;font-weight:700;">My Offers</span></div>
       <div class="offer-tab" onclick="filterOffers('Pending',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">⏳ Pending</span></div>
       <div class="offer-tab" onclick="filterOffers('Countered',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">🔄 Countered</span></div>
       <div class="offer-tab" onclick="filterOffers('Accepted',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">✅ Accepted</span></div>
       <div class="offer-tab" onclick="filterOffers('Completed',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">🎉 Completed</span></div>
       <div class="offer-tab" onclick="filterOffers('Declined',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">❌ Declined</span></div>
+      <div class="offer-tab" onclick="filterOffers('received',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:#FF3B30;font-size:13px;font-weight:700;">📥 Received</span></div>
     </div>
     <div id="offers-list" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
@@ -1104,6 +1105,7 @@ function pCard(p, i) {
       <div class="cov"></div>
       ${p.hot ? '<div class="hbadge">🔥 HOT</div>' : ''}
       ${p.isNew ? '<div class="hbadge" style="background:linear-gradient(135deg,#00C864,#00A050);left:8px;">✨ NEW</div>' : ''}
+      ${OFFERS.some(o => o.productId === p.id && o.status === 'Pending') ? '<div class="hbadge" style="background:linear-gradient(135deg,#FFB347,#E67E00);right:8px;left:auto;">🏷️ Offer</div>' : ''}
       <button class="lbtn${lk?' on':''}" id="lk-${p.id}" onclick="event.stopPropagation();toggleLike(${p.id})">${lk?'❤️':'🤍'}</button>
       ${priceBadge(p)}
     </div>
@@ -2679,102 +2681,83 @@ function submitReport() {
 
 const OFFERS = [
   {
-    id: 'OFF-1001',
-    productId: 5,
-    title: 'Adidas x Ivy Park Stan Smith',
-    img: I['adidas_ivy_park'],
-    seller: 'ivyparklover',
-    listedPrice: 150,
-    offerAmount: 120,
-    counterAmount: 135,
-    currency: 'USD',
-    message: 'Love these! Would you take $120?',
-    status: 'Countered',
-    date: '10:32 AM',
+    id: 'OFF-1001', productId: 5,
+    title: 'Adidas x Ivy Park Stan Smith', img: I['adidas_ivy_park'],
+    seller: 'ivyparklover', listedPrice: 150, listedCurrency: 'USD',
+    offerAmount: 120, counterAmount: 135, currency: 'USD', currencyChanged: false,
+    message: 'Love these! Would you take $120?', status: 'Countered',
+    date: '10:32 AM', expiresAt: Date.now() + 38 * 60 * 60 * 1000,
   },
   {
-    id: 'OFF-1002',
-    productId: 14,
-    title: 'Y2K Betsey Johnson Summer Dress',
-    img: I['betsey_dress'],
-    seller: 'vintagequeen',
-    listedPrice: 125,
-    offerAmount: 95,
-    counterAmount: null,
-    currency: 'USD',
-    message: 'Been looking for this forever!',
-    status: 'Pending',
-    date: '9:15 AM',
+    id: 'OFF-1002', productId: 14,
+    title: 'Y2K Betsey Johnson Summer Dress', img: I['betsey_dress'],
+    seller: 'vintagequeen', listedPrice: 125, listedCurrency: 'USD',
+    offerAmount: 95, counterAmount: null, currency: 'USD', currencyChanged: false,
+    message: 'Been looking for this forever!', status: 'Pending',
+    date: '9:15 AM', expiresAt: Date.now() + 22 * 60 * 60 * 1000,
   },
   {
-    id: 'OFF-1003',
-    productId: 11,
-    title: 'Metallic Gold Long-Sleeve Shirt',
-    img: I['gold_shirt'],
-    seller: 'goldenthread',
-    listedPrice: 25,
-    offerAmount: 18,
-    counterAmount: null,
-    currency: 'SB',
-    message: '',
-    status: 'Accepted',
-    date: 'Yesterday',
+    id: 'OFF-1003', productId: 11,
+    title: 'Metallic Gold Long-Sleeve Shirt', img: I['gold_shirt'],
+    seller: 'goldenthread', listedPrice: 25, listedCurrency: 'SB',
+    offerAmount: 18, counterAmount: null, currency: 'SB', currencyChanged: false,
+    message: '', status: 'Accepted', date: 'Yesterday', expiresAt: null,
   },
   {
-    id: 'OFF-1004',
-    productId: 8,
-    title: 'Metallic Silver Pants',
-    img: I['silver_pants'],
-    seller: 'silverstyle',
-    listedPrice: 10,
-    offerAmount: 6,
-    counterAmount: null,
-    currency: 'USD',
-    message: 'Can you do $6?',
-    status: 'Declined',
-    date: 'Yesterday',
+    id: 'OFF-1004', productId: 8,
+    title: 'Metallic Silver Pants', img: I['silver_pants'],
+    seller: 'silverstyle', listedPrice: 10, listedCurrency: 'USD',
+    offerAmount: 6, counterAmount: null, currency: 'USD', currencyChanged: false,
+    message: 'Can you do $6?', status: 'Declined', date: 'Yesterday', expiresAt: null,
   },
   {
-    id: 'OFF-1005',
-    productId: 15,
-    title: '80s Sequin Vest',
-    img: I['sequin_vest'],
-    seller: 'retrofinds',
-    listedPrice: 20,
-    offerAmount: 16,
-    counterAmount: null,
-    currency: 'SB',
-    message: 'Great piece! 16 SB work for you?',
-    status: 'Pending',
-    date: '8:44 AM',
+    id: 'OFF-1005', productId: 15,
+    title: '80s Sequin Vest', img: I['sequin_vest'],
+    seller: 'retrofinds', listedPrice: 20, listedCurrency: 'SB',
+    offerAmount: 16, counterAmount: null, currency: 'SB', currencyChanged: false,
+    message: 'Great piece! 16 SB work for you?', status: 'Pending',
+    date: '8:44 AM', expiresAt: Date.now() + 6 * 60 * 60 * 1000,
   },
   {
-    id: 'OFF-1006',
-    productId: 2,
-    title: 'Puma Black Leather Platform',
-    img: I['puma_black'],
-    seller: 'styledrops',
-    listedPrice: 35,
-    offerAmount: 25,
-    counterAmount: null,
-    currency: 'USD',
-    message: '',
-    status: 'Declined',
-    date: '2 days ago',
+    id: 'OFF-1006', productId: 2,
+    title: 'Puma Black Leather Platform', img: I['puma_black'],
+    seller: 'styledrops', listedPrice: 35, listedCurrency: 'USD',
+    offerAmount: 25, counterAmount: null, currency: 'SB', currencyChanged: true,
+    message: '', status: 'Declined', date: '2 days ago', expiresAt: null,
   },
   {
-    id: 'OFF-1007',
-    productId: 10,
-    title: 'Rodarte x Target Sheer Top',
-    img: I['rodarte_sheer'],
-    seller: 'designerdrops',
-    listedPrice: 35,
-    offerAmount: 30,
-    counterAmount: null,
-    currency: 'USD',
-    message: 'Would love this for $30!',
-    status: 'Completed',
-    date: '3 days ago',
+    id: 'OFF-1007', productId: 10,
+    title: 'Rodarte x Target Sheer Top', img: I['rodarte_sheer'],
+    seller: 'designerdrops', listedPrice: 35, listedCurrency: 'USD',
+    offerAmount: 30, counterAmount: null, currency: 'USD', currencyChanged: false,
+    message: 'Would love this for $30!', status: 'Completed', date: '3 days ago', expiresAt: null,
+  },
+];
+
+// Received offers (as seller @dinobravo)
+const RECEIVED_OFFERS = [
+  {
+    id: 'REC-001', productId: 11,
+    title: 'Metallic Gold Long-Sleeve Shirt', img: I['gold_shirt'],
+    buyer: 'sneakerhead_99', buyerInitials: 'SH', buyerColor: '#1a1a2e',
+    listedPrice: 25, offerAmount: 20, currency: 'SB', currencyChanged: false,
+    message: 'Big fan of your listings! 20 SB?', status: 'Pending',
+    date: '11:20 AM', expiresAt: Date.now() + 44 * 60 * 60 * 1000,
+  },
+  {
+    id: 'REC-002', productId: 15,
+    title: '80s Sequin Vest', img: I['sequin_vest'],
+    buyer: 'retrofinds', buyerInitials: 'RF', buyerColor: '#1a0000',
+    listedPrice: 20, offerAmount: 25, currency: 'USD', currencyChanged: true,
+    message: 'Offering in USD instead of SB — let me know!', status: 'Pending',
+    date: '10:05 AM', expiresAt: Date.now() + 30 * 60 * 60 * 1000,
+  },
+  {
+    id: 'REC-003', productId: 12,
+    title: 'Vintage Sterfield Baseball Glove', img: I['baseball_glove'],
+    buyer: 'catfoshee', buyerInitials: 'CF', buyerColor: '#3d1a00',
+    listedPrice: 25, offerAmount: 22, currency: 'USD', currencyChanged: true,
+    message: '', status: 'Accepted', date: 'Yesterday', expiresAt: null,
   },
 ];
 let currentOfferProductId = null;
@@ -2898,6 +2881,7 @@ function submitOffer() {
     message: message,
     status: 'Pending',
     date: nowTime(),
+    expiresAt: Date.now() + 48 * 60 * 60 * 1000, // 48 hours
   };
   OFFERS.unshift(offer);
 
@@ -2981,7 +2965,7 @@ function showOfferResponse(offerId) {
       <div style="text-align:center;padding:10px 0 20px;">
         ${currencyNote}
         <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-          <button onclick="document.getElementById('modal-offer-response').style.display='none';showToast('Counter saved — find it in My Offers')" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Decide Later ›</button>
+          <button onclick="document.getElementById('modal-offer-response').style.display='none';showToast('Counter saved — find it in My Offers')" style="background:none;border:none;color:rgba(255,59,48,.6);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Decide Later ›</button>
         </div>
         <div style="font-size:48px;margin-bottom:12px;">🔄</div>
         <div style="color:#FFB347;font-weight:900;font-size:22px;margin-bottom:8px;">Counter Offer!</div>
@@ -3311,21 +3295,35 @@ function refreshWalletStats() {
   if (el_p) el_p.textContent = '+' + pending;
 }
 
+function formatExpiry(expiresAt) {
+  if (!expiresAt) return null;
+  const ms = expiresAt - Date.now();
+  if (ms <= 0) return 'Expired';
+  const hrs = Math.floor(ms / 3600000);
+  const mins = Math.floor((ms % 3600000) / 60000);
+  if (hrs > 0) return `Expires in ${hrs}h ${mins}m`;
+  return `Expires in ${mins}m`;
+}
+
 function renderOffers(filter) {
   const el = document.getElementById('offers-list');
   if (!el) return;
 
-  const list = filter === 'all' ? OFFERS : 
+  // Update badge
+  const pending = OFFERS.filter(o => o.status === 'Pending' || o.status === 'Countered').length
+                + RECEIVED_OFFERS.filter(o => o.status === 'Pending').length;
+  const badge = document.getElementById('offers-badge');
+  if (badge) { badge.style.display = pending > 0 ? 'inline-block' : 'none'; badge.textContent = pending; }
+
+  // Received offers tab
+  if (filter === 'received') {
+    renderReceivedOffers();
+    return;
+  }
+
+  const list = filter === 'all' ? OFFERS :
                filter === 'Accepted' ? OFFERS.filter(o => o.status === 'Accepted' || o.status === 'Completing') :
                OFFERS.filter(o => o.status === filter);
-
-  // Update badge
-  const pending = OFFERS.filter(o => o.status === 'Pending' || o.status === 'Countered').length;
-  const badge = document.getElementById('offers-badge');
-  if (badge) {
-    badge.style.display = pending > 0 ? 'inline-block' : 'none';
-    badge.textContent = pending;
-  }
 
   if (!list.length) {
     el.innerHTML = `
@@ -3339,40 +3337,41 @@ function renderOffers(filter) {
   }
 
   const STATUS_CONFIG = {
-    'Pending':   {bg:'rgba(255,179,71,.12)', border:'rgba(255,179,71,.3)',  color:'#FFB347', icon:'⏳', label:'Pending'},
-    'Countered': {bg:'rgba(79,195,247,.12)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'🔄', label:'Countered'},
-    'Accepted':  {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'✅', label:'Accepted'},
-    'Declined':  {bg:'rgba(255,59,48,.12)',  border:'rgba(255,59,48,.3)',   color:'#FF3B30', icon:'❌', label:'Declined'},
-    'Completed': {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'🎉', label:'Completed'},
+    'Pending':   {bg:'rgba(255,179,71,.12)', border:'rgba(255,179,71,.3)',  color:'#FFB347', icon:'⏳'},
+    'Countered': {bg:'rgba(79,195,247,.12)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'🔄'},
+    'Accepted':  {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'✅'},
+    'Declined':  {bg:'rgba(255,59,48,.12)',  border:'rgba(255,59,48,.3)',   color:'#FF3B30', icon:'❌'},
+    'Completed': {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'🎉'},
   };
-
-  const isUSD = o => o.currency === 'USD';
-  const fmt = (o, amt) => isUSD(o) ? '$' + amt : amt + ' SB';
 
   el.innerHTML = list.map(o => {
     const sc = STATUS_CONFIG[o.status] || STATUS_CONFIG['Pending'];
-    const p = PRODS.find(x => x.id === o.productId);
+    const isUSD = o.currency === 'USD';
+    const fmt = v => isUSD ? '$' + v : v + ' SB';
+    const expiry = formatExpiry(o.expiresAt);
     return `
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;">
         <div style="display:flex;gap:12px;padding:14px;">
           <div style="width:64px;height:64px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#111;">
-            <img src="${o.img||p?.img||''}" style="width:100%;height:100%;object-fit:cover;">
+            <img src="${o.img||''}" style="width:100%;height:100%;object-fit:cover;">
           </div>
           <div style="flex:1;min-width:0;">
             <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.title}</div>
             <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:6px;">@${o.seller} · ${o.date}</div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span style="color:rgba(255,255,255,.4);font-size:12px;">Listed: <span style="color:#fff;font-weight:600;">${fmt(o,o.listedPrice)}</span></span>
+              <span style="color:rgba(255,255,255,.4);font-size:12px;">Listed: <span style="color:#fff;font-weight:600;">${o.listedCurrency==='USD'?'$'+o.listedPrice:o.listedPrice+' SB'}</span></span>
               <span style="color:rgba(255,255,255,.3);">·</span>
-              <span style="color:rgba(255,255,255,.4);font-size:12px;">Your offer: <span style="color:#FF3B30;font-weight:700;">${fmt(o,o.offerAmount)}</span></span>
+              <span style="color:rgba(255,255,255,.4);font-size:12px;">Your offer: <span style="color:#FF3B30;font-weight:700;">${fmt(o.offerAmount)}</span></span>
+              ${o.currencyChanged ? '<span style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:1px 6px;color:#FF3B30;font-size:10px;font-weight:700;">Currency changed</span>' : ''}
             </div>
+            ${expiry && (o.status==='Pending'||o.status==='Countered') ? `<div style="color:${expiry==='Expired'?'#FF3B30':'rgba(255,179,71,.7)'};font-size:11px;margin-top:4px;font-weight:600;">⏱ ${expiry}</div>` : ''}
           </div>
         </div>
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-          <span style="background:${sc.bg};border:1px solid ${sc.border};border-radius:8px;padding:3px 10px;color:${sc.color};font-size:11px;font-weight:700;">${sc.icon} ${sc.label}</span>
+          <span style="background:${sc.bg};border:1px solid ${sc.border};border-radius:8px;padding:3px 10px;color:${sc.color};font-size:11px;font-weight:700;">${sc.icon} ${o.status}</span>
           ${o.status === 'Countered' ? `
             <div style="display:flex;align-items:center;gap:6px;">
-              <span style="color:#4FC3F7;font-size:12px;font-weight:700;">Counter: ${fmt(o,o.counterAmount)}</span>
+              <span style="color:#4FC3F7;font-size:12px;font-weight:700;">Counter: ${isUSD?'$'+o.counterAmount:o.counterAmount+' SB'}</span>
               <button onclick="showOfferResponse('${o.id}')" style="background:rgba(79,195,247,.15);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:4px 10px;color:#4FC3F7;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
             </div>` :
           o.status === 'Accepted' ? `
@@ -3383,10 +3382,81 @@ function renderOffers(filter) {
             <span style="color:#00C864;font-size:12px;font-weight:600;">Purchase completed ✓</span>` :
           o.status === 'Declined' ? `
             <button onclick="reOffer('${o.id}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer Again</button>` :
-          `<span style="color:rgba(255,255,255,.3);font-size:12px;">No further action needed</span>`}
+          `<span style="color:rgba(255,255,255,.3);font-size:12px;">No action needed</span>`}
         </div>
       </div>`;
   }).join('');
+}
+
+function renderReceivedOffers() {
+  const el = document.getElementById('offers-list');
+  if (!el) return;
+
+  if (!RECEIVED_OFFERS.length) {
+    el.innerHTML = '<div style="color:rgba(255,255,255,.3);text-align:center;padding:40px 0;">No offers received yet</div>';
+    return;
+  }
+
+  const STATUS_CONFIG = {
+    'Pending':  {bg:'rgba(255,179,71,.12)', border:'rgba(255,179,71,.3)', color:'#FFB347', icon:'⏳'},
+    'Accepted': {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',  color:'#00C864', icon:'✅'},
+    'Declined': {bg:'rgba(255,59,48,.12)',  border:'rgba(255,59,48,.3)',  color:'#FF3B30', icon:'❌'},
+  };
+
+  el.innerHTML = RECEIVED_OFFERS.map(o => {
+    const sc = STATUS_CONFIG[o.status] || STATUS_CONFIG['Pending'];
+    const isUSD = o.currency === 'USD';
+    const fmt = v => isUSD ? '$' + v : v + ' SB';
+    const expiry = formatExpiry(o.expiresAt);
+    const p = PRODS.find(x => x.id === o.productId);
+    return `
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;">
+        <div style="display:flex;gap:12px;padding:14px;">
+          <div style="width:64px;height:64px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#111;">
+            <img src="${o.img||''}" style="width:100%;height:100%;object-fit:cover;">
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.title}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <div style="width:22px;height:22px;border-radius:6px;background:${o.buyerColor};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:9px;color:#fff;">${o.buyerInitials}</div>
+              <span style="color:rgba(255,255,255,.5);font-size:12px;">@${o.buyer} · ${o.date}</span>
+            </div>
+            <div style="color:rgba(255,255,255,.4);font-size:12px;">
+              Listed: <span style="color:#fff;font-weight:600;">${p?.currency==='USD'?'$'+o.listedPrice:o.listedPrice+' SB'}</span>
+              &nbsp;·&nbsp; Offer: <span style="color:#FF3B30;font-weight:700;">${fmt(o.offerAmount)}</span>
+              ${o.currencyChanged ? '&nbsp;<span style="background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.3);border-radius:5px;padding:1px 6px;color:#FFB347;font-size:10px;font-weight:700;">⚠️ Different currency</span>' : ''}
+            </div>
+            ${expiry && o.status==='Pending' ? `<div style="color:rgba(255,179,71,.7);font-size:11px;margin-top:4px;font-weight:600;">⏱ ${expiry}</div>` : ''}
+            ${o.message ? `<div style="color:rgba(255,255,255,.5);font-size:12px;font-style:italic;margin-top:4px;">"${o.message}"</div>` : ''}
+          </div>
+        </div>
+        ${o.status === 'Pending' ? `
+        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;gap:8px;">
+          <button onclick="respondToOffer('${o.id}','declined')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.6);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Decline</button>
+          <button onclick="respondToOffer('${o.id}','countered')" style="flex:1;background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.3);border-radius:10px;padding:8px;color:#FFB347;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
+          <button onclick="respondToOffer('${o.id}','accepted')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:10px;padding:8px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;">Accept ✓</button>
+        </div>` : `
+        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="background:${sc.bg};border:1px solid ${sc.border};border-radius:8px;padding:3px 10px;color:${sc.color};font-size:11px;font-weight:700;">${sc.icon} ${o.status}</span>
+        </div>`}
+      </div>`;
+  }).join('');
+}
+
+function respondToOffer(offerId, action) {
+  const o = RECEIVED_OFFERS.find(x => x.id === offerId);
+  if (!o) return;
+  if (action === 'accepted') {
+    o.status = 'Accepted';
+    showToast('✅ Offer accepted! Buyer has been notified.');
+  } else if (action === 'declined') {
+    o.status = 'Declined';
+    showToast('❌ Offer declined.');
+  } else if (action === 'countered') {
+    o.status = 'Accepted'; // simplified for demo
+    showToast('🔄 Counter sent to buyer!');
+  }
+  renderReceivedOffers();
 }
 
 function filterOffers(status, el) {
