@@ -106,6 +106,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 /* UTILS */
 @keyframes sUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes tdot{0%,80%,100%{transform:translateY(0);opacity:.3}40%{transform:translateY(-4px);opacity:1}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .oss .r{color:#FF3B30;}
 .oss .w{color:#fff;}
@@ -374,34 +375,96 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 
-<!-- NEW LISTING (AI Generator placeholder) -->
+<!-- NEW LISTING (AI Generator) -->
 <div id="s-new-listing" class="screen">
-  <div style="padding:52px 20px 20px;">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
+  <div style="padding:52px 20px 20px;padding-bottom:40px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
       <button onclick="go('my-listings')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
-      <h2 style="color:#fff;font-weight:900;font-size:24px;">New Listing</h2>
-    </div>
-    <div style="background:linear-gradient(135deg,#1A0000,#2D0000);border:2px dashed rgba(255,59,48,.4);border-radius:24px;padding:40px 20px;text-align:center;margin-bottom:24px;cursor:pointer;" onclick="showToast('AI Photo Listing coming in next update! 🔜')">
-      <div style="font-size:48px;margin-bottom:12px;">📸</div>
-      <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:6px;">Snap or Upload a Photo</div>
-      <div style="color:rgba(255,255,255,.4);font-size:13px;line-height:1.5;margin-bottom:16px;">AI will instantly generate your title,<br>description, category & price</div>
-      <div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:14px;padding:12px 28px;display:inline-block;">
-        <span style="color:#fff;font-weight:800;font-size:15px;">⚡ Coming Next Update</span>
+      <h2 style="color:#fff;font-weight:900;font-size:24px;flex:1;">New Listing</h2>
+      <div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:10px;padding:4px 10px;">
+        <span style="color:#fff;font-size:10px;font-weight:800;">⚡ AI Powered</span>
       </div>
     </div>
-    <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Or Fill In Manually</div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <input placeholder="Title" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
-      <textarea placeholder="Description" rows="3" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;"></textarea>
+
+    <!-- Photo upload area -->
+    <div id="ai-photo-area" onclick="document.getElementById('ai-photo-input').click()" style="background:linear-gradient(135deg,#1A0000,#2D0000);border:2px dashed rgba(255,59,48,.4);border-radius:24px;padding:36px 20px;text-align:center;margin-bottom:20px;cursor:pointer;position:relative;overflow:hidden;transition:border-color .2s;">
+      <div id="ai-photo-preview" style="display:none;position:absolute;inset:0;">
+        <img id="ai-preview-img" style="width:100%;height:100%;object-fit:cover;">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.8));"></div>
+        <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;">
+          <span style="color:#fff;font-size:13px;font-weight:600;background:rgba(0,0,0,.5);padding:4px 14px;border-radius:20px;">Tap to change photo</span>
+        </div>
+      </div>
+      <div id="ai-photo-placeholder">
+        <div style="font-size:48px;margin-bottom:12px;">📸</div>
+        <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:6px;">Snap or Upload a Photo</div>
+        <div style="color:rgba(255,255,255,.4);font-size:13px;line-height:1.5;margin-bottom:18px;">AI instantly writes your title,<br>description, category & price</div>
+        <div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:14px;padding:12px 28px;display:inline-block;">
+          <span style="color:#fff;font-weight:800;font-size:15px;">📷 Choose Photo</span>
+        </div>
+      </div>
+    </div>
+    <input id="ai-photo-input" type="file" accept="image/*" style="display:none;" onchange="handlePhotoSelected(this)">
+
+    <!-- AI Generate button — shown after photo selected -->
+    <button id="ai-generate-btn" onclick="runAIListing()" style="display:none;width:100%;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:20px;">
+      ✨ Generate Listing with AI
+    </button>
+
+    <!-- AI loading state -->
+    <div id="ai-loading" style="display:none;text-align:center;padding:24px;margin-bottom:20px;">
+      <div style="font-size:36px;margin-bottom:10px;animation:spin 1s linear infinite;display:inline-block;">⚡</div>
+      <div style="color:#fff;font-weight:700;font-size:16px;margin-bottom:4px;">AI is analyzing your photo...</div>
+      <div style="color:rgba(255,255,255,.4);font-size:13px;">Writing title, description & price</div>
+    </div>
+
+    <!-- Form fields — populated by AI -->
+    <div id="ai-form" style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Title</div>
+        <input id="f-title" placeholder="e.g. Nike Air Force 1 '07 White" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;">
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <input placeholder="Price (SB)" type="number" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
-        <select style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:rgba(255,255,255,.6);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
-          <option value="">Category</option>
-          <option>Sneakers</option><option>Streetwear</option><option>Vintage</option><option>Kids & Baby</option>
-        </select>
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Category</div>
+          <select id="f-category" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
+            <option value="">Select...</option>
+            <option>Sneakers</option><option>Streetwear</option><option>Vintage</option><option>Kids & Baby</option>
+          </select>
+        </div>
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Condition</div>
+          <select id="f-condition" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
+            <option value="">Select...</option>
+            <option>New with tags</option><option>Like New</option><option>Good</option><option>Fair</option>
+          </select>
+        </div>
       </div>
-      <input placeholder="Your city (e.g. Nashville, TN)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
-      <button onclick="showToast('Listing posted! 🎉')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">Post Listing</button>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Description</div>
+        <textarea id="f-desc" rows="3" placeholder="Describe your item..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Price (SB)</div>
+          <input id="f-price" type="number" placeholder="e.g. 45" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+        </div>
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From</div>
+          <input id="f-location" placeholder="City, ST" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+        </div>
+      </div>
+
+      <!-- AI confidence badge — shown after AI fills form -->
+      <div id="ai-confidence" style="display:none;background:rgba(0,200,100,.08);border:1px solid rgba(0,200,100,.2);border-radius:14px;padding:12px 16px;display:none;align-items:center;gap:10px;">
+        <span style="font-size:20px;">🤖</span>
+        <div>
+          <div style="color:#00C864;font-weight:700;font-size:13px;">AI Generated — Review & Edit</div>
+          <div style="color:rgba(255,255,255,.4);font-size:11px;">All fields are editable before posting</div>
+        </div>
+      </div>
+
+      <button onclick="postListing()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">🚀 Post Listing</button>
     </div>
   </div>
 </div>
@@ -821,6 +884,130 @@ function showDetail(id) {
       </button>
     </div>`;
   go('detail');
+}
+
+// ── AI LISTING GENERATOR ─────────────────────────────────────────────────────
+let aiPhotoBase64 = null;
+let aiPhotoMime = null;
+
+function handlePhotoSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  aiPhotoMime = file.type || 'image/jpeg';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    aiPhotoBase64 = dataUrl.split(',')[1];
+
+    // Show preview
+    document.getElementById('ai-preview-img').src = dataUrl;
+    document.getElementById('ai-photo-preview').style.display = 'block';
+    document.getElementById('ai-photo-placeholder').style.display = 'none';
+    document.getElementById('ai-photo-area').style.height = '220px';
+    document.getElementById('ai-generate-btn').style.display = 'block';
+
+    // Clear any previous AI fill
+    document.getElementById('ai-confidence').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function runAIListing() {
+  if (!aiPhotoBase64) return;
+
+  // Show loading
+  document.getElementById('ai-generate-btn').style.display = 'none';
+  document.getElementById('ai-loading').style.display = 'block';
+
+  const systemPrompt = `You are an expert resale marketplace listing assistant for OneStopSwap, a fashion resale app. 
+The currency is SwapBucks (SB) where 1 SB ≈ $1 USD.
+
+Analyze the photo and return ONLY a JSON object with these exact fields:
+{
+  "title": "Short punchy product title (brand + item name + key detail, max 8 words)",
+  "category": "One of: Sneakers, Streetwear, Vintage, Kids & Baby",
+  "condition": "One of: New with tags, Like New, Good, Fair",
+  "description": "2-3 sentences. Mention brand, style, key features, condition details. Resale-style, enthusiastic but honest.",
+  "price": number (suggested SwapBucks price based on resale market value — be realistic),
+  "confidence": "high or medium"
+}
+
+Return ONLY the JSON. No markdown, no explanation, no backticks.`;
+
+  try {
+    const PROXY_URL = 'https://winter-wildflower-530f.dean-klein.workers.dev';
+    const response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 500,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: aiPhotoMime,
+                data: aiPhotoBase64
+              }
+            },
+            {
+              type: 'text',
+              text: 'Analyze this item and generate the listing JSON.'
+            }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = data.content?.[0]?.text || '';
+
+    // Parse JSON from response
+    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+    // Fill in the form
+    document.getElementById('f-title').value = parsed.title || '';
+    document.getElementById('f-desc').value = parsed.description || '';
+    document.getElementById('f-price').value = parsed.price || '';
+
+    // Set selects
+    const catEl = document.getElementById('f-category');
+    const condEl = document.getElementById('f-condition');
+    for (let opt of catEl.options) { if (opt.text === parsed.category) { catEl.value = opt.value || opt.text; break; } }
+    for (let opt of condEl.options) { if (opt.text === parsed.condition) { condEl.value = opt.value || opt.text; break; } }
+
+    // Highlight fields briefly
+    ['f-title','f-desc','f-price','f-category','f-condition'].forEach(id => {
+      const el = document.getElementById(id);
+      el.style.borderColor = '#FF3B30';
+      setTimeout(() => { el.style.borderColor = 'rgba(255,255,255,.1)'; }, 2000);
+    });
+
+    // Show confidence badge
+    const conf = document.getElementById('ai-confidence');
+    conf.style.display = 'flex';
+
+    showToast('✨ AI filled your listing — review & edit!');
+
+  } catch (err) {
+    console.error('AI listing error:', err);
+    showToast('AI had trouble reading that photo — fill in manually 📝');
+    document.getElementById('ai-generate-btn').style.display = 'block';
+  }
+
+  document.getElementById('ai-loading').style.display = 'none';
+}
+
+function postListing() {
+  const title = document.getElementById('f-title').value.trim();
+  if (!title) { showToast('Please add a title first!'); return; }
+  showToast('🎉 Listing posted! It\'s live in the shop.');
+  setTimeout(() => go('my-listings'), 1200);
 }
 
 // ── AI CHAT ───────────────────────────────────────────────────────────────────
