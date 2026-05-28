@@ -738,18 +738,6 @@ const CHAT_DATA = {
 let SB = 125, liked = {}, selCat = null, prevScreen = 'home';
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
-function go(name) {
-  document.querySelectorAll('.screen').forEach(s => s.style.display = '');
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
-  document.getElementById('s-' + name).classList.add('active');
-  const nb = document.getElementById('nb-' + name);
-  if (nb) nb.classList.add('active');
-  if (!['detail','chat','all'].includes(name)) prevScreen = name;
-  // Hide bottom nav on chat so the input bar is never covered
-  document.getElementById('nav').style.display = name === 'chat' ? 'none' : '';
-  window.scrollTo(0,0);
-}
 
 // ── RENDER HELPERS ────────────────────────────────────────────────────────────
 function pCard(p, i) {
@@ -1216,9 +1204,18 @@ function showToast(msg) {
 }
 
 // Override go() to trigger sub-screen renders
-const _go = go;
 function go(name) {
-  _go(name);
+  document.querySelectorAll('.screen').forEach(s => s.style.display = '');
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
+  const target = document.getElementById('s-' + name);
+  if (target) target.classList.add('active');
+  const nb = document.getElementById('nb-' + name);
+  if (nb) nb.classList.add('active');
+  if (!['detail','chat','all','my-listings','new-listing','my-orders','acct-settings','sb-wallet','my-reviews','support'].includes(name)) prevScreen = name;
+  document.getElementById('nav').style.display = name === 'chat' ? 'none' : '';
+  window.scrollTo(0,0);
+  // Sub-screen data rendering
   if (name === 'my-orders') renderOrders('all');
   if (name === 'my-listings') renderMyListings();
   if (name === 'sb-wallet') {
@@ -1226,13 +1223,6 @@ function go(name) {
     if (w) w.innerHTML = SB + ' <span style="font-size:22px;color:rgba(255,59,48,.6);">SB</span>';
   }
 }
-
-// Register sub-screens with go() — they need display:none by default but are .screen
-document.querySelectorAll('.screen').forEach(s => {
-  if (!['s-home','s-shop','s-live','s-messages','s-chat','s-profile','s-detail','s-all'].includes(s.id)) {
-    s.style.display = 'none';
-  }
-});
 
 // ── SEARCH ────────────────────────────────────────────────────────────────────
 function openSrch() { document.getElementById('srch').classList.add('open'); doSrch(''); setTimeout(()=>document.getElementById('si').focus(),100); }
