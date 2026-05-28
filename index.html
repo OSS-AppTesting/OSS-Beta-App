@@ -1536,16 +1536,66 @@ let searchQuery = '';
 let searchTimer = null;
 
 const SYNONYMS = {
-  // These map to a full category — search returns whole category
+  // Full category words
   'shoes':'sneakers','shoe':'sneakers','kicks':'sneakers',
   'trainers':'sneakers','runners':'sneakers','footwear':'sneakers',
+  'streetwear':'streetwear','street wear':'streetwear',
   'kids':'kids & baby','baby':'kids & baby','children':'kids & baby','toddler':'kids & baby','infant':'kids & baby',
   'retro':'vintage','thrift':'vintage','antique':'vintage',
+};
+
+// Clothing item synonyms — maps to a search term used against titles
+const ITEM_SYNONYMS = {
+  // Tops
+  'shirt':['shirt','tee','top','blouse','button','polo','jersey','tunic','cami','halter','crop'],
+  'tee':['tee','shirt','top'],
+  'tshirt':['tee','shirt','top'],
+  't-shirt':['tee','shirt','top'],
+  'top':['top','shirt','tee','blouse','crop','cami','halter','tunic'],
+  'blouse':['blouse','top','shirt'],
+  'sweater':['sweater','knit','pullover','crewneck'],
+  'sweatshirt':['sweatshirt','sweater','pullover','crewneck'],
+  'hoodie':['hoodie','hoody','sweatshirt'],
+  'cardigan':['cardigan','knit','sweater'],
+  'crop':['crop','cropped'],
+  'tank':['tank','cami','sleeveless'],
+  // Bottoms
+  'pants':['pants','trousers','slacks','bottoms'],
+  'jeans':['jeans','denim','pants'],
+  'shorts':['shorts','short'],
+  'skirt':['skirt'],
+  'leggings':['leggings','tights'],
+  'joggers':['jogger','sweatpant','track'],
+  'sweatpants':['sweatpant','jogger','track'],
+  'cargo':['cargo'],
+  // Outerwear
+  'jacket':['jacket','coat','blazer','bomber','windbreaker','parka','outerwear'],
+  'coat':['coat','jacket','parka','outerwear'],
+  'blazer':['blazer','jacket','suit'],
+  'vest':['vest','gilet','puffer'],
+  'puffer':['puffer','vest','jacket','coat'],
+  'raincoat':['raincoat','rain','windbreaker'],
+  // Footwear
+  'boots':['boot','bootie','ankle'],
+  'heels':['heel','pump','stiletto'],
+  'sandals':['sandal','flip flop','slide'],
+  'loafers':['loafer','mule','slip on'],
+  'platforms':['platform','chunky'],
+  'high tops':['high top','hightop'],
+  // Accessories
+  'bag':['bag','purse','tote','clutch','backpack','handbag'],
+  'hat':['hat','cap','beanie','snapback','bucket'],
+  'belt':['belt'],
+  'scarf':['scarf','wrap'],
+  'dress':['dress','gown','frock'],
+  'jumpsuit':['jumpsuit','romper','playsuit'],
+  'suit':['suit','blazer','formal'],
 };
 
 // Only these trigger a full category restriction
 const CATEGORY_MAP = {
   'sneakers':'Sneakers',
+  'streetwear':'Streetwear',
   'kids & baby':'Kids & Baby',
   'vintage':'Vintage',
 };
@@ -1592,13 +1642,16 @@ function runSearch() {
   const synonymTarget = SYNONYMS[searchQuery];
   const categoryOnly = synonymTarget ? CATEGORY_MAP[synonymTarget] : null;
 
+  // Check if query maps to item synonyms (e.g. "shirt" → search for tee, top, blouse etc)
+  const itemTerms = ITEM_SYNONYMS[searchQuery] || [searchQuery];
+
   let results;
   if (categoryOnly) {
     results = pool.filter(p => p.category === categoryOnly);
   } else {
     results = pool.filter(p => {
       const hay = [p.title, p.seller, p.seller.replace(/_/g,' '), p.category, p.location||''].join(' ').toLowerCase();
-      return fuzzyMatch(hay, searchQuery);
+      return itemTerms.some(t => fuzzyMatch(hay, t));
     });
   }
 
