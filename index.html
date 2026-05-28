@@ -1671,24 +1671,25 @@ function filterPayment(type, el) {
   if (searchQuery) { runSearch(); return; }
 
   if (type === 'all') {
-    document.getElementById('shop-default').style.display = 'none';
-    document.getElementById('shop-filtered').style.display = 'block';
     if (selCat) {
-      // Re-render current category with no currency filter
+      // Stay in category, show all currency types
+      document.getElementById('shop-default').style.display = 'none';
+      document.getElementById('shop-filtered').style.display = 'block';
       document.getElementById('shop-cat-title').textContent = selCat + ' ✦';
-      document.getElementById('shop-grid').innerHTML = PRODS.filter(p=>p.category===selCat).map((p,i)=>pCard(p,i)).join('');
+      document.getElementById('shop-grid').innerHTML = PRODS.filter(p => p.category === selCat).map((p,i) => pCard(p,i)).join('');
     } else {
-      // No category selected — show category tiles
+      // No category — show category tiles
       document.getElementById('shop-default').style.display = 'block';
       document.getElementById('shop-filtered').style.display = 'none';
     }
   } else {
-    // Filter by currency, also respect active category if set
     const filtered = PRODS.filter(p => p.currency === type && (!selCat || p.category === selCat));
     document.getElementById('shop-default').style.display = 'none';
     document.getElementById('shop-filtered').style.display = 'block';
     document.getElementById('shop-cat-title').textContent = (selCat ? selCat + ' · ' : '') + (type === 'USD' ? '💵 Cash' : '💰 SwapBucks') + ' ✦';
-    document.getElementById('shop-grid').innerHTML = filtered.map((p,i) => pCard(p,i)).join('');
+    document.getElementById('shop-grid').innerHTML = filtered.length
+      ? filtered.map((p,i) => pCard(p,i)).join('')
+      : '<div style="color:rgba(255,255,255,.3);text-align:center;padding:40px 0;font-size:14px;">No ' + (type==='USD'?'Cash':'SB') + ' listings in ' + (selCat||'this category') + '</div>';
   }
 }
 
