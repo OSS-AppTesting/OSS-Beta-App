@@ -712,6 +712,7 @@ function pCard(p, i) {
       <img src="${p.img}" alt="${p.title}" loading="lazy">
       <div class="cov"></div>
       ${p.hot ? '<div class="hbadge">🔥 HOT</div>' : ''}
+      ${p.isNew ? '<div class="hbadge" style="background:linear-gradient(135deg,#00C864,#00A050);left:8px;">✨ NEW</div>' : ''}
       <button class="lbtn${lk?' on':''}" id="lk-${p.id}" onclick="event.stopPropagation();toggleLike(${p.id})">${lk?'❤️':'🤍'}</button>
       <div class="pbadge"><span class="pn">${p.price}</span><span class="ps">SB</span></div>
     </div>
@@ -889,6 +890,7 @@ function showDetail(id) {
 // ── AI LISTING GENERATOR ─────────────────────────────────────────────────────
 let aiPhotoBase64 = null;
 let aiPhotoMime = null;
+let aiPreviewDataUrl = null;
 
 function handlePhotoSelected(input) {
   const file = input.files[0];
@@ -899,6 +901,7 @@ function handlePhotoSelected(input) {
   reader.onload = (e) => {
     const dataUrl = e.target.result;
     aiPhotoBase64 = dataUrl.split(',')[1];
+    aiPreviewDataUrl = dataUrl;
 
     // Show preview
     document.getElementById('ai-preview-img').src = dataUrl;
@@ -1005,9 +1008,58 @@ Return ONLY the JSON. No markdown, no explanation, no backticks.`;
 
 function postListing() {
   const title = document.getElementById('f-title').value.trim();
+  const desc = document.getElementById('f-desc').value.trim();
+  const price = parseInt(document.getElementById('f-price').value) || 25;
+  const category = document.getElementById('f-category').value || 'Streetwear';
+  const location = document.getElementById('f-location').value.trim() || 'Nashville, TN';
+
   if (!title) { showToast('Please add a title first!'); return; }
-  showToast('🎉 Listing posted! It\'s live in the shop.');
-  setTimeout(() => go('my-listings'), 1200);
+
+  // Build new product object
+  const newId = PRODS.length + 100;
+  const newProd = {
+    id: newId,
+    title: title,
+    price: price,
+    seller: 'dinobravo',
+    location: location,
+    img: aiPreviewDataUrl || I['gold_shirt'],
+    category: category,
+    likes: 0,
+    views: 1,
+    hot: false,
+    isNew: true,
+    description: desc
+  };
+
+  // Add to top of PRODS
+  PRODS.unshift(newProd);
+
+  // Re-render home and shop
+  renderAll();
+
+  showToast('🎉 Listing posted! Live in the shop now.');
+
+  // Reset the form
+  setTimeout(() => {
+    aiPhotoBase64 = null;
+    aiPhotoMime = null;
+    aiPreviewDataUrl = null;
+    document.getElementById('ai-photo-input').value = '';
+    document.getElementById('ai-preview-img').src = '';
+    document.getElementById('ai-photo-preview').style.display = 'none';
+    document.getElementById('ai-photo-placeholder').style.display = 'block';
+    document.getElementById('ai-photo-area').style.height = '';
+    document.getElementById('ai-generate-btn').style.display = 'none';
+    document.getElementById('ai-loading').style.display = 'none';
+    document.getElementById('ai-confidence').style.display = 'none';
+    document.getElementById('f-title').value = '';
+    document.getElementById('f-desc').value = '';
+    document.getElementById('f-price').value = '';
+    document.getElementById('f-category').value = '';
+    document.getElementById('f-location').value = '';
+    go('home');
+  }, 1200);
 }
 
 // ── AI CHAT ───────────────────────────────────────────────────────────────────
