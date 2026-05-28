@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap</title>
+<title>OneStopSwap v13</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -342,11 +342,301 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <button class="rbtn" style="width:auto;padding:12px 24px;font-size:15px;">+ Get SwapBucks</button>
     </div>
     <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;">
-      <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🏪</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">My Listings</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
-      <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">My Orders</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
-      <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">⚙️</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Account Settings</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
-      <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">💳</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Payment Info</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
-      <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🎧</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Support</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
+      <div onclick="go('my-listings')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🏪</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">My Listings</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
+      <div onclick="go('my-orders')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">My Orders</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
+      <div onclick="go('acct-settings')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">⚙️</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Account Settings</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
+      <div onclick="go('sb-wallet')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">💰</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">SwapBucks Wallet</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
+      <div onclick="go('my-reviews')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">⭐</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Seller Reviews</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
+      <div onclick="go('support')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🎧</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Support</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- MY LISTINGS -->
+<div id="s-my-listings" class="screen">
+  <div style="padding:52px 20px 20px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+      <button onclick="go('profile')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+      <h2 style="color:#fff;font-weight:900;font-size:24px;flex:1;">My Listings</h2>
+      <button onclick="go('new-listing')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:8px 16px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ List Item</button>
+    </div>
+    <!-- AI banner -->
+    <div onclick="go('new-listing')" style="background:linear-gradient(135deg,#1A0000,#2D0000);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:16px 18px;margin-bottom:20px;cursor:pointer;display:flex;align-items:center;gap:14px;">
+      <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">📸</div>
+      <div style="flex:1;">
+        <div style="color:#fff;font-weight:800;font-size:15px;margin-bottom:2px;">AI Listing Generator</div>
+        <div style="color:rgba(255,255,255,.4);font-size:12px;">Snap a photo — AI writes title, price & description instantly</div>
+      </div>
+      <span style="color:#FF3B30;font-size:20px;">›</span>
+    </div>
+    <!-- Active listings -->
+    <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Active · 3 listings</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      ${[{id:11,status:'Active',views:445,offers:2},{id:12,status:'Active',views:210,offers:0},{id:15,status:'Active',views:167,offers:1}].map(l=>{
+        const p = null; // will be rendered by JS
+        return `<div class="listing-row" data-id="${l.id}" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;display:flex;gap:0;">
+          <div class="listing-img-wrap" style="width:90px;height:90px;flex-shrink:0;background:#111;"></div>
+          <div style="flex:1;padding:12px 14px;min-width:0;">
+            <div class="listing-title" style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span style="background:rgba(0,200,100,.15);border:1px solid rgba(0,200,100,.3);border-radius:6px;padding:2px 8px;color:#00C864;font-size:11px;font-weight:700;">${l.status}</span>
+              <span style="color:rgba(255,255,255,.35);font-size:11px;">👁 ${l.views}</span>
+              ${l.offers>0?`<span style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:2px 8px;color:#FF3B30;font-size:11px;font-weight:700;">${l.offers} offer${l.offers>1?'s':''}</span>`:''}
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="event.stopPropagation();showToast('Edit coming soon!')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:6px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
+              <button onclick="event.stopPropagation();showToast('Listing removed')" style="flex:1;background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:6px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>
+            </div>
+          </div>
+          <div class="listing-price-badge" style="padding:12px 12px 12px 0;display:flex;align-items:flex-start;"></div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+</div>
+
+<!-- NEW LISTING (AI Generator placeholder) -->
+<div id="s-new-listing" class="screen">
+  <div style="padding:52px 20px 20px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
+      <button onclick="go('my-listings')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+      <h2 style="color:#fff;font-weight:900;font-size:24px;">New Listing</h2>
+    </div>
+    <div style="background:linear-gradient(135deg,#1A0000,#2D0000);border:2px dashed rgba(255,59,48,.4);border-radius:24px;padding:40px 20px;text-align:center;margin-bottom:24px;cursor:pointer;" onclick="showToast('AI Photo Listing coming in next update! 🔜')">
+      <div style="font-size:48px;margin-bottom:12px;">📸</div>
+      <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:6px;">Snap or Upload a Photo</div>
+      <div style="color:rgba(255,255,255,.4);font-size:13px;line-height:1.5;margin-bottom:16px;">AI will instantly generate your title,<br>description, category & price</div>
+      <div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:14px;padding:12px 28px;display:inline-block;">
+        <span style="color:#fff;font-weight:800;font-size:15px;">⚡ Coming Next Update</span>
+      </div>
+    </div>
+    <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Or Fill In Manually</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input placeholder="Title" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      <textarea placeholder="Description" rows="3" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;"></textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <input placeholder="Price (SB)" type="number" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+        <select style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:rgba(255,255,255,.6);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
+          <option value="">Category</option>
+          <option>Sneakers</option><option>Streetwear</option><option>Vintage</option><option>Kids & Baby</option>
+        </select>
+      </div>
+      <input placeholder="Your city (e.g. Nashville, TN)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      <button onclick="showToast('Listing posted! 🎉')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">Post Listing</button>
+    </div>
+  </div>
+</div>
+
+<!-- MY ORDERS -->
+<div id="s-my-orders" class="screen">
+  <div style="padding:52px 20px 20px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+      <button onclick="go('profile')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+      <h2 style="color:#fff;font-weight:900;font-size:24px;">My Orders</h2>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <div class="order-tab active-tab" onclick="filterOrders('all',this)" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:6px 16px;cursor:pointer;"><span style="color:#FF3B30;font-size:13px;font-weight:700;">All</span></div>
+      <div class="order-tab" onclick="filterOrders('active',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">Active</span></div>
+      <div class="order-tab" onclick="filterOrders('delivered',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">Delivered</span></div>
+    </div>
+    <div id="orders-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+  </div>
+</div>
+
+<!-- ACCOUNT SETTINGS -->
+<div id="s-acct-settings" class="screen">
+  <div style="padding:52px 20px 20px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
+      <button onclick="go('profile')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+      <h2 style="color:#fff;font-weight:900;font-size:24px;">Account Settings</h2>
+    </div>
+    <!-- Avatar -->
+    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:28px;">
+      <div style="position:relative;margin-bottom:12px;">
+        <div class="pav" style="width:80px;height:80px;font-size:32px;"><span style="color:#fff;font-weight:900;position:relative;z-index:1;">DB</span><div class="pav-badge">✓</div></div>
+        <button onclick="showToast('Photo upload coming soon!')" style="position:absolute;bottom:-4px;right:-4px;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:10px;width:28px;height:28px;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✏️</button>
+      </div>
+      <span style="color:rgba(255,255,255,.4);font-size:12px;">Tap to change photo</span>
+    </div>
+    <!-- Form -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Full Name</div>
+        <input value="Dino Bravo" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      </div>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Username</div>
+        <input value="dinobravo" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      </div>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Bio</div>
+        <textarea rows="3" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;">Vintage hunter 🕵️ Sneaker collector. Ships same day!</textarea>
+      </div>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Email</div>
+        <input value="dino@onestopswap.com" type="email" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      </div>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ship From</div>
+        <input value="Nashville, TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      </div>
+      <button onclick="showToast('Settings saved! ✓')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- SWAPBUCKS WALLET -->
+<div id="s-sb-wallet" class="screen">
+  <div style="padding:52px 20px 20px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+      <button onclick="go('profile')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+      <h2 style="color:#fff;font-weight:900;font-size:24px;">SB Wallet</h2>
+    </div>
+    <!-- Balance card -->
+    <div style="background:linear-gradient(135deg,#1A0000,#3D0000);border:1px solid rgba(255,59,48,.3);border-radius:24px;padding:24px;margin-bottom:20px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(255,59,48,.2),transparent);"></div>
+      <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Current Balance</div>
+      <div id="wallet-sb" style="color:#FF3B30;font-weight:900;font-size:52px;font-family:'Space Grotesk',sans-serif;line-height:1;margin-bottom:4px;">125 <span style="font-size:22px;color:rgba(255,59,48,.6);">SB</span></div>
+      <div style="color:rgba(255,255,255,.3);font-size:13px;margin-bottom:20px;">≈ $125.00 USD value</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button onclick="document.getElementById('modal-sb').classList.add('open')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:12px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ Add SB</button>
+        <button onclick="showToast('Withdrawals coming soon!')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Withdraw</button>
+      </div>
+    </div>
+    <!-- Stats row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#00C864;font-weight:900;font-size:18px;">+340</div><div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Earned</div></div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#FF3B30;font-weight:900;font-size:18px;">-215</div><div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Spent</div></div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#FFB347;font-weight:900;font-size:18px;">+12</div><div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Pending</div></div>
+    </div>
+    <!-- Transaction history -->
+    <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Transaction History</div>
+    <div style="display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;">
+      ${[
+        {icon:'💰',label:'Sold: 80s Sequin Vest',sub:'@sneakerhead_99',amt:'+20',date:'Today',clr:'#00C864'},
+        {icon:'🛍️',label:'Purchased: Gold Shirt',sub:'@goldenthread',amt:'-25',date:'Yesterday',clr:'#FF3B30'},
+        {icon:'💰',label:'Sold: Baseball Glove',sub:'@catfoshee',amt:'+25',date:'May 24',clr:'#00C864'},
+        {icon:'💳',label:'Added SwapBucks',sub:'Visa ···6411',amt:'+100',date:'May 22',clr:'#00C864'},
+        {icon:'🛍️',label:'Purchased: Vans Daisy',sub:'@sneakerhead_99',amt:'-20',date:'May 20',clr:'#FF3B30'},
+        {icon:'⏳',label:'Pending: Raincoat Sale',sub:'@kidsboutique',amt:'+12',date:'Pending',clr:'#FFB347'},
+      ].map((t,i,arr)=>`
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;${i<arr.length-1?'border-bottom:1px solid rgba(255,255,255,.05);':''}">
+          <div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${t.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="color:#fff;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.label}</div>
+            <div style="color:rgba(255,255,255,.35);font-size:12px;">${t.sub} · ${t.date}</div>
+          </div>
+          <div style="color:${t.clr};font-weight:800;font-size:15px;flex-shrink:0;">${t.amt} SB</div>
+        </div>`).join('')}
+    </div>
+  </div>
+</div>
+
+<!-- SELLER REVIEWS -->
+<div id="s-my-reviews" class="screen">
+  <div style="padding:52px 20px 20px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+      <button onclick="go('profile')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+      <h2 style="color:#fff;font-weight:900;font-size:24px;">Seller Reviews</h2>
+    </div>
+    <!-- Rating summary -->
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:20px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:20px;">
+        <div style="text-align:center;">
+          <div style="color:#FF3B30;font-weight:900;font-size:52px;font-family:'Space Grotesk',sans-serif;line-height:1;">4.9</div>
+          <div style="color:#FFB347;font-size:18px;margin:4px 0;">⭐⭐⭐⭐⭐</div>
+          <div style="color:rgba(255,255,255,.4);font-size:12px;">138 reviews</div>
+        </div>
+        <div style="flex:1;">
+          ${[5,4,3,2,1].map((s,i)=>{
+            const pcts=[78,15,5,1,1];
+            return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+              <span style="color:rgba(255,255,255,.5);font-size:11px;width:8px;">${s}</span>
+              <div style="flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;">
+                <div style="height:100%;width:${pcts[i]}%;background:${s>=4?'#FFB347':'rgba(255,255,255,.2)'};border-radius:3px;"></div>
+              </div>
+              <span style="color:rgba(255,255,255,.3);font-size:11px;width:28px;">${pcts[i]}%</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+    <!-- Reviews list -->
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      ${[
+        {name:'sneakerhead_99',initials:'SH',color:'#1a1a2e',rating:5,item:'Vans Daisy High Tops',text:'Super fast shipping, item exactly as described. Would definitely buy from again! 🙌',date:'2 days ago'},
+        {name:'catfoshee',initials:'CF',color:'#3d1a00',rating:5,item:'Vintage Baseball Glove',text:'Packaged perfectly, great condition. Seller communicated great throughout.',date:'1 week ago'},
+        {name:'goldenthread',initials:'GT',color:'#2d1b00',rating:5,item:'Metallic Gold Shirt',text:'Obsessed with this piece!! Ships so fast and very well packaged 🔥',date:'2 weeks ago'},
+        {name:'kidswear22',initials:'KW',color:'#3d0035',rating:4,item:'Pink Winter Boots',text:'Arrived quickly, good condition. Color slightly different than photo but still love them.',date:'3 weeks ago'},
+        {name:'retrofinds',initials:'RF',color:'#1a0000',rating:5,item:'80s Sequin Vest',text:'Amazing seller! Already planning my next purchase from @dinobravo 💯',date:'1 month ago'},
+      ].map(r=>`
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:${r.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0;">${r.initials}</div>
+            <div style="flex:1;">
+              <div style="color:#fff;font-weight:700;font-size:14px;">@${r.name}</div>
+              <div style="color:rgba(255,255,255,.35);font-size:11px;">${r.item} · ${r.date}</div>
+            </div>
+            <div style="color:#FFB347;font-size:14px;">${'⭐'.repeat(r.rating)}</div>
+          </div>
+          <div style="color:rgba(255,255,255,.7);font-size:13px;line-height:1.5;">${r.text}</div>
+        </div>`).join('')}
+    </div>
+  </div>
+</div>
+
+<!-- SUPPORT -->
+<div id="s-support" class="screen">
+  <div style="padding:52px 20px 20px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+      <button onclick="go('profile')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+      <h2 style="color:#fff;font-weight:900;font-size:24px;">Support</h2>
+    </div>
+    <!-- Quick actions -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;">
+      <div onclick="showToast('Opening chat...')" style="background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.2);border-radius:18px;padding:18px 14px;text-align:center;cursor:pointer;">
+        <div style="font-size:28px;margin-bottom:6px;">💬</div>
+        <div style="color:#fff;font-weight:700;font-size:13px;">Live Chat</div>
+        <div style="color:rgba(255,255,255,.35);font-size:11px;margin-top:2px;">Avg 2 min reply</div>
+      </div>
+      <div onclick="showToast('Opening email...')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:18px 14px;text-align:center;cursor:pointer;">
+        <div style="font-size:28px;margin-bottom:6px;">📧</div>
+        <div style="color:#fff;font-weight:700;font-size:13px;">Email Us</div>
+        <div style="color:rgba(255,255,255,.35);font-size:11px;margin-top:2px;">help@onestopswap.com</div>
+      </div>
+    </div>
+    <!-- FAQ -->
+    <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">FAQ</div>
+    <div style="display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;" id="faq-list">
+      ${[
+        {q:'How do SwapBucks work?',a:'SwapBucks (SB) are the in-app currency. 1 SB = $1 USD value. Buy them in the app and use them to purchase any item. You also earn SB when you sell items.'},
+        {q:'How long does shipping take?',a:'Most sellers ship within 1-2 business days via USPS. Standard shipping takes 3-5 days. Priority Mail is 1-3 days. Tracking is always included.'},
+        {q:'What if my item doesn\'t arrive?',a:'If your item doesn\'t arrive within 10 business days of the tracking showing shipped, contact us and we\'ll open a case and fully refund your SwapBucks.'},
+        {q:'Can I return an item?',a:'Returns are handled between buyer and seller. Most sellers accept returns within 3 days if the item is significantly not as described. Contact the seller first.'},
+        {q:'How do I become a verified seller?',a:'Sell 5+ items with all 5-star reviews and you\'ll be automatically considered for the ✓ verified badge. The team reviews monthly.'},
+        {q:'Is my payment info secure?',a:'Yes — we never store card numbers. All payments are processed by Stripe with bank-level encryption. SwapBucks are stored in your in-app wallet.'},
+      ].map((f,i)=>`
+        <div class="faq-item" onclick="toggleFaq(${i})" style="cursor:pointer;">
+          <div style="display:flex;align-items:center;gap:12px;padding:16px;${i>0?'border-top:1px solid rgba(255,255,255,.05);':''}">
+            <span style="color:#fff;font-weight:600;font-size:14px;flex:1;">${f.q}</span>
+            <span id="faq-arrow-${i}" style="color:rgba(255,255,255,.3);font-size:18px;transition:transform .2s;display:inline-block;">›</span>
+          </div>
+          <div id="faq-ans-${i}" style="display:none;padding:0 16px 16px;">
+            <div style="color:rgba(255,255,255,.5);font-size:13px;line-height:1.6;">${f.a}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <!-- Contact form -->
+    <div style="margin-top:24px;">
+      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Send a Message</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <select style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:rgba(255,255,255,.6);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
+          <option>Select topic...</option>
+          <option>Order issue</option><option>Account help</option><option>SwapBucks question</option><option>Report a seller</option><option>Other</option>
+        </select>
+        <textarea placeholder="Describe your issue..." rows="4" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;"></textarea>
+        <button onclick="showToast('Message sent! We\'ll reply within 24h ✓')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">Send Message</button>
+      </div>
     </div>
   </div>
 </div>
@@ -831,6 +1121,118 @@ Rules:
   btn.disabled = false;
   input.focus();
 }
+
+// ── PROFILE SUB-SCREENS ───────────────────────────────────────────────────────
+
+const ORDERS = [
+  {id:'OSS-1042',item:'Y2K Betsey Johnson Dress',img:'betsey_dress',price:125,seller:'vintagequeen',status:'Delivered',date:'May 20',tracking:'9400111899223456789'},
+  {id:'OSS-1038',item:'Adidas x Ivy Park Stan Smith',img:'adidas_ivy_park',price:150,seller:'ivyparklover',status:'Shipped',date:'May 25',tracking:'9400111899223456790'},
+  {id:'OSS-1035',item:'Vans Daisy High Tops',img:'vans_daisy',price:20,seller:'sneakerhead_99',status:'Processing',date:'May 27',tracking:null},
+  {id:'OSS-1029',item:'Metallic Silver Pants',img:'silver_pants',price:10,seller:'silverstyle',status:'Delivered',date:'May 10',tracking:'9400111899223456788'},
+  {id:'OSS-1021',item:'Rodarte x Target Sheer Top',img:'rodarte_sheer',price:35,seller:'designerdrops',status:'Delivered',date:'Apr 28',tracking:'9400111899223456787'},
+];
+
+const STATUS_STYLES = {
+  'Delivered': {bg:'rgba(0,200,100,.12)',border:'rgba(0,200,100,.3)',color:'#00C864',icon:'✓'},
+  'Shipped':   {bg:'rgba(79,195,247,.12)',border:'rgba(79,195,247,.3)',color:'#4FC3F7',icon:'📦'},
+  'Processing':{bg:'rgba(255,179,71,.12)',border:'rgba(255,179,71,.3)',color:'#FFB347',icon:'⏳'},
+};
+
+function renderOrders(filter) {
+  const list = filter === 'all' ? ORDERS :
+               filter === 'active' ? ORDERS.filter(o=>o.status!=='Delivered') :
+               ORDERS.filter(o=>o.status==='Delivered');
+  document.getElementById('orders-list').innerHTML = list.map(o => {
+    const ss = STATUS_STYLES[o.status] || STATUS_STYLES['Processing'];
+    return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;">
+      <div style="display:flex;gap:12px;padding:14px;">
+        <div style="width:72px;height:72px;border-radius:12px;overflow:hidden;background:#111;flex-shrink:0;">
+          <img src="${I[o.img]||''}" style="width:100%;height:100%;object-fit:cover;">
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.item}</div>
+          <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:6px;">@${o.seller} · ${o.date}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="background:${ss.bg};border:1px solid ${ss.border};border-radius:8px;padding:3px 10px;color:${ss.color};font-size:11px;font-weight:700;">${ss.icon} ${o.status}</span>
+            <span style="color:#FF3B30;font-weight:800;font-size:14px;">${o.price} SB</span>
+          </div>
+        </div>
+      </div>
+      ${o.tracking ? `<div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="color:rgba(255,255,255,.4);font-size:11px;">Tracking: ${o.tracking.slice(-8)}</span>
+        <button onclick="showToast('Opening USPS tracking...')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 12px;color:rgba(255,255,255,.6);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Track →</button>
+      </div>` : ''}
+    </div>`;
+  }).join('') || '<div style="color:rgba(255,255,255,.3);text-align:center;padding:40px 0;">No orders yet</div>';
+}
+
+function filterOrders(type, el) {
+  document.querySelectorAll('.order-tab').forEach(t => {
+    t.style.background = 'rgba(255,255,255,.06)';
+    t.style.border = '1px solid rgba(255,255,255,.1)';
+    t.querySelector('span').style.color = 'rgba(255,255,255,.5)';
+  });
+  el.style.background = 'rgba(255,59,48,.2)';
+  el.style.border = '1px solid rgba(255,59,48,.4)';
+  el.querySelector('span').style.color = '#FF3B30';
+  renderOrders(type);
+}
+
+function renderMyListings() {
+  const ids = [11, 12, 15];
+  document.querySelectorAll('.listing-row').forEach((row, i) => {
+    const p = PRODS.find(x => x.id === ids[i]);
+    if (!p) return;
+    const imgWrap = row.querySelector('.listing-img-wrap');
+    imgWrap.innerHTML = `<img src="${p.img}" style="width:100%;height:100%;object-fit:cover;">`;
+    row.querySelector('.listing-title').textContent = p.title;
+    const badge = row.querySelector('.listing-price-badge');
+    badge.innerHTML = `<div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:10px;padding:4px 10px;display:inline-flex;align-items:center;gap:3px;"><span style="color:#fff;font-weight:900;font-size:13px;">${p.price}</span><span style="color:rgba(255,255,255,.7);font-size:10px;">SB</span></div>`;
+  });
+}
+
+function toggleFaq(i) {
+  const ans = document.getElementById('faq-ans-' + i);
+  const arrow = document.getElementById('faq-arrow-' + i);
+  if (!ans) return;
+  const open = ans.style.display !== 'none';
+  ans.style.display = open ? 'none' : 'block';
+  arrow.style.transform = open ? '' : 'rotate(90deg)';
+}
+
+// Toast notification
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,.97);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 20px;color:#fff;font-size:14px;font-weight:600;font-family:"DM Sans",sans-serif;z-index:9999;pointer-events:none;transition:opacity .3s;white-space:nowrap;backdrop-filter:blur(20px);';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2200);
+}
+
+// Override go() to trigger sub-screen renders
+const _go = go;
+function go(name) {
+  _go(name);
+  if (name === 'my-orders') renderOrders('all');
+  if (name === 'my-listings') renderMyListings();
+  if (name === 'sb-wallet') {
+    const w = document.getElementById('wallet-sb');
+    if (w) w.innerHTML = SB + ' <span style="font-size:22px;color:rgba(255,59,48,.6);">SB</span>';
+  }
+}
+
+// Register sub-screens with go() — they need display:none by default but are .screen
+document.querySelectorAll('.screen').forEach(s => {
+  if (!['s-home','s-shop','s-live','s-messages','s-chat','s-profile','s-detail','s-all'].includes(s.id)) {
+    s.style.display = 'none';
+  }
+});
 
 // ── SEARCH ────────────────────────────────────────────────────────────────────
 function openSrch() { document.getElementById('srch').classList.add('open'); doSrch(''); setTimeout(()=>document.getElementById('si').focus(),100); }
