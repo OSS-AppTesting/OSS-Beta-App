@@ -574,7 +574,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <textarea id="report-details" rows="3" placeholder="Please describe the issue in detail..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;"></textarea>
       </div>
       <div style="background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:12px;padding:12px 14px;">
-        <div style="color:#FFB347;font-size:12px;font-weight:600;">⚡ Our team responds within 24 hours. If eligible, SwapBucks will be refunded.</div>
+        <div style="color:#FFB347;font-size:12px;font-weight:600;" id="report-refund-msg">⚡ Our team responds within 24 hours. If eligible, your payment will be refunded.</div>
       </div>
       <button onclick="submitReport()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">Submit Report</button>
     </div>
@@ -2515,6 +2515,11 @@ function openReportIssue(orderId) {
   document.getElementById('modal-report-issue').style.display = 'flex';
   document.getElementById('report-order-id').textContent = o.id;
   document.getElementById('report-item-name').textContent = o.item;
+  const refundMsg = document.getElementById('report-refund-msg');
+  if (refundMsg) {
+    const method = o.currency === 'USD' ? 'your payment will be refunded to your original payment method' : 'SwapBucks will be refunded to your wallet';
+    refundMsg.textContent = '⚡ Our team responds within 24 hours. If eligible, ' + method + '.';
+  }
   window._reportOrderId = orderId;
 }
 
