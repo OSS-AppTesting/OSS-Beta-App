@@ -547,6 +547,28 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 
+<!-- SELLER COUNTER MODAL -->
+<div id="modal-seller-counter" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:800;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="color:#fff;font-weight:900;font-size:22px;">Send Counter Offer</h3>
+      <button onclick="document.getElementById('modal-seller-counter').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:24px;cursor:pointer;">✕</button>
+    </div>
+    <div id="seller-counter-summary" style="margin-bottom:20px;"></div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Your Counter</div>
+        <div style="position:relative;">
+          <div id="seller-counter-currency" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.5);font-size:16px;font-weight:700;pointer-events:none;">SB</div>
+          <input id="seller-counter-amount" type="number" placeholder="0" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px 14px 48px;color:#fff;font-size:24px;font-weight:800;font-family:'Space Grotesk',sans-serif;outline:none;text-align:center;">
+        </div>
+      </div>
+      <button onclick="submitSellerCounter()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">Send Counter Offer 🔄</button>
+    </div>
+  </div>
+</div>
+
 <!-- MAKE OFFER MODAL -->
 <div id="modal-make-offer" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:700;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
@@ -685,7 +707,8 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div class="offer-tab" onclick="filterOffers('Accepted',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">✅ Accepted</span></div>
       <div class="offer-tab" onclick="filterOffers('Completed',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">🎉 Completed</span></div>
       <div class="offer-tab" onclick="filterOffers('Declined',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">❌ Declined</span></div>
-      <div class="offer-tab" onclick="filterOffers('received',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:#FF3B30;font-size:13px;font-weight:700;">📥 Received</span></div>
+      <div class="offer-tab" onclick="filterOffers('Expired',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">⌛ Expired</span></div>
+      <div class="offer-tab" onclick="filterOffers('received',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:#FF3B30;font-size:13px;font-weight:700;">📬 Inbox</span></div>
     </div>
     <div id="offers-list" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
@@ -2732,6 +2755,13 @@ const OFFERS = [
     offerAmount: 30, counterAmount: null, currency: 'USD', currencyChanged: false,
     message: 'Would love this for $30!', status: 'Completed', date: '3 days ago', expiresAt: null,
   },
+  {
+    id: 'OFF-1008', productId: 3,
+    title: 'Hoka One Bondi Sneakers', img: I['hoka_bondi'],
+    seller: 'runnerup', listedPrice: 25, listedCurrency: 'SB',
+    offerAmount: 18, counterAmount: null, currency: 'SB', currencyChanged: false,
+    message: '', status: 'Expired', date: '4 days ago', expiresAt: Date.now() - 1000,
+  },
 ];
 
 // Received offers (as seller @dinobravo)
@@ -3321,8 +3351,9 @@ function renderOffers(filter) {
     return;
   }
 
-  const list = filter === 'all' ? OFFERS :
+  const list = filter === 'all' ? OFFERS.filter(o => o.status !== 'Expired') :
                filter === 'Accepted' ? OFFERS.filter(o => o.status === 'Accepted' || o.status === 'Completing') :
+               filter === 'Expired' ? OFFERS.filter(o => o.status === 'Expired' || (o.expiresAt && o.expiresAt < Date.now() && o.status === 'Pending')) :
                OFFERS.filter(o => o.status === filter);
 
   if (!list.length) {
@@ -3449,13 +3480,42 @@ function respondToOffer(offerId, action) {
   if (action === 'accepted') {
     o.status = 'Accepted';
     showToast('✅ Offer accepted! Buyer has been notified.');
+    renderReceivedOffers();
   } else if (action === 'declined') {
     o.status = 'Declined';
     showToast('❌ Offer declined.');
+    renderReceivedOffers();
   } else if (action === 'countered') {
-    o.status = 'Accepted'; // simplified for demo
-    showToast('🔄 Counter sent to buyer!');
+    // Open seller counter modal
+    window._sellerCounterOfferId = offerId;
+    const isUSD = o.currency === 'USD';
+    document.getElementById('seller-counter-summary').innerHTML = `
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Buyer's offer</div>
+          <div style="color:#FF3B30;font-weight:900;font-size:20px;">${isUSD?'$'+o.offerAmount:o.offerAmount+' SB'}</div>
+        </div>
+        <div style="color:rgba(255,255,255,.3);font-size:20px;">→</div>
+        <div style="text-align:right;">
+          <div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Your listed price</div>
+          <div style="color:#fff;font-weight:700;font-size:16px;">${isUSD?'$'+o.listedPrice:o.listedPrice+' SB'}</div>
+        </div>
+      </div>`;
+    document.getElementById('seller-counter-currency').textContent = isUSD ? '$' : 'SB';
+    document.getElementById('seller-counter-amount').value = '';
+    document.getElementById('modal-seller-counter').style.display = 'flex';
   }
+}
+
+function submitSellerCounter() {
+  const o = RECEIVED_OFFERS.find(x => x.id === window._sellerCounterOfferId);
+  if (!o) return;
+  const amt = parseFloat(document.getElementById('seller-counter-amount').value);
+  if (!amt || amt <= 0) { showToast('Enter a counter amount!'); return; }
+  o.status = 'Countered';
+  o.sellerCounter = amt;
+  document.getElementById('modal-seller-counter').style.display = 'none';
+  showToast('🔄 Counter offer of ' + (o.currency==='USD'?'$'+amt:amt+' SB') + ' sent to @' + o.buyer + '!');
   renderReceivedOffers();
 }
 
