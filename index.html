@@ -369,29 +369,8 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       </div>
       <span style="color:#FF3B30;font-size:20px;">›</span>
     </div>
-    <!-- Active listings -->
     <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Active · 3 listings</div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      ${[{id:11,status:'Active',views:445,offers:2},{id:12,status:'Active',views:210,offers:0},{id:15,status:'Active',views:167,offers:1}].map(l=>{
-        const p = null; // will be rendered by JS
-        return `<div class="listing-row" data-id="${l.id}" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;display:flex;gap:0;">
-          <div class="listing-img-wrap" style="width:90px;height:90px;flex-shrink:0;background:#111;"></div>
-          <div style="flex:1;padding:12px 14px;min-width:0;">
-            <div class="listing-title" style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-              <span style="background:rgba(0,200,100,.15);border:1px solid rgba(0,200,100,.3);border-radius:6px;padding:2px 8px;color:#00C864;font-size:11px;font-weight:700;">${l.status}</span>
-              <span style="color:rgba(255,255,255,.35);font-size:11px;">👁 ${l.views}</span>
-              ${l.offers>0?`<span style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:2px 8px;color:#FF3B30;font-size:11px;font-weight:700;">${l.offers} offer${l.offers>1?'s':''}</span>`:''}
-            </div>
-            <div style="display:flex;gap:8px;">
-              <button onclick="event.stopPropagation();showToast('Edit coming soon!')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:6px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
-              <button onclick="event.stopPropagation();showToast('Listing removed')" style="flex:1;background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:6px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>
-            </div>
-          </div>
-          <div class="listing-price-badge" style="padding:12px 12px 12px 0;display:flex;align-items:flex-start;"></div>
-        </div>`;
-      }).join('')}
-    </div>
+    <div id="my-listings-list" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
 </div>
 
@@ -509,26 +488,8 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#FF3B30;font-weight:900;font-size:18px;">-215</div><div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Spent</div></div>
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#FFB347;font-weight:900;font-size:18px;">+12</div><div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Pending</div></div>
     </div>
-    <!-- Transaction history -->
     <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Transaction History</div>
-    <div style="display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;">
-      ${[
-        {icon:'💰',label:'Sold: 80s Sequin Vest',sub:'@sneakerhead_99',amt:'+20',date:'Today',clr:'#00C864'},
-        {icon:'🛍️',label:'Purchased: Gold Shirt',sub:'@goldenthread',amt:'-25',date:'Yesterday',clr:'#FF3B30'},
-        {icon:'💰',label:'Sold: Baseball Glove',sub:'@catfoshee',amt:'+25',date:'May 24',clr:'#00C864'},
-        {icon:'💳',label:'Added SwapBucks',sub:'Visa ···6411',amt:'+100',date:'May 22',clr:'#00C864'},
-        {icon:'🛍️',label:'Purchased: Vans Daisy',sub:'@sneakerhead_99',amt:'-20',date:'May 20',clr:'#FF3B30'},
-        {icon:'⏳',label:'Pending: Raincoat Sale',sub:'@kidsboutique',amt:'+12',date:'Pending',clr:'#FFB347'},
-      ].map((t,i,arr)=>`
-        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;${i<arr.length-1?'border-bottom:1px solid rgba(255,255,255,.05);':''}">
-          <div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${t.icon}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="color:#fff;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.label}</div>
-            <div style="color:rgba(255,255,255,.35);font-size:12px;">${t.sub} · ${t.date}</div>
-          </div>
-          <div style="color:${t.clr};font-weight:800;font-size:15px;flex-shrink:0;">${t.amt} SB</div>
-        </div>`).join('')}
-    </div>
+    <div id="wallet-txns" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;"></div>
   </div>
 </div>
 
@@ -540,48 +501,8 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <h2 style="color:#fff;font-weight:900;font-size:24px;">Seller Reviews</h2>
     </div>
     <!-- Rating summary -->
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:20px;margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:20px;">
-        <div style="text-align:center;">
-          <div style="color:#FF3B30;font-weight:900;font-size:52px;font-family:'Space Grotesk',sans-serif;line-height:1;">4.9</div>
-          <div style="color:#FFB347;font-size:18px;margin:4px 0;">⭐⭐⭐⭐⭐</div>
-          <div style="color:rgba(255,255,255,.4);font-size:12px;">138 reviews</div>
-        </div>
-        <div style="flex:1;">
-          ${[5,4,3,2,1].map((s,i)=>{
-            const pcts=[78,15,5,1,1];
-            return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-              <span style="color:rgba(255,255,255,.5);font-size:11px;width:8px;">${s}</span>
-              <div style="flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;">
-                <div style="height:100%;width:${pcts[i]}%;background:${s>=4?'#FFB347':'rgba(255,255,255,.2)'};border-radius:3px;"></div>
-              </div>
-              <span style="color:rgba(255,255,255,.3);font-size:11px;width:28px;">${pcts[i]}%</span>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>
-    </div>
-    <!-- Reviews list -->
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      ${[
-        {name:'sneakerhead_99',initials:'SH',color:'#1a1a2e',rating:5,item:'Vans Daisy High Tops',text:'Super fast shipping, item exactly as described. Would definitely buy from again! 🙌',date:'2 days ago'},
-        {name:'catfoshee',initials:'CF',color:'#3d1a00',rating:5,item:'Vintage Baseball Glove',text:'Packaged perfectly, great condition. Seller communicated great throughout.',date:'1 week ago'},
-        {name:'goldenthread',initials:'GT',color:'#2d1b00',rating:5,item:'Metallic Gold Shirt',text:'Obsessed with this piece!! Ships so fast and very well packaged 🔥',date:'2 weeks ago'},
-        {name:'kidswear22',initials:'KW',color:'#3d0035',rating:4,item:'Pink Winter Boots',text:'Arrived quickly, good condition. Color slightly different than photo but still love them.',date:'3 weeks ago'},
-        {name:'retrofinds',initials:'RF',color:'#1a0000',rating:5,item:'80s Sequin Vest',text:'Amazing seller! Already planning my next purchase from @dinobravo 💯',date:'1 month ago'},
-      ].map(r=>`
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:${r.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0;">${r.initials}</div>
-            <div style="flex:1;">
-              <div style="color:#fff;font-weight:700;font-size:14px;">@${r.name}</div>
-              <div style="color:rgba(255,255,255,.35);font-size:11px;">${r.item} · ${r.date}</div>
-            </div>
-            <div style="color:#FFB347;font-size:14px;">${'⭐'.repeat(r.rating)}</div>
-          </div>
-          <div style="color:rgba(255,255,255,.7);font-size:13px;line-height:1.5;">${r.text}</div>
-        </div>`).join('')}
-    </div>
+    <div id="reviews-summary" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:20px;margin-bottom:20px;"></div>
+    <div id="reviews-list" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
 </div>
 
@@ -605,27 +526,8 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <div style="color:rgba(255,255,255,.35);font-size:11px;margin-top:2px;">help@onestopswap.com</div>
       </div>
     </div>
-    <!-- FAQ -->
     <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">FAQ</div>
-    <div style="display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;" id="faq-list">
-      ${[
-        {q:'How do SwapBucks work?',a:'SwapBucks (SB) are the in-app currency. 1 SB = $1 USD value. Buy them in the app and use them to purchase any item. You also earn SB when you sell items.'},
-        {q:'How long does shipping take?',a:'Most sellers ship within 1-2 business days via USPS. Standard shipping takes 3-5 days. Priority Mail is 1-3 days. Tracking is always included.'},
-        {q:'What if my item doesn\'t arrive?',a:'If your item doesn\'t arrive within 10 business days of the tracking showing shipped, contact us and we\'ll open a case and fully refund your SwapBucks.'},
-        {q:'Can I return an item?',a:'Returns are handled between buyer and seller. Most sellers accept returns within 3 days if the item is significantly not as described. Contact the seller first.'},
-        {q:'How do I become a verified seller?',a:'Sell 5+ items with all 5-star reviews and you\'ll be automatically considered for the ✓ verified badge. The team reviews monthly.'},
-        {q:'Is my payment info secure?',a:'Yes — we never store card numbers. All payments are processed by Stripe with bank-level encryption. SwapBucks are stored in your in-app wallet.'},
-      ].map((f,i)=>`
-        <div class="faq-item" onclick="toggleFaq(${i})" style="cursor:pointer;">
-          <div style="display:flex;align-items:center;gap:12px;padding:16px;${i>0?'border-top:1px solid rgba(255,255,255,.05);':''}">
-            <span style="color:#fff;font-weight:600;font-size:14px;flex:1;">${f.q}</span>
-            <span id="faq-arrow-${i}" style="color:rgba(255,255,255,.3);font-size:18px;transition:transform .2s;display:inline-block;">›</span>
-          </div>
-          <div id="faq-ans-${i}" style="display:none;padding:0 16px 16px;">
-            <div style="color:rgba(255,255,255,.5);font-size:13px;line-height:1.6;">${f.a}</div>
-          </div>
-        </div>`).join('')}
-    </div>
+    <div id="faq-list" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;"></div>
     <!-- Contact form -->
     <div style="margin-top:24px;">
       <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Send a Message</div>
@@ -1112,6 +1014,98 @@ Rules:
 
 // ── PROFILE SUB-SCREENS ───────────────────────────────────────────────────────
 
+const TXNS = [
+  {icon:'💰',label:'Sold: 80s Sequin Vest',sub:'@sneakerhead_99',amt:'+20',date:'Today',clr:'#00C864'},
+  {icon:'🛍️',label:'Purchased: Gold Shirt',sub:'@goldenthread',amt:'-25',date:'Yesterday',clr:'#FF3B30'},
+  {icon:'💰',label:'Sold: Baseball Glove',sub:'@catfoshee',amt:'+25',date:'May 24',clr:'#00C864'},
+  {icon:'💳',label:'Added SwapBucks',sub:'Visa ···6411',amt:'+100',date:'May 22',clr:'#00C864'},
+  {icon:'🛍️',label:'Purchased: Vans Daisy',sub:'@sneakerhead_99',amt:'-20',date:'May 20',clr:'#FF3B30'},
+  {icon:'⏳',label:'Pending: Raincoat Sale',sub:'@kidsboutique',amt:'+12',date:'Pending',clr:'#FFB347'},
+];
+
+const REVIEWS_DATA = [
+  {name:'sneakerhead_99',initials:'SH',color:'#1a1a2e',rating:5,item:'Vans Daisy High Tops',text:'Super fast shipping, item exactly as described. Would definitely buy from again! 🙌',date:'2 days ago'},
+  {name:'catfoshee',initials:'CF',color:'#3d1a00',rating:5,item:'Vintage Baseball Glove',text:'Packaged perfectly, great condition. Seller communicated great throughout.',date:'1 week ago'},
+  {name:'goldenthread',initials:'GT',color:'#2d1b00',rating:5,item:'Metallic Gold Shirt',text:'Obsessed with this piece!! Ships so fast and very well packaged 🔥',date:'2 weeks ago'},
+  {name:'kidswear22',initials:'KW',color:'#3d0035',rating:4,item:'Pink Winter Boots',text:'Arrived quickly, good condition. Color slightly different than photo but still love them.',date:'3 weeks ago'},
+  {name:'retrofinds',initials:'RF',color:'#1a0000',rating:5,item:'80s Sequin Vest',text:'Amazing seller! Already planning my next purchase from @dinobravo 💯',date:'1 month ago'},
+];
+
+const FAQS = [
+  {q:'How do SwapBucks work?',a:'SwapBucks (SB) are the in-app currency. 1 SB = $1 USD value. Buy them in the app and use them to purchase any item. You also earn SB when you sell items.'},
+  {q:'How long does shipping take?',a:'Most sellers ship within 1-2 business days via USPS. Standard shipping takes 3-5 days. Priority Mail is 1-3 days. Tracking is always included.'},
+  {q:'What if my item doesn\'t arrive?',a:'If your item doesn\'t arrive within 10 business days of the tracking showing shipped, contact us and we\'ll open a case and fully refund your SwapBucks.'},
+  {q:'Can I return an item?',a:'Returns are handled between buyer and seller. Most sellers accept returns within 3 days if the item is significantly not as described. Contact the seller first.'},
+  {q:'How do I become a verified seller?',a:'Sell 5+ items with all 5-star reviews and you\'ll be automatically considered for the verified badge. The team reviews monthly.'},
+  {q:'Is my payment info secure?',a:'Yes — we never store card numbers. All payments are processed by Stripe with bank-level encryption. SwapBucks are stored in your in-app wallet.'},
+];
+
+function renderWallet() {
+  const w = document.getElementById('wallet-sb');
+  if (w) w.innerHTML = SB + ' <span style="font-size:22px;color:rgba(255,59,48,.6);">SB</span>';
+  const txEl = document.getElementById('wallet-txns');
+  if (!txEl) return;
+  txEl.innerHTML = TXNS.map((t,i) => `
+    <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;${i<TXNS.length-1?'border-bottom:1px solid rgba(255,255,255,.05);':''}">
+      <div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${t.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="color:#fff;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.label}</div>
+        <div style="color:rgba(255,255,255,.35);font-size:12px;">${t.sub} · ${t.date}</div>
+      </div>
+      <div style="color:${t.clr};font-weight:800;font-size:15px;flex-shrink:0;">${t.amt} SB</div>
+    </div>`).join('');
+}
+
+function renderReviews() {
+  const pcts = [78,15,5,1,1];
+  const summary = document.getElementById('reviews-summary');
+  if (summary) summary.innerHTML = `
+    <div style="display:flex;align-items:center;gap:20px;">
+      <div style="text-align:center;">
+        <div style="color:#FF3B30;font-weight:900;font-size:52px;font-family:'Space Grotesk',sans-serif;line-height:1;">4.9</div>
+        <div style="color:#FFB347;font-size:18px;margin:4px 0;">⭐⭐⭐⭐⭐</div>
+        <div style="color:rgba(255,255,255,.4);font-size:12px;">138 reviews</div>
+      </div>
+      <div style="flex:1;">
+        ${[5,4,3,2,1].map((s,i) => `
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+            <span style="color:rgba(255,255,255,.5);font-size:11px;width:8px;">${s}</span>
+            <div style="flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${pcts[i]}%;background:${s>=4?'#FFB347':'rgba(255,255,255,.2)'};border-radius:3px;"></div>
+            </div>
+            <span style="color:rgba(255,255,255,.3);font-size:11px;width:28px;">${pcts[i]}%</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  const list = document.getElementById('reviews-list');
+  if (list) list.innerHTML = REVIEWS_DATA.map(r => `
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:${r.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0;">${r.initials}</div>
+        <div style="flex:1;">
+          <div style="color:#fff;font-weight:700;font-size:14px;">@${r.name}</div>
+          <div style="color:rgba(255,255,255,.35);font-size:11px;">${r.item} · ${r.date}</div>
+        </div>
+        <div style="color:#FFB347;font-size:14px;">${'⭐'.repeat(r.rating)}</div>
+      </div>
+      <div style="color:rgba(255,255,255,.7);font-size:13px;line-height:1.5;">${r.text}</div>
+    </div>`).join('');
+}
+
+function renderFaq() {
+  const el = document.getElementById('faq-list');
+  if (!el) return;
+  el.innerHTML = FAQS.map((f,i) => `
+    <div onclick="toggleFaq(${i})" style="cursor:pointer;${i>0?'border-top:1px solid rgba(255,255,255,.05);':''}">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px;">
+        <span style="color:#fff;font-weight:600;font-size:14px;flex:1;">${f.q}</span>
+        <span id="faq-arrow-${i}" style="color:rgba(255,255,255,.3);font-size:18px;transition:transform .2s;display:inline-block;">›</span>
+      </div>
+      <div id="faq-ans-${i}" style="display:none;padding:0 16px 16px;">
+        <div style="color:rgba(255,255,255,.5);font-size:13px;line-height:1.6;">${f.a}</div>
+      </div>
+    </div>`).join('');
+}
 const ORDERS = [
   {id:'OSS-1042',item:'Y2K Betsey Johnson Dress',img:'betsey_dress',price:125,seller:'vintagequeen',status:'Delivered',date:'May 20',tracking:'9400111899223456789'},
   {id:'OSS-1038',item:'Adidas x Ivy Park Stan Smith',img:'adidas_ivy_park',price:150,seller:'ivyparklover',status:'Shipped',date:'May 25',tracking:'9400111899223456790'},
@@ -1218,10 +1212,9 @@ function go(name) {
   // Sub-screen data rendering
   if (name === 'my-orders') renderOrders('all');
   if (name === 'my-listings') renderMyListings();
-  if (name === 'sb-wallet') {
-    const w = document.getElementById('wallet-sb');
-    if (w) w.innerHTML = SB + ' <span style="font-size:22px;color:rgba(255,59,48,.6);">SB</span>';
-  }
+  if (name === 'sb-wallet') renderWallet();
+  if (name === 'my-reviews') renderReviews();
+  if (name === 'support') renderFaq();
 }
 
 // ── SEARCH ────────────────────────────────────────────────────────────────────
