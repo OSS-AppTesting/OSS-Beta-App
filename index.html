@@ -736,7 +736,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 </div>
 
 <!-- DETAIL -->
-<div id="s-detail" class="screen"><div id="detail-body"></div></div>
+<div id="s-detail" class="screen" style="padding-bottom:0!important;"><div id="detail-body"></div></div>
 
 <!-- BOTTOM NAV -->
 <nav id="nav">
@@ -2139,7 +2139,7 @@ function go(name) {
   const nb = document.getElementById('nb-' + name);
   if (nb) nb.classList.add('active');
   if (!['detail','chat','all','my-listings','new-listing','my-orders','acct-settings','sb-wallet','my-reviews','support','auction'].includes(name)) prevScreen = name;
-  document.getElementById('nav').style.display = (name === 'chat' || name === 'auction') ? 'none' : '';
+  document.getElementById('nav').style.display = (name === 'chat' || name === 'auction' || name === 'detail') ? 'none' : '';
   window.scrollTo(0,0);
   // Sub-screen data rendering
   if (name === 'my-orders') renderOrders('all');
