@@ -256,7 +256,6 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         onblur="this.style.borderColor='rgba(255,255,255,.12)'">
       <button id="search-clear" onclick="clearSearch()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:none;border-radius:8px;width:26px;height:26px;color:#fff;font-size:14px;cursor:pointer;display:none;">✕</button>
     </div>
-    <button onclick="alert('handleSearch='+typeof handleSearch+' PRODS='+PRODS.length+' query='+searchQuery)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;font-family:monospace;margin-bottom:12px;">🔧 Debug Search</button>
 
     <!-- Search results -->
     <div id="search-results" style="display:none;">
@@ -1542,6 +1541,21 @@ const SYNONYMS = {
   'kids':'kids & baby','baby':'kids & baby','children':'kids & baby','toddler':'kids & baby',
 };
 
+function fuzzyMatch(hay, needle) {
+  if (hay.includes(needle)) return true;
+  // Allow 1 character typo for queries over 4 chars
+  if (needle.length < 4) return false;
+  let mismatches = 0;
+  let hi = 0;
+  for (let ni = 0; ni < needle.length; ni++) {
+    if (hi >= hay.length) { mismatches++; continue; }
+    if (hay[hi] === needle[ni]) { hi++; }
+    else { mismatches++; hi++; }
+    if (mismatches > 1) return false;
+  }
+  return mismatches <= 1;
+}
+
 function handleSearch(val) {
   searchQuery = val.trim().toLowerCase();
   document.getElementById('search-clear').style.display = searchQuery ? 'block' : 'none';
@@ -1574,7 +1588,7 @@ function runSearch() {
       p.seller.replace(/_/g,' '),  // sneakerhead_99 → sneakerhead 99
       p.category, p.location || ''
     ].join(' ').toLowerCase();
-    return terms.some(t => hay.includes(t));
+    return terms.some(t => fuzzyMatch(hay, t));
   });
 
   resultsEl.style.display = 'block';
@@ -2651,7 +2665,13 @@ function go(name) {
 }
 
 // ── SEARCH ────────────────────────────────────────────────────────────────────
-function openSrch() { document.getElementById('srch').classList.add('open'); doSrch(''); setTimeout(()=>document.getElementById('si').focus(),100); }
+function openSrch() {
+  go('shop');
+  setTimeout(() => {
+    const input = document.getElementById('search-input');
+    if (input) input.focus();
+  }, 100);
+}
 function closeSrch() { document.getElementById('srch').classList.remove('open'); }
 function setSrch(q) { document.getElementById('si').value=q; doSrch(q); }
 function doSrch(q) {
