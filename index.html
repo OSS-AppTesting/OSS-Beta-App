@@ -2865,7 +2865,7 @@ const ORDERS = [
   },
   {
     id:'OSS-1038', item:'Adidas x Ivy Park Stan Smith', img:'adidas_ivy_park', price:150,
-    seller:'ivyparklover', status:'Shipped', date:'May 25', currency:'SB',
+    seller:'ivyparklover', status:'Shipped', date:'May 25', currency:'USD',
     tracking:'9400111899223456790', carrier:'USPS', shipFrom:'LA, CA', shipTo:'Nashville, TN',
     timeline:[
       {status:'Order Placed',     date:'May 25, 11:02 AM', done:true,  icon:'🛍️'},
@@ -2940,7 +2940,7 @@ function renderOrders(filter) {
           <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:6px;">@${o.seller} · ${o.date}</div>
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <span style="background:${ss.bg};border:1px solid ${ss.border};border-radius:8px;padding:3px 10px;color:${ss.color};font-size:11px;font-weight:700;">${ss.icon} ${o.status}</span>
-            <span style="color:#FF3B30;font-weight:800;font-size:14px;">${o.price} SB</span>
+            <span style="color:${o.currency==='USD'?'#00A550':'#FF3B30'};font-weight:800;font-size:14px;">${o.currency==='USD'?'$'+o.price:o.price+' SB'}</span>
           </div>
         </div>
       </div>
