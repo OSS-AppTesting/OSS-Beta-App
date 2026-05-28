@@ -557,6 +557,24 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     </div>
     <div id="offer-item-summary" style="margin-bottom:20px;"></div>
     <div style="display:flex;flex-direction:column;gap:14px;">
+      <!-- Currency toggle — only shown on USD listings -->
+      <div id="offer-currency-toggle" style="display:none;">
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Pay With</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div id="offer-toggle-usd" onclick="setOfferCurrency('USD')" style="background:rgba(0,165,80,.15);border:2px solid rgba(0,165,80,.5);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
+            <div style="font-size:18px;margin-bottom:2px;">💵</div>
+            <div style="color:#00A550;font-weight:800;font-size:13px;">USD Cash</div>
+          </div>
+          <div id="offer-toggle-sb" onclick="setOfferCurrency('SB')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
+            <div style="font-size:18px;margin-bottom:2px;">💰</div>
+            <div style="color:rgba(255,255,255,.5);font-weight:800;font-size:13px;">SwapBucks</div>
+          </div>
+        </div>
+        <div id="offer-currency-note" style="display:none;background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:10px 14px;margin-top:8px;">
+          <div style="color:#FF3B30;font-size:12px;font-weight:600;">💰 Offering in SwapBucks</div>
+          <div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:3px;">Seller will be notified this offer is in SB, not USD. 1 SB ≈ $1 USD value.</div>
+        </div>
+      </div>
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Your Offer</div>
         <div style="position:relative;">
@@ -2762,6 +2780,36 @@ const OFFERS = [
 let currentOfferProductId = null;
 let currentCounterOfferId = null;
 
+let offerChosenCurrency = null;
+
+function setOfferCurrency(type) {
+  offerChosenCurrency = type;
+  const usdEl = document.getElementById('offer-toggle-usd');
+  const sbEl = document.getElementById('offer-toggle-sb');
+  const noteEl = document.getElementById('offer-currency-note');
+  const symEl = document.getElementById('offer-currency-symbol');
+
+  if (type === 'USD') {
+    usdEl.style.background = 'rgba(0,165,80,.15)';
+    usdEl.style.border = '2px solid rgba(0,165,80,.5)';
+    usdEl.querySelector('div:last-child').style.color = '#00A550';
+    sbEl.style.background = 'rgba(255,255,255,.04)';
+    sbEl.style.border = '2px solid rgba(255,255,255,.1)';
+    sbEl.querySelector('div:last-child').style.color = 'rgba(255,255,255,.5)';
+    symEl.textContent = '$';
+    noteEl.style.display = 'none';
+  } else {
+    sbEl.style.background = 'rgba(255,59,48,.15)';
+    sbEl.style.border = '2px solid rgba(255,59,48,.5)';
+    sbEl.querySelector('div:last-child').style.color = '#FF3B30';
+    usdEl.style.background = 'rgba(255,255,255,.04)';
+    usdEl.style.border = '2px solid rgba(255,255,255,.1)';
+    usdEl.querySelector('div:last-child').style.color = 'rgba(255,255,255,.5)';
+    symEl.textContent = 'SB';
+    noteEl.style.display = 'block';
+  }
+}
+
 function reOffer(offerId) {
   const offer = OFFERS.find(o => o.id === offerId);
   if (!offer) return;
@@ -2788,6 +2836,11 @@ function openMakeOffer(productId) {
   const isUSD = p.currency === 'USD';
   document.getElementById('offer-currency-symbol').textContent = isUSD ? '$' : 'SB';
   document.getElementById('offer-listed-price').textContent = isUSD ? '$' + p.price + ' USD' : p.price + ' SB';
+
+  // Show currency toggle only on USD listings
+  const toggle = document.getElementById('offer-currency-toggle');
+  toggle.style.display = isUSD ? 'block' : 'none';
+  if (isUSD) setOfferCurrency('USD'); // default to USD
   document.getElementById('offer-amount').value = '';
   document.getElementById('offer-message').value = '';
   document.getElementById('offer-pct-display').textContent = '';
@@ -2826,6 +2879,10 @@ function submitOffer() {
   if (!amount || amount <= 0) { showToast('Please enter an offer amount!'); return; }
   if (amount >= p.price) { showToast('Your offer is at or above the listed price — just buy it!'); return; }
 
+  // Use chosen currency (may differ from listing currency)
+  const chosenCurrency = offerChosenCurrency || p.currency;
+  const currencyChanged = chosenCurrency !== p.currency;
+
   // Create offer
   const offer = {
     id: 'OFF-' + Date.now(),
@@ -2834,8 +2891,10 @@ function submitOffer() {
     img: p.img,
     seller: p.seller,
     listedPrice: p.price,
+    listedCurrency: p.currency,
     offerAmount: amount,
-    currency: p.currency,
+    currency: chosenCurrency,
+    currencyChanged: currencyChanged,
     message: message,
     status: 'Pending',
     date: nowTime(),
@@ -2843,7 +2902,13 @@ function submitOffer() {
   OFFERS.unshift(offer);
 
   document.getElementById('modal-make-offer').style.display = 'none';
-  showToast('🏷️ Offer sent to @' + p.seller + '!');
+
+  // Show notification if currency was changed
+  if (currencyChanged) {
+    showToast('🏷️ Offer sent in SwapBucks — seller has been notified!');
+  } else {
+    showToast('🏷️ Offer sent to @' + p.seller + '!');
+  }
 
   // Simulate seller response after 4-8 seconds
   const pct = (amount / p.price) * 100;
@@ -2879,11 +2944,17 @@ function showOfferResponse(offerId) {
   if (!offer) return;
   const isUSD = offer.currency === 'USD';
   const fmt = v => isUSD ? '$' + v : v + ' SB';
+  const currencyNote = offer.currencyChanged ? `
+    <div style="background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:8px 14px;margin-bottom:12px;text-align:left;">
+      <div style="color:#FF3B30;font-size:12px;font-weight:700;">⚠️ Currency Change</div>
+      <div style="color:rgba(255,255,255,.5);font-size:11px;margin-top:2px;">Buyer offered in ${offer.currency} instead of ${offer.listedCurrency}. Seller was notified.</div>
+    </div>` : '';
 
   let content = '';
   if (offer.status === 'Accepted') {
     content = `
       <div style="text-align:center;padding:20px 0;">
+        ${currencyNote}
         <div style="font-size:56px;margin-bottom:12px;">🎉</div>
         <div style="color:#00C864;font-weight:900;font-size:24px;margin-bottom:8px;">Offer Accepted!</div>
         <div style="color:rgba(255,255,255,.5);font-size:14px;margin-bottom:6px;">@${offer.seller} accepted your offer of</div>
@@ -2896,6 +2967,7 @@ function showOfferResponse(offerId) {
   } else if (offer.status === 'Declined') {
     content = `
       <div style="text-align:center;padding:20px 0;">
+        ${currencyNote}
         <div style="font-size:56px;margin-bottom:12px;">😔</div>
         <div style="color:#FF3B30;font-weight:900;font-size:24px;margin-bottom:8px;">Offer Declined</div>
         <div style="color:rgba(255,255,255,.5);font-size:14px;margin-bottom:24px;">@${offer.seller} declined your offer of ${fmt(offer.offerAmount)}</div>
@@ -2907,6 +2979,7 @@ function showOfferResponse(offerId) {
   } else if (offer.status === 'Countered') {
     content = `
       <div style="text-align:center;padding:10px 0 20px;">
+        ${currencyNote}
         <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
           <button onclick="document.getElementById('modal-offer-response').style.display='none';showToast('Counter saved — find it in My Offers')" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Decide Later ›</button>
         </div>
