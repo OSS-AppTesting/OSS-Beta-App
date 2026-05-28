@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v14</title>
+<title>OneStopSwap v15</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -549,27 +549,87 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   <div style="padding:52px 20px 20px;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
       <button onclick="go('profile')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
-      <h2 style="color:#fff;font-weight:900;font-size:24px;">SB Wallet</h2>
-    </div>
-    <!-- Balance card -->
-    <div style="background:linear-gradient(135deg,#1A0000,#3D0000);border:1px solid rgba(255,59,48,.3);border-radius:24px;padding:24px;margin-bottom:20px;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(255,59,48,.2),transparent);"></div>
-      <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Current Balance</div>
-      <div id="wallet-sb" style="color:#FF3B30;font-weight:900;font-size:52px;font-family:'Space Grotesk',sans-serif;line-height:1;margin-bottom:4px;">125 <span style="font-size:22px;color:rgba(255,59,48,.6);">SB</span></div>
-      <div style="color:rgba(255,255,255,.3);font-size:13px;margin-bottom:20px;">≈ $125.00 USD value</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <button onclick="document.getElementById('modal-sb').classList.add('open')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:12px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ Add SB</button>
-        <button onclick="showToast('Withdrawals coming soon!')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Withdraw</button>
+      <h2 style="color:#fff;font-weight:900;font-size:24px;flex:1;">SB Wallet</h2>
+      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:5px 12px;">
+        <span style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;">1 SB = $1 USD</span>
       </div>
     </div>
-    <!-- Stats row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#00C864;font-weight:900;font-size:18px;">+340</div><div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Earned</div></div>
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#FF3B30;font-weight:900;font-size:18px;">-215</div><div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Spent</div></div>
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#FFB347;font-weight:900;font-size:18px;">+12</div><div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Pending</div></div>
+
+    <!-- Balance card -->
+    <div style="background:linear-gradient(135deg,#1A0000,#3D0000);border:1px solid rgba(255,59,48,.3);border-radius:24px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-30px;right:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(255,59,48,.25),transparent);pointer-events:none;"></div>
+      <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Current Balance</div>
+      <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:4px;">
+        <div id="wallet-sb" style="color:#FF3B30;font-weight:900;font-size:52px;font-family:'Space Grotesk',sans-serif;line-height:1;">125 <span style="font-size:22px;color:rgba(255,59,48,.6);">SB</span></div>
+      </div>
+      <div id="wallet-usd" style="color:rgba(255,255,255,.3);font-size:13px;margin-bottom:20px;">≈ $125.00 USD value</div>
+      <!-- Action buttons -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <button onclick="document.getElementById('modal-sb').classList.add('open')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:12px 8px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;">
+          <span style="font-size:18px;">➕</span><span>Add SB</span>
+        </button>
+        <button onclick="openSendSB()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 8px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;">
+          <span style="font-size:18px;">📤</span><span>Send</span>
+        </button>
+        <button onclick="showToast('Gift cards coming soon! 🎁')" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 8px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;">
+          <span style="font-size:18px;">🎁</span><span>Gift</span>
+        </button>
+      </div>
     </div>
-    <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Transaction History</div>
-    <div id="wallet-txns" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;"></div>
+
+    <!-- Live stats row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
+      <div style="background:rgba(0,200,100,.06);border:1px solid rgba(0,200,100,.15);border-radius:16px;padding:14px 8px;text-align:center;">
+        <div id="wallet-earned" style="color:#00C864;font-weight:900;font-size:18px;">+340</div>
+        <div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Earned</div>
+      </div>
+      <div style="background:rgba(255,59,48,.06);border:1px solid rgba(255,59,48,.15);border-radius:16px;padding:14px 8px;text-align:center;">
+        <div id="wallet-spent" style="color:#FF3B30;font-weight:900;font-size:18px;">-215</div>
+        <div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Spent</div>
+      </div>
+      <div style="background:rgba(255,179,71,.06);border:1px solid rgba(255,179,71,.15);border-radius:16px;padding:14px 8px;text-align:center;">
+        <div id="wallet-pending" style="color:#FFB347;font-weight:900;font-size:18px;">+12</div>
+        <div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Pending</div>
+      </div>
+    </div>
+
+    <!-- Filter tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px;">
+      <div class="txn-tab active-tab" onclick="filterTxns('all',this)" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:#FF3B30;font-size:13px;font-weight:700;">All</span></div>
+      <div class="txn-tab" onclick="filterTxns('earned',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">Earned</span></div>
+      <div class="txn-tab" onclick="filterTxns('spent',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">Spent</span></div>
+      <div class="txn-tab" onclick="filterTxns('pending',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">Pending</span></div>
+    </div>
+
+    <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">Transaction History</div>
+    <div id="wallet-txns" style="display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;"></div>
+  </div>
+</div>
+
+<!-- SEND SB MODAL -->
+<div id="modal-send-sb" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:flex-end;justify-content:center;z-index:600;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="color:#fff;font-weight:900;font-size:22px;">Send SwapBucks</h3>
+      <button onclick="document.getElementById('modal-send-sb').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:24px;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Recipient Username</div>
+        <input id="send-to" placeholder="@username" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      </div>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Amount (SB)</div>
+        <input id="send-amt" type="number" placeholder="e.g. 25" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      </div>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Note (optional)</div>
+        <input id="send-note" placeholder="e.g. For the boots 👟" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      </div>
+      <div id="send-balance-check" style="color:rgba(255,255,255,.4);font-size:13px;text-align:center;"></div>
+      <button onclick="confirmSendSB()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">Send SwapBucks</button>
+    </div>
   </div>
 </div>
 
@@ -840,9 +900,21 @@ function toggleLike(id) {
 
 function buySB(amt) {
   SB += amt;
-  document.getElementById('sb-pill').textContent = SB + ' SB';
-  document.getElementById('profile-sb').innerHTML = SB + ' <span style="font-size:20px;color:rgba(255,59,48,.6);">SB</span>';
+  updateAllSBDisplays();
+  addTransaction('earned', '💳', 'Added ' + amt + ' SwapBucks', 'Visa ···6411', amt);
   document.getElementById('modal-sb').style.display='none';
+  showToast('✓ ' + amt + ' SB added to your wallet!');
+  if (document.getElementById('s-sb-wallet').classList.contains('active')) renderWallet();
+}
+
+function swapItem(id) {
+  const p = PRODS.find(x=>x.id===id);
+  if (!p || SB < p.price) return;
+  SB -= p.price;
+  updateAllSBDisplays();
+  addTransaction('spent', '🛍️', 'Purchased: ' + p.title, '@' + p.seller, -p.price);
+  showToast('⚡ Swapped! ' + p.price + ' SB spent. Check My Orders.');
+  go('home');
 }
 
 function notifyMe() {
@@ -897,9 +969,7 @@ function showDetail(id) {
       </div>` : ''}
     </div>
     <div style="position:fixed;bottom:0;left:0;right:0;padding:12px 20px 32px;background:linear-gradient(180deg,transparent,#0A0A0A 30%);">
-      <button class="rbtn" style="background:${canBuy?'linear-gradient(135deg,#FF3B30,#C0392B)':'rgba(255,255,255,.1)'};color:${canBuy?'#fff':'rgba(255,255,255,.3)'};cursor:${canBuy?'pointer':'not-allowed'};">
-        ${canBuy?'⚡ Swap for '+p.price+' SB':'🔒 Need '+p.price+' SwapBucks to Swap'}
-      </button>
+      ${canBuy?`<button class="rbtn" onclick="swapItem(${p.id})" style="background:linear-gradient(135deg,#FF3B30,#C0392B);color:#fff;cursor:pointer;">⚡ Swap for ${p.price} SB</button>`:`<button class="rbtn" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.3);cursor:not-allowed;">🔒 Need ${p.price} SwapBucks to Swap</button>`}
     </div>`;
   go('detail');
 }
@@ -1166,8 +1236,8 @@ function placeBid(auctionId, amount) {
 
   // Deduct SB (hold)
   SB -= amount;
-  document.getElementById('sb-pill').textContent = SB + ' SB';
-  document.getElementById('profile-sb').innerHTML = SB + ' <span style="font-size:20px;color:rgba(255,59,48,.6);">SB</span>';
+  updateAllSBDisplays();
+  addTransaction('pending', '⚡', 'Bid on: ' + a.title, '@' + a.seller + ' auction', -amount);
 
   // Update auction
   a.currentBid = amount;
@@ -1406,6 +1476,9 @@ function postListing() {
 
   // Re-render home and shop
   renderAll();
+
+  // Log pending earning
+  addTransaction('pending', '🏪', 'Listed: ' + title, 'Pending first sale', 0);
 
   showToast('🎉 Listing posted! Live in the shop now.');
 
@@ -1648,20 +1721,113 @@ const FAQS = [
   {q:'Is my payment info secure?',a:'Yes — we never store card numbers. All payments are processed by Stripe with bank-level encryption. SwapBucks are stored in your in-app wallet.'},
 ];
 
+// ── SWAPBUCKS WALLET ──────────────────────────────────────────────────────────
+
+// Live transaction log — gets updated by all app actions
+const TXN_LOG = [
+  {type:'earned', icon:'💰', label:'Sold: 80s Sequin Vest',   sub:'@sneakerhead_99', amt:20,  date:'Today',     clr:'#00C864'},
+  {type:'spent',  icon:'🛍️', label:'Purchased: Gold Shirt',   sub:'@goldenthread',   amt:-25, date:'Yesterday', clr:'#FF3B30'},
+  {type:'earned', icon:'💰', label:'Sold: Baseball Glove',     sub:'@catfoshee',      amt:25,  date:'May 24',    clr:'#00C864'},
+  {type:'earned', icon:'💳', label:'Added SwapBucks',          sub:'Visa ···6411',    amt:100, date:'May 22',    clr:'#00C864'},
+  {type:'spent',  icon:'🛍️', label:'Purchased: Vans Daisy',   sub:'@sneakerhead_99', amt:-20, date:'May 20',    clr:'#FF3B30'},
+  {type:'pending',icon:'⏳', label:'Pending: Raincoat Sale',   sub:'@kidsboutique',   amt:12,  date:'Pending',   clr:'#FFB347'},
+];
+
+function addTransaction(type, icon, label, sub, amt) {
+  TXN_LOG.unshift({type, icon, label, sub, amt, date:'Just now', clr: amt > 0 ? '#00C864' : '#FF3B30'});
+  // Update stats
+  refreshWalletStats();
+}
+
+function refreshWalletStats() {
+  const earned = TXN_LOG.filter(t=>t.type==='earned').reduce((s,t)=>s+Math.abs(t.amt),0);
+  const spent  = TXN_LOG.filter(t=>t.type==='spent').reduce((s,t)=>s+Math.abs(t.amt),0);
+  const pending= TXN_LOG.filter(t=>t.type==='pending').reduce((s,t)=>s+Math.abs(t.amt),0);
+  const el_e = document.getElementById('wallet-earned');
+  const el_s = document.getElementById('wallet-spent');
+  const el_p = document.getElementById('wallet-pending');
+  if (el_e) el_e.textContent = '+' + earned;
+  if (el_s) el_s.textContent = '-' + spent;
+  if (el_p) el_p.textContent = '+' + pending;
+}
+
 function renderWallet() {
+  // Update balance
   const w = document.getElementById('wallet-sb');
   if (w) w.innerHTML = SB + ' <span style="font-size:22px;color:rgba(255,59,48,.6);">SB</span>';
-  const txEl = document.getElementById('wallet-txns');
-  if (!txEl) return;
-  txEl.innerHTML = TXNS.map((t,i) => `
-    <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;${i<TXNS.length-1?'border-bottom:1px solid rgba(255,255,255,.05);':''}">
-      <div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${t.icon}</div>
+  const usd = document.getElementById('wallet-usd');
+  if (usd) usd.textContent = '≈ $' + SB.toFixed(2) + ' USD value';
+  refreshWalletStats();
+  renderTxnList('all');
+}
+
+function renderTxnList(filter) {
+  const el = document.getElementById('wallet-txns');
+  if (!el) return;
+  const list = filter === 'all' ? TXN_LOG :
+               TXN_LOG.filter(t => t.type === filter);
+  if (!list.length) {
+    el.innerHTML = '<div style="color:rgba(255,255,255,.3);text-align:center;padding:30px;">No transactions yet</div>';
+    return;
+  }
+  el.innerHTML = list.map((t,i) => `
+    <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;${i<list.length-1?'border-bottom:1px solid rgba(255,255,255,.05);':''}">
+      <div style="width:42px;height:42px;border-radius:13px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${t.icon}</div>
       <div style="flex:1;min-width:0;">
         <div style="color:#fff;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.label}</div>
         <div style="color:rgba(255,255,255,.35);font-size:12px;">${t.sub} · ${t.date}</div>
       </div>
-      <div style="color:${t.clr};font-weight:800;font-size:15px;flex-shrink:0;">${t.amt} SB</div>
+      <div style="color:${t.clr};font-weight:800;font-size:15px;flex-shrink:0;">${t.amt > 0 ? '+' : ''}${t.amt} SB</div>
     </div>`).join('');
+}
+
+function filterTxns(type, el) {
+  document.querySelectorAll('.txn-tab').forEach(t => {
+    t.style.background = 'rgba(255,255,255,.06)';
+    t.style.border = '1px solid rgba(255,255,255,.1)';
+    t.querySelector('span').style.color = 'rgba(255,255,255,.5)';
+  });
+  el.style.background = 'rgba(255,59,48,.2)';
+  el.style.border = '1px solid rgba(255,59,48,.4)';
+  el.querySelector('span').style.color = '#FF3B30';
+  renderTxnList(type);
+}
+
+function openSendSB() {
+  document.getElementById('modal-send-sb').style.display = 'flex';
+  const balEl = document.getElementById('send-balance-check');
+  if (balEl) balEl.textContent = 'Your balance: ' + SB + ' SB';
+}
+
+function confirmSendSB() {
+  const to = document.getElementById('send-to').value.trim().replace('@','');
+  const amt = parseInt(document.getElementById('send-amt').value);
+  const note = document.getElementById('send-note').value.trim();
+  if (!to) { showToast('Enter a username!'); return; }
+  if (!amt || amt < 1) { showToast('Enter an amount!'); return; }
+  if (amt > SB) { showToast('Not enough SB! You have ' + SB + ' SB'); return; }
+
+  SB -= amt;
+  updateAllSBDisplays();
+  addTransaction('spent', '📤', 'Sent to @' + to + (note ? ' · ' + note : ''), '@' + to, -amt);
+  document.getElementById('modal-send-sb').style.display = 'none';
+  document.getElementById('send-to').value = '';
+  document.getElementById('send-amt').value = '';
+  document.getElementById('send-note').value = '';
+  renderWallet();
+  showToast('✓ Sent ' + amt + ' SB to @' + to + '!');
+}
+
+function updateAllSBDisplays() {
+  document.getElementById('sb-pill').textContent = SB + ' SB';
+  const pSB = document.getElementById('profile-sb');
+  if (pSB) pSB.innerHTML = SB + ' <span style="font-size:20px;color:rgba(255,59,48,.6);">SB</span>';
+  const wSB = document.getElementById('wallet-sb');
+  if (wSB) wSB.innerHTML = SB + ' <span style="font-size:22px;color:rgba(255,59,48,.6);">SB</span>';
+  const wUSD = document.getElementById('wallet-usd');
+  if (wUSD) wUSD.textContent = '≈ $' + SB.toFixed(2) + ' USD value';
+  const liveEl = document.getElementById('live-sb-display');
+  if (liveEl) liveEl.textContent = '💰 ' + SB + ' SB';
 }
 
 function renderReviews() {
