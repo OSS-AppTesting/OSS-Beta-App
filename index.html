@@ -801,8 +801,11 @@ Rules:
 
     const PROXY_URL = 'https://winter-wildflower-530f.dean-klein.workers.dev';
 
+    // Test worker is reachable first
+    console.log('Calling proxy:', PROXY_URL);
     const response = await fetch(PROXY_URL, {
       method: 'POST',
+      mode: 'cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
@@ -823,8 +826,8 @@ Rules:
 
   } catch (err) {
     setTypingIndicator(false);
-    addChatBubble('them', "Hey sorry — bad signal right now. Try again in a sec! 📶");
-    console.error('AI chat error:', err);
+    addChatBubble('them', "DEBUG: " + err.name + " — " + err.message);
+    console.error('AI chat error full:', err.name, err.message, err);
   }
 
   btn.style.opacity = '1';
