@@ -273,17 +273,19 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       </div>
     </div>
 
-    <!-- Default: categories + all listings -->
+    <!-- Default: categories -->
     <div id="shop-default">
       <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">All Categories</div>
       <div id="shop-cats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px;"></div>
-      <div id="shop-filtered" style="display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-          <span id="shop-cat-title" style="color:#fff;font-weight:900;font-size:18px;"></span>
-          <button onclick="clearFilter()" style="color:#FF3B30;font-weight:600;font-size:13px;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;">✕ Clear</button>
-        </div>
-        <div id="shop-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
+    </div>
+
+    <!-- Filtered results: shown when SB/Cash selected OR category chosen -->
+    <div id="shop-filtered" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span id="shop-cat-title" style="color:#fff;font-weight:900;font-size:18px;"></span>
+        <button onclick="clearFilter()" style="color:#FF3B30;font-weight:600;font-size:13px;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;">✕ Clear</button>
       </div>
+      <div id="shop-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
     </div>
   </div>
 </div>
@@ -1042,17 +1044,14 @@ function filterCat(name) {
   selCat = selCat===name ? null : name;
   renderAll();
   if (selCat && prevScreen==='shop') {
-    document.getElementById('shop-filtered').style.display='block';
+    document.getElementById('shop-default').style.display = 'none';
+    document.getElementById('shop-filtered').style.display = 'block';
     document.getElementById('shop-cat-title').textContent = selCat + ' ✦';
     document.getElementById('shop-grid').innerHTML = PRODS.filter(p=>p.category===selCat).map((p,i)=>pCard(p,i)).join('');
   }
 }
 
-function clearFilter() {
   selCat = null;
-  document.getElementById('shop-filtered').style.display='none';
-  renderAll();
-}
 
 function toggleLike(id) {
   liked[id] = !liked[id];
@@ -1668,23 +1667,30 @@ function filterPayment(type, el) {
   el.style.border = '1px solid rgba(255,59,48,.4)';
   el.querySelector('span').style.color = '#FF3B30';
 
-  // If search is active re-run with new filter
   if (searchQuery) { runSearch(); return; }
 
   if (type === 'all') {
-    document.getElementById('shop-filtered').style.display = 'none';
     document.getElementById('shop-default').style.display = 'block';
-    // Re-render categories in case they're empty
-    const cats = document.getElementById('shop-cats');
-    if (cats && cats.innerHTML === '') {
-      cats.innerHTML = CATS.map(catTileShop).join('');
-    }
+    document.getElementById('shop-filtered').style.display = 'none';
   } else {
     const filtered = PRODS.filter(p => p.currency === type);
+    document.getElementById('shop-default').style.display = 'none';
     document.getElementById('shop-filtered').style.display = 'block';
-    document.getElementById('shop-cat-title').textContent = (type === 'USD' ? '💵 Cash Listings' : '💰 SwapBucks Listings') + ' ✦';
-    document.getElementById('shop-grid').innerHTML = filtered.map((p,i)=>pCard(p,i)).join('');
+    document.getElementById('shop-cat-title').textContent = type === 'USD' ? '💵 Cash Listings ✦' : '💰 SwapBucks Listings ✦';
+    document.getElementById('shop-grid').innerHTML = filtered.map((p,i) => pCard(p,i)).join('');
   }
+}
+
+function clearFilter() {
+  payFilter = 'all';
+  document.getElementById('shop-default').style.display = 'block';
+  document.getElementById('shop-filtered').style.display = 'none';
+  // Reset pay tabs
+  document.querySelectorAll('.pay-tab').forEach((t,i) => {
+    t.style.background = i===0 ? 'rgba(255,59,48,.2)' : 'rgba(255,255,255,.06)';
+    t.style.border = i===0 ? '1px solid rgba(255,59,48,.4)' : '1px solid rgba(255,255,255,.1)';
+    t.querySelector('span').style.color = i===0 ? '#FF3B30' : 'rgba(255,255,255,.5)';
+  });
 }
 
 function openCheckout(id) {
