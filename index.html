@@ -285,7 +285,10 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     <!-- Filtered results: shown when SB/Cash selected OR category chosen -->
     <div id="shop-filtered" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <span id="shop-cat-title" style="color:#fff;font-weight:900;font-size:18px;"></span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button onclick="clearFilter()" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:34px;height:34px;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+          <span id="shop-cat-title" style="color:#fff;font-weight:900;font-size:18px;"></span>
+        </div>
         <button onclick="clearFilter()" style="color:#FF3B30;font-weight:600;font-size:13px;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;">✕ Clear</button>
       </div>
       <div id="shop-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
@@ -854,7 +857,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     <svg viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="#FF3B30" stroke-width="2" stroke-linejoin="round" fill="rgba(255,59,48,.15)"/></svg>
     <span>Home</span><div class="nb-dot"></div>
   </button>
-  <button class="nb" onclick="go('shop')" id="nb-shop">
+  <button class="nb" onclick="if(prevScreen==='shop'){clearFilter();}else{go('shop');}" id="nb-shop">
     <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#FF3B30" stroke-width="2"/><path d="M17 17l4 4" stroke="#FF3B30" stroke-width="2.5" stroke-linecap="round"/></svg>
     <span>Shop</span><div class="nb-dot"></div>
   </button>
@@ -1569,37 +1572,37 @@ function runSearch() {
 
   if (!searchQuery) {
     resultsEl.style.display = 'none';
-    defaultEl.style.display = 'block';
+    defaultEl.style.display = selCat ? 'none' : 'block';
     return;
   }
 
-  // Expand query with synonyms
-  const terms = [searchQuery];
-  if (SYNONYMS[searchQuery]) terms.push(SYNONYMS[searchQuery]);
-  Object.entries(SYNONYMS).forEach(([k,v]) => {
-    if (searchQuery.includes(k)) terms.push(v);
-  });
-
-  // Build searchable string per product
-  let pool = payFilter === 'all' ? PRODS : PRODS.filter(p => p.currency === payFilter);
-  const results = pool.filter(p => {
-    const hay = [
-      p.title, p.seller,
-      p.seller.replace(/_/g,' '),  // sneakerhead_99 → sneakerhead 99
-      p.category, p.location || ''
-    ].join(' ').toLowerCase();
-    return terms.some(t => fuzzyMatch(hay, t));
-  });
-
   resultsEl.style.display = 'block';
   defaultEl.style.display = 'none';
+  document.getElementById('shop-filtered').style.display = 'none';
+
+  let pool = payFilter === 'all' ? PRODS : PRODS.filter(p => p.currency === payFilter);
+
+  // Check if query is a category synonym — if so restrict to that category only
+  const synonymTarget = SYNONYMS[searchQuery];
+  const CATEGORY_MAP = {'sneakers':'Sneakers','streetwear':'Streetwear','vintage':'Vintage','kids & baby':'Kids & Baby'};
+  const categoryOnly = synonymTarget ? CATEGORY_MAP[synonymTarget] : null;
+
+  let results;
+  if (categoryOnly) {
+    results = pool.filter(p => p.category === categoryOnly);
+  } else {
+    results = pool.filter(p => {
+      const hay = [p.title, p.seller, p.seller.replace(/_/g,' '), p.category, p.location||''].join(' ').toLowerCase();
+      return fuzzyMatch(hay, searchQuery);
+    });
+  }
 
   const countEl = document.getElementById('search-count');
   const gridEl  = document.getElementById('search-grid');
   const emptyEl = document.getElementById('search-empty');
 
   if (results.length) {
-    countEl.innerHTML = `<span style="color:#fff;font-weight:700;">${results.length}</span> result${results.length!==1?'s':''} for "<span style="color:#FF3B30;">${searchQuery}</span>"`;
+    countEl.innerHTML = `<span style="color:#fff;font-weight:700;">${results.length}</span> result${results.length!==1?'s':''} for "<span style="color:#FF3B30;">${searchQuery}</span>"${categoryOnly?' in '+categoryOnly:''}`;
     emptyEl.style.display = 'none';
     gridEl.style.display  = 'grid';
     gridEl.innerHTML = results.map((p,i) => pCard(p,i)).join('');
