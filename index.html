@@ -702,6 +702,43 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 
+<!-- SB CHECKOUT MODAL -->
+<div id="modal-sb-checkout" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:700;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <h3 style="color:#fff;font-weight:900;font-size:22px;">Confirm Swap</h3>
+      <button onclick="document.getElementById('modal-sb-checkout').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:24px;cursor:pointer;">✕</button>
+    </div>
+    <p style="color:rgba(255,255,255,.4);font-size:13px;margin-bottom:20px;">SwapBucks will be deducted from your wallet instantly.</p>
+    <div id="sb-checkout-item" style="margin-bottom:20px;"></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <!-- Shipping address -->
+      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">Shipping Address</div>
+      <input id="sbc-name" placeholder="Full Name" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      <input id="sbc-addr" placeholder="Street Address" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
+        <input id="sbc-city" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+        <input id="sbc-zip" placeholder="ZIP" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      </div>
+      <!-- SB balance summary -->
+      <div id="sbc-balance-row" style="background:linear-gradient(135deg,#1A0000,#2D0000);border:1px solid rgba(255,59,48,.3);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;margin-bottom:2px;">Your balance</div>
+          <div id="sbc-before" style="color:#fff;font-weight:700;font-size:15px;"></div>
+        </div>
+        <div style="color:rgba(255,255,255,.3);font-size:20px;">→</div>
+        <div style="text-align:right;">
+          <div style="color:rgba(255,255,255,.5);font-size:11px;margin-bottom:2px;">After swap</div>
+          <div id="sbc-after" style="color:#FF3B30;font-weight:700;font-size:15px;"></div>
+        </div>
+      </div>
+      <button onclick="confirmSBCheckout()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">⚡ Confirm Swap</button>
+      <p style="color:rgba(255,255,255,.3);font-size:11px;text-align:center;">SwapBucks are non-refundable once a swap is confirmed</p>
+    </div>
+  </div>
+</div>
+
 <!-- CHECKOUT MODAL -->
 <div id="modal-checkout" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:700;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease;">
@@ -964,12 +1001,41 @@ function buySB(amt) {
   if (document.getElementById('s-sb-wallet').classList.contains('active')) renderWallet();
 }
 
+let currentSBCheckoutId = null;
+
 function swapItem(id) {
   const p = PRODS.find(x=>x.id===id);
   if (!p || SB < p.price) return;
+  currentSBCheckoutId = id;
+
+  // Populate modal
+  document.getElementById('sb-checkout-item').innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px;">
+      <div style="width:60px;height:60px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#111;">
+        <img src="${p.img}" style="width:100%;height:100%;object-fit:cover;">
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="color:#fff;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
+        <div style="color:rgba(255,255,255,.4);font-size:12px;">@${p.seller} · ${p.category}</div>
+      </div>
+      <div style="color:#FF3B30;font-weight:900;font-size:18px;">${p.price} SB</div>
+    </div>`;
+  document.getElementById('sbc-before').textContent = SB + ' SB';
+  document.getElementById('sbc-after').textContent = (SB - p.price) + ' SB';
+  document.getElementById('modal-sb-checkout').style.display = 'flex';
+}
+
+function confirmSBCheckout() {
+  const name = document.getElementById('sbc-name').value.trim();
+  const addr = document.getElementById('sbc-addr').value.trim();
+  if (!name || !addr) { showToast('Please fill in your shipping info!'); return; }
+  const p = PRODS.find(x=>x.id===currentSBCheckoutId);
+  if (!p || SB < p.price) return;
+
   SB -= p.price;
   updateAllSBDisplays();
   addTransaction('spent', '🛍️', 'Purchased: ' + p.title, '@' + p.seller, -p.price);
+  document.getElementById('modal-sb-checkout').style.display = 'none';
   showToast('⚡ Swapped! ' + p.price + ' SB spent. Check My Orders.');
   go('home');
 }
