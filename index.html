@@ -1671,13 +1671,23 @@ function filterPayment(type, el) {
   if (searchQuery) { runSearch(); return; }
 
   if (type === 'all') {
-    document.getElementById('shop-default').style.display = 'block';
-    document.getElementById('shop-filtered').style.display = 'none';
-  } else {
-    const filtered = PRODS.filter(p => p.currency === type);
     document.getElementById('shop-default').style.display = 'none';
     document.getElementById('shop-filtered').style.display = 'block';
-    document.getElementById('shop-cat-title').textContent = type === 'USD' ? '💵 Cash Listings ✦' : '💰 SwapBucks Listings ✦';
+    if (selCat) {
+      // Re-render current category with no currency filter
+      document.getElementById('shop-cat-title').textContent = selCat + ' ✦';
+      document.getElementById('shop-grid').innerHTML = PRODS.filter(p=>p.category===selCat).map((p,i)=>pCard(p,i)).join('');
+    } else {
+      // No category selected — show category tiles
+      document.getElementById('shop-default').style.display = 'block';
+      document.getElementById('shop-filtered').style.display = 'none';
+    }
+  } else {
+    // Filter by currency, also respect active category if set
+    const filtered = PRODS.filter(p => p.currency === type && (!selCat || p.category === selCat));
+    document.getElementById('shop-default').style.display = 'none';
+    document.getElementById('shop-filtered').style.display = 'block';
+    document.getElementById('shop-cat-title').textContent = (selCat ? selCat + ' · ' : '') + (type === 'USD' ? '💵 Cash' : '💰 SwapBucks') + ' ✦';
     document.getElementById('shop-grid').innerHTML = filtered.map((p,i) => pCard(p,i)).join('');
   }
 }
