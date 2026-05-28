@@ -159,7 +159,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <div class="oss" style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:900;letter-spacing:-.5px;"><span class="r">ONE</span><span class="w">STOP</span><span class="r">SWAP</span></div>
       <div style="display:flex;gap:10px;align-items:center;">
-        <button onclick="document.getElementById('modal-sb').classList.add('open')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:20px;padding:6px 14px;display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <button onclick="document.getElementById('modal-sb').style.display='flex'" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:20px;padding:6px 14px;display:flex;align-items:center;gap:6px;cursor:pointer;">
           <span style="font-size:13px;">💰</span>
           <span id="sb-pill" style="color:#fff;font-weight:700;font-size:13px;font-family:'DM Sans',sans-serif;">125 SB</span>
         </button>
@@ -353,7 +353,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#fff;font-weight:900;font-size:22px;">138</div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:2px;">Sold</div></div>
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#FF3B30;font-weight:900;font-size:19px;">4.9 ⭐</div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:2px;">Reviews</div></div>
     </div>
-    <div onclick="document.getElementById('modal-sb').classList.add('open')" style="background:linear-gradient(135deg,#1A0000,#2D0000);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:20px;margin-bottom:20px;cursor:pointer;position:relative;overflow:hidden;">
+    <div onclick="document.getElementById('modal-sb').style.display='flex'" style="background:linear-gradient(135deg,#1A0000,#2D0000);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:20px;margin-bottom:20px;cursor:pointer;position:relative;overflow:hidden;">
       <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(255,59,48,.2),transparent);"></div>
       <div style="color:rgba(255,255,255,.5);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">SwapBucks Balance</div>
       <div id="profile-sb" style="color:#FF3B30;font-weight:900;font-size:42px;font-family:'Space Grotesk',sans-serif;margin-bottom:14px;">125 <span style="font-size:20px;color:rgba(255,59,48,.6);">SB</span></div>
@@ -565,7 +565,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div id="wallet-usd" style="color:rgba(255,255,255,.3);font-size:13px;margin-bottom:20px;">≈ $125.00 USD value</div>
       <!-- Action buttons -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-        <button onclick="document.getElementById('modal-sb').classList.add('open')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:12px 8px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <button onclick="document.getElementById('modal-sb').style.display='flex'" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:12px 8px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;">
           <span style="font-size:18px;">➕</span><span>Add SB</span>
         </button>
         <button onclick="openSendSB()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 8px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;">
