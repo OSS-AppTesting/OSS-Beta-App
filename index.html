@@ -1529,6 +1529,9 @@ function placeBid(auctionId, amount) {
 
 // ── SEARCH ────────────────────────────────────────────────────────────────────
 
+let searchQuery = '';
+let searchTimer = null;
+
 // Search synonyms — maps common words to what's in the data
 const SEARCH_SYNONYMS = {
   'shoes': 'sneakers', 'shoe': 'sneakers', 'kicks': 'sneakers', 'boots': 'sneakers',
@@ -1626,9 +1629,6 @@ function clearSearch() {
   document.getElementById('search-results').style.display = 'none';
   document.getElementById('shop-default').style.display = 'block';
 }
-
-// Also add search to home screen nav button — tapping Shop focuses search
-const origGoShop = null;
 
 // ── CURRENCY & PAYMENT SYSTEM ────────────────────────────────────────────────
 
