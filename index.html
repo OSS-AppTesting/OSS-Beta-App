@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v19</title>
+<title>OneStopSwap v20</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -544,6 +544,11 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <button onclick="postListing()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">🚀 Post Listing</button>
     </div>
   </div>
+</div>
+
+<!-- ORDER TRACKING -->
+<div id="s-order-track" class="screen" style="padding-bottom:0!important;">
+  <div id="order-track-body"></div>
 </div>
 
 <!-- MY ORDERS -->
@@ -2458,7 +2463,107 @@ function getSellerRating(seller) {
   return SELLER_RATINGS[seller] || { avg: 4.8, count: 12, reviews: [] };
 }
 
-// ── PROFILE SUB-SCREENS ───────────────────────────────────────────────────────
+// ── ORDER TRACKING ────────────────────────────────────────────────────────────
+
+function openOrderTracking(orderId) {
+  const o = ORDERS.find(x => x.id === orderId);
+  if (!o) return;
+  const ss = STATUS_STYLES[o.status] || STATUS_STYLES['Processing'];
+  const currentStep = o.timeline.filter(t => t.done).length - 1;
+  const progress = Math.round((o.timeline.filter(t=>t.done).length / o.timeline.length) * 100);
+
+  document.getElementById('order-track-body').innerHTML = `
+    <div style="position:sticky;top:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
+      <button onclick="go('my-orders')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+      <div style="flex:1;">
+        <div style="color:#fff;font-weight:700;font-size:15px;">Order ${o.id}</div>
+        <div style="color:rgba(255,255,255,.4);font-size:12px;">${o.item}</div>
+      </div>
+      <span style="background:${ss.bg};border:1px solid ${ss.border};border-radius:10px;padding:4px 12px;color:${ss.color};font-size:12px;font-weight:700;">${ss.icon} ${o.status}</span>
+    </div>
+
+    <div style="padding:20px;padding-bottom:40px;">
+      <!-- Item summary -->
+      <div style="display:flex;gap:14px;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px;margin-bottom:20px;">
+        <div style="width:64px;height:64px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#111;">
+          <img src="${I[o.img]||''}" style="width:100%;height:100%;object-fit:cover;">
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.item}</div>
+          <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:4px;">@${o.seller} · Ordered ${o.date}</div>
+          <div style="color:${o.currency==='USD'?'#00A550':'#FF3B30'};font-weight:800;font-size:14px;">${o.currency==='USD'?'$'+o.price:o.price+' SB'}</div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div style="margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="color:#fff;font-weight:700;font-size:14px;">Delivery Progress</span>
+          <span style="color:#FF3B30;font-weight:800;font-size:14px;">${progress}%</span>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${progress}%;background:linear-gradient(90deg,#FF3B30,#FF6B35);border-radius:3px;transition:width .5s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Tracking number -->
+      ${o.tracking ? `
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">${o.carrier||'USPS'} Tracking</div>
+          <div style="color:#fff;font-weight:600;font-size:13px;font-family:monospace;">${o.tracking}</div>
+        </div>
+        <button onclick="navigator.clipboard?.writeText('${o.tracking}');showToast('Tracking # copied!')" style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 12px;color:#FF3B30;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Copy</button>
+      </div>` : ''}
+
+      <!-- Shipping info -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;">
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;">
+          <div style="color:rgba(255,255,255,.4);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">From</div>
+          <div style="color:#fff;font-weight:600;font-size:13px;">📍 ${o.shipFrom||'Unknown'}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;">
+          <div style="color:rgba(255,255,255,.4);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">To</div>
+          <div style="color:#fff;font-weight:600;font-size:13px;">🏠 ${o.shipTo||'Your address'}</div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px;">Tracking Timeline</div>
+      <div style="position:relative;padding-left:32px;">
+        <!-- Vertical line -->
+        <div style="position:absolute;left:11px;top:8px;bottom:8px;width:2px;background:rgba(255,255,255,.08);border-radius:1px;"></div>
+        <div style="position:absolute;left:11px;top:8px;width:2px;height:${Math.min(progress, 95)}%;background:linear-gradient(180deg,#FF3B30,rgba(255,59,48,.3));border-radius:1px;transition:height .5s;"></div>
+
+        ${o.timeline.map((step, i) => `
+          <div style="position:relative;margin-bottom:${i<o.timeline.length-1?'20px':'0'};">
+            <!-- Dot -->
+            <div style="position:absolute;left:-26px;top:2px;width:14px;height:14px;border-radius:50%;background:${step.done?'#FF3B30':'rgba(255,255,255,.1)'};border:2px solid ${step.done?'#FF3B30':'rgba(255,255,255,.15)'};display:flex;align-items:center;justify-content:center;font-size:7px;z-index:1;">
+              ${step.done?'✓':''}
+            </div>
+            <div style="padding-left:4px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+                <span style="font-size:16px;">${step.icon}</span>
+                <span style="color:${step.done?'#fff':'rgba(255,255,255,.3)'};font-weight:${step.done?'700':'500'};font-size:14px;">${step.status}</span>
+                ${i===currentStep&&o.status!=='Delivered'?'<span style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:1px 8px;color:#FF3B30;font-size:10px;font-weight:800;">CURRENT</span>':''}
+              </div>
+              <div style="color:${step.done?'rgba(255,255,255,.4)':'rgba(255,255,255,.2)'};font-size:12px;padding-left:24px;">${step.date}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <!-- Contact seller -->
+      <div style="margin-top:28px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="color:#fff;font-weight:700;font-size:14px;">Questions about your order?</div>
+          <div style="color:rgba(255,255,255,.4);font-size:12px;">Message @${o.seller} directly</div>
+        </div>
+        <button onclick="openChat('${o.seller}','#1a0000','#FF3B30','${o.seller.substring(0,2).toUpperCase()}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:12px;padding:8px 16px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
+      </div>
+    </div>`;
+
+  go('order-track');
+}
 
 const TXNS = [
   {icon:'💰',label:'Sold: 80s Sequin Vest',sub:'@sneakerhead_99',amt:'+20',date:'Today',clr:'#00C864'},
@@ -2646,11 +2751,71 @@ function renderFaq() {
     </div>`).join('');
 }
 const ORDERS = [
-  {id:'OSS-1042',item:'Y2K Betsey Johnson Dress',img:'betsey_dress',price:125,seller:'vintagequeen',status:'Delivered',date:'May 20',tracking:'9400111899223456789'},
-  {id:'OSS-1038',item:'Adidas x Ivy Park Stan Smith',img:'adidas_ivy_park',price:150,seller:'ivyparklover',status:'Shipped',date:'May 25',tracking:'9400111899223456790'},
-  {id:'OSS-1035',item:'Vans Daisy High Tops',img:'vans_daisy',price:20,seller:'sneakerhead_99',status:'Processing',date:'May 27',tracking:null},
-  {id:'OSS-1029',item:'Metallic Silver Pants',img:'silver_pants',price:10,seller:'silverstyle',status:'Delivered',date:'May 10',tracking:'9400111899223456788'},
-  {id:'OSS-1021',item:'Rodarte x Target Sheer Top',img:'rodarte_sheer',price:35,seller:'designerdrops',status:'Delivered',date:'Apr 28',tracking:'9400111899223456787'},
+  {
+    id:'OSS-1042', item:'Y2K Betsey Johnson Dress', img:'betsey_dress', price:125,
+    seller:'vintagequeen', status:'Delivered', date:'May 20', currency:'USD',
+    tracking:'9400111899223456789', carrier:'USPS', shipFrom:'Brooklyn, NY', shipTo:'Nashville, TN',
+    timeline:[
+      {status:'Order Placed',     date:'May 20, 2:14 PM',  done:true,  icon:'🛍️'},
+      {status:'Payment Confirmed',date:'May 20, 2:15 PM',  done:true,  icon:'✅'},
+      {status:'Seller Packaged',  date:'May 21, 10:30 AM', done:true,  icon:'📦'},
+      {status:'Shipped',          date:'May 21, 3:45 PM',  done:true,  icon:'🚚'},
+      {status:'Out for Delivery', date:'May 24, 8:20 AM',  done:true,  icon:'🏃'},
+      {status:'Delivered',        date:'May 24, 1:33 PM',  done:true,  icon:'🎉'},
+    ]
+  },
+  {
+    id:'OSS-1038', item:'Adidas x Ivy Park Stan Smith', img:'adidas_ivy_park', price:150,
+    seller:'ivyparklover', status:'Shipped', date:'May 25', currency:'SB',
+    tracking:'9400111899223456790', carrier:'USPS', shipFrom:'LA, CA', shipTo:'Nashville, TN',
+    timeline:[
+      {status:'Order Placed',     date:'May 25, 11:02 AM', done:true,  icon:'🛍️'},
+      {status:'Payment Confirmed',date:'May 25, 11:03 AM', done:true,  icon:'✅'},
+      {status:'Seller Packaged',  date:'May 26, 9:15 AM',  done:true,  icon:'📦'},
+      {status:'Shipped',          date:'May 26, 2:30 PM',  done:true,  icon:'🚚'},
+      {status:'Out for Delivery', date:'May 28, est.',     done:false, icon:'🏃'},
+      {status:'Delivered',        date:'Est. May 28-29',   done:false, icon:'🎉'},
+    ]
+  },
+  {
+    id:'OSS-1035', item:'Vans Daisy High Tops', img:'vans_daisy', price:20,
+    seller:'sneakerhead_99', status:'Processing', date:'May 27', currency:'SB',
+    tracking:null, carrier:'USPS', shipFrom:'Austin, TX', shipTo:'Nashville, TN',
+    timeline:[
+      {status:'Order Placed',     date:'May 27, 9:45 AM',  done:true,  icon:'🛍️'},
+      {status:'Payment Confirmed',date:'May 27, 9:46 AM',  done:true,  icon:'✅'},
+      {status:'Seller Packaged',  date:'Pending',          done:false, icon:'📦'},
+      {status:'Shipped',          date:'Est. May 28-29',   done:false, icon:'🚚'},
+      {status:'Out for Delivery', date:'Est. May 30-31',   done:false, icon:'🏃'},
+      {status:'Delivered',        date:'Est. Jun 1-2',     done:false, icon:'🎉'},
+    ]
+  },
+  {
+    id:'OSS-1029', item:'Metallic Silver Pants', img:'silver_pants', price:10,
+    seller:'silverstyle', status:'Delivered', date:'May 10', currency:'USD',
+    tracking:'9400111899223456788', carrier:'USPS', shipFrom:'Miami, FL', shipTo:'Nashville, TN',
+    timeline:[
+      {status:'Order Placed',     date:'May 10, 3:22 PM',  done:true, icon:'🛍️'},
+      {status:'Payment Confirmed',date:'May 10, 3:23 PM',  done:true, icon:'✅'},
+      {status:'Seller Packaged',  date:'May 11, 11:00 AM', done:true, icon:'📦'},
+      {status:'Shipped',          date:'May 11, 4:10 PM',  done:true, icon:'🚚'},
+      {status:'Out for Delivery', date:'May 14, 7:55 AM',  done:true, icon:'🏃'},
+      {status:'Delivered',        date:'May 14, 12:18 PM', done:true, icon:'🎉'},
+    ]
+  },
+  {
+    id:'OSS-1021', item:'Rodarte x Target Sheer Top', img:'rodarte_sheer', price:35,
+    seller:'designerdrops', status:'Delivered', date:'Apr 28', currency:'USD',
+    tracking:'9400111899223456787', carrier:'USPS', shipFrom:'Austin, TX', shipTo:'Nashville, TN',
+    timeline:[
+      {status:'Order Placed',     date:'Apr 28, 1:05 PM',  done:true, icon:'🛍️'},
+      {status:'Payment Confirmed',date:'Apr 28, 1:06 PM',  done:true, icon:'✅'},
+      {status:'Seller Packaged',  date:'Apr 29, 9:30 AM',  done:true, icon:'📦'},
+      {status:'Shipped',          date:'Apr 29, 3:15 PM',  done:true, icon:'🚚'},
+      {status:'Out for Delivery', date:'May 2, 8:45 AM',   done:true, icon:'🎉'},
+      {status:'Delivered',        date:'May 2, 11:22 AM',  done:true, icon:'🎉'},
+    ]
+  },
 ];
 
 const STATUS_STYLES = {
@@ -2681,9 +2846,12 @@ function renderOrders(filter) {
         </div>
       </div>
       ${o.tracking ? `<div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
-        <span style="color:rgba(255,255,255,.4);font-size:11px;">Tracking: ${o.tracking.slice(-8)}</span>
-        <button onclick="showToast('Opening USPS tracking...')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 12px;color:rgba(255,255,255,.6);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Track →</button>
-      </div>` : ''}
+        <span style="color:rgba(255,255,255,.4);font-size:11px;">📦 ${o.carrier||'USPS'} · ${o.tracking.slice(-8)}</span>
+        <button onclick="openOrderTracking('${o.id}')" style="background:linear-gradient(135deg,rgba(255,59,48,.2),rgba(255,59,48,.1));border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:4px 12px;color:#FF3B30;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Track →</button>
+      </div>` : `<div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="color:rgba(255,255,255,.3);font-size:11px;">⏳ Awaiting shipment</span>
+        <button onclick="openOrderTracking('${o.id}')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 12px;color:rgba(255,255,255,.5);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Details →</button>
+      </div>`}
       ${o.status === 'Delivered' ? `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;">
           ${reviewed ? `
@@ -2760,8 +2928,8 @@ function go(name) {
   if (target) target.classList.add('active');
   const nb = document.getElementById('nb-' + name);
   if (nb) nb.classList.add('active');
-  if (!['detail','chat','all','my-listings','new-listing','my-orders','acct-settings','sb-wallet','my-reviews','support','auction','seller'].includes(name)) prevScreen = name;
-  document.getElementById('nav').style.display = (name === 'chat' || name === 'auction' || name === 'detail' || name === 'seller') ? 'none' : '';
+  if (!['detail','chat','all','my-listings','new-listing','my-orders','acct-settings','sb-wallet','my-reviews','support','auction','seller','order-track'].includes(name)) prevScreen = name;
+  document.getElementById('nav').style.display = (name === 'chat' || name === 'auction' || name === 'detail' || name === 'seller' || name === 'order-track') ? 'none' : '';
   window.scrollTo(0,0);
   // Sub-screen data rendering
   if (name === 'my-orders') renderOrders('all');
