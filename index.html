@@ -1529,15 +1529,49 @@ function placeBid(auctionId, amount) {
 
 // ── SEARCH ────────────────────────────────────────────────────────────────────
 
-let searchQuery = '';
-let searchTimer = null;
+// Search synonyms — maps common words to what's in the data
+const SEARCH_SYNONYMS = {
+  'shoes': 'sneakers', 'shoe': 'sneakers', 'kicks': 'sneakers', 'boots': 'sneakers',
+  'trainers': 'sneakers', 'runners': 'sneakers', 'tennis shoes': 'sneakers',
+  'clothes': 'streetwear', 'clothing': 'streetwear', 'tops': 'streetwear',
+  'shirts': 'streetwear', 'shirt': 'streetwear', 'jacket': 'streetwear',
+  'pants': 'streetwear', 'jeans': 'streetwear', 'hoodie': 'streetwear',
+  'retro': 'vintage', 'old': 'vintage', 'classic': 'vintage', 'antique': 'vintage',
+  'thrift': 'vintage', 'secondhand': 'vintage', 'used': 'vintage',
+  'kids': 'kids & baby', 'baby': 'kids & baby', 'children': 'kids & baby',
+  'toddler': 'kids & baby', 'infant': 'kids & baby', 'child': 'kids & baby',
+  'cash': 'usd', 'money': 'usd', 'dollars': 'usd',
+  'swapbucks': 'sb', 'swap bucks': 'sb',
+};
+
+function expandQuery(q) {
+  // Return array of terms to search for
+  const terms = [q];
+  if (SEARCH_SYNONYMS[q]) terms.push(SEARCH_SYNONYMS[q]);
+  // Also check partial synonym matches
+  Object.entries(SEARCH_SYNONYMS).forEach(([k, v]) => {
+    if (q.includes(k) || k.includes(q)) terms.push(v);
+  });
+  return [...new Set(terms)];
+}
+
+function productMatchesSearch(p, terms) {
+  const searchable = [
+    p.title.toLowerCase(),
+    p.seller.toLowerCase(),
+    p.seller.toLowerCase().replace(/_/g, ' '), // sneakerhead_99 → sneakerhead 99
+    p.category.toLowerCase(),
+    (p.location || '').toLowerCase(),
+    (p.currency || '').toLowerCase(),
+  ].join(' ');
+
+  return terms.some(term => searchable.includes(term));
+}
 
 function handleSearch(val) {
   searchQuery = val.trim().toLowerCase();
   const clearBtn = document.getElementById('search-clear');
   if (clearBtn) clearBtn.style.display = searchQuery ? 'flex' : 'none';
-
-  // Debounce
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => runSearch(), 120);
 }
@@ -1555,16 +1589,9 @@ function runSearch() {
   resultsEl.style.display = 'block';
   defaultEl.style.display = 'none';
 
-  // Apply payment filter too
-  let pool = payFilter === 'all' ? PRODS : PRODS.filter(p=>p.currency===payFilter);
-
-  // Search across title, seller, category, location
-  const results = pool.filter(p =>
-    p.title.toLowerCase().includes(searchQuery) ||
-    p.seller.toLowerCase().includes(searchQuery) ||
-    p.category.toLowerCase().includes(searchQuery) ||
-    (p.location||'').toLowerCase().includes(searchQuery)
-  );
+  const terms = expandQuery(searchQuery);
+  let pool = payFilter === 'all' ? PRODS : PRODS.filter(p => p.currency === payFilter);
+  const results = pool.filter(p => productMatchesSearch(p, terms));
 
   const countEl = document.getElementById('search-count');
   const gridEl = document.getElementById('search-grid');
@@ -1580,11 +1607,9 @@ function runSearch() {
     countEl.innerHTML = `No results for "<span style="color:#FF3B30;">${searchQuery}</span>"`;
     gridEl.style.display = 'none';
     emptyEl.style.display = 'block';
-
-    // Suggest popular searches
     const suggestions = ['Sneakers', 'Vintage', 'Streetwear', 'Kids & Baby', 'Nike', 'Adidas', 'Y2K'];
     sugEl.innerHTML = suggestions.map(s =>
-      `<div onclick="document.getElementById('search-input').value='${s}';handleSearch('${s}')" 
+      `<div onclick="document.getElementById('search-input').value='${s}';handleSearch('${s}')"
         style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:6px 16px;cursor:pointer;">
         <span style="color:rgba(255,255,255,.7);font-size:13px;font-weight:600;">${s}</span>
       </div>`
