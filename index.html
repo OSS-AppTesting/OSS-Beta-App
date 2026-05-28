@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v16</title>
+<title>OneStopSwap v17</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -652,6 +652,32 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 
+<!-- LEAVE A REVIEW MODAL -->
+<div id="modal-review" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:700;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="color:#fff;font-weight:900;font-size:22px;">Leave a Review</h3>
+      <button onclick="document.getElementById('modal-review').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:24px;cursor:pointer;">✕</button>
+    </div>
+    <div id="review-order-summary" style="margin-bottom:20px;"></div>
+    <!-- Star rating -->
+    <div style="margin-bottom:20px;">
+      <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Your Rating</div>
+      <div style="display:flex;gap:12px;justify-content:center;" id="star-row">
+        ${[1,2,3,4,5].map(s=>`<span id="star-${s}" onclick="selectStar(${s})" style="font-size:40px;cursor:pointer;filter:grayscale(1);transition:filter .15s,transform .15s;" onmouseenter="hoverStar(${s})" onmouseleave="unhoverStar()">⭐</span>`).join('')}
+      </div>
+      <div id="star-label" style="text-align:center;color:rgba(255,255,255,.4);font-size:13px;margin-top:8px;">Tap to rate</div>
+    </div>
+    <!-- Review text -->
+    <div style="margin-bottom:16px;">
+      <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Your Review</div>
+      <textarea id="review-text" rows="3" placeholder="How was the item? Did it ship fast? Would you buy from this seller again?" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;"></textarea>
+    </div>
+    <button onclick="submitReview()" style="width:100%;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">Post Review ⭐</button>
+  </div>
+</div>
+
 <!-- SELLER REVIEWS -->
 <div id="s-my-reviews" class="screen">
   <div style="padding:52px 20px 20px;">
@@ -1076,7 +1102,7 @@ function showDetail(id) {
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:20px;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
           <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:800;font-size:16px;">${p.seller[0].toUpperCase()}</span></div>
-          <div><div style="color:#fff;font-weight:700;font-size:15px;">@${p.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ 4.9 · 127 sales</div></div>
+          <div><div style="color:#fff;font-weight:700;font-size:15px;">@${p.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${getSellerRating(p.seller).avg} · ${getSellerRating(p.seller).count} sales</div></div>
           <button onclick="openChat('${p.seller}','#1a0000','#FF3B30','${p.seller.substring(0,2).toUpperCase()}')" style="margin-left:auto;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
         </div>
         <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:12px;display:flex;gap:20px;">
@@ -1318,7 +1344,7 @@ function openAuction(id) {
       <!-- Seller -->
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:12px 14px;">
         <div style="width:36px;height:36px;border-radius:10px;background:${a.sellerColor};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;">${a.sellerInitials}</div>
-        <div style="flex:1;"><div style="color:#fff;font-weight:700;font-size:14px;">@${a.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ 4.9 · Verified seller ✓</div></div>
+        <div style="flex:1;"><div style="color:#fff;font-weight:700;font-size:14px;">@${a.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${getSellerRating(a.seller).avg} · Verified seller ✓</div></div>
         <button onclick="openChat('${a.seller}','${a.sellerColor}','#FF3B30','${a.sellerInitials}')" style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Ask</button>
       </div>
 
@@ -1917,6 +1943,132 @@ Rules:
   input.focus();
 }
 
+// ── SELLER RATINGS & REVIEWS ─────────────────────────────────────────────────
+
+const reviewedOrders = {}; // tracks which orders have been reviewed
+let currentReviewOrderId = null;
+let selectedStars = 0;
+
+// Seller ratings store — starts with existing data, updates live
+const SELLER_RATINGS = {
+  sneakerhead_99: { avg: 4.9, count: 138, reviews: [] },
+  ivyparklover:   { avg: 4.8, count: 42,  reviews: [] },
+  vintagequeen:   { avg: 5.0, count: 67,  reviews: [] },
+  goldenthread:   { avg: 4.7, count: 28,  reviews: [] },
+  catfoshee:      { avg: 4.9, count: 31,  reviews: [] },
+  silverstyle:    { avg: 4.6, count: 19,  reviews: [] },
+  designerdrops:  { avg: 4.8, count: 54,  reviews: [] },
+};
+
+const STAR_LABELS = ['','😞 Poor','😐 Fair','🙂 Good','😊 Great','🤩 Amazing!'];
+
+function openReviewModal(orderId) {
+  const o = ORDERS.find(x=>x.id===orderId);
+  if (!o) return;
+  currentReviewOrderId = orderId;
+  selectedStars = 0;
+
+  document.getElementById('review-order-summary').innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px;">
+      <div style="width:56px;height:56px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#111;">
+        <img src="${I[o.img]||''}" style="width:100%;height:100%;object-fit:cover;">
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="color:#fff;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.item}</div>
+        <div style="color:rgba(255,255,255,.4);font-size:12px;">@${o.seller} · ${o.date}</div>
+      </div>
+    </div>`;
+
+  // Reset stars
+  [1,2,3,4,5].forEach(s => {
+    const el = document.getElementById('star-' + s);
+    if (el) { el.style.filter = 'grayscale(1)'; el.style.transform = 'scale(1)'; }
+  });
+  document.getElementById('star-label').textContent = 'Tap to rate';
+  document.getElementById('review-text').value = '';
+  document.getElementById('modal-review').style.display = 'flex';
+}
+
+function hoverStar(n) {
+  [1,2,3,4,5].forEach(s => {
+    const el = document.getElementById('star-' + s);
+    if (el) el.style.filter = s <= n ? 'grayscale(0)' : 'grayscale(1)';
+  });
+}
+
+function unhoverStar() {
+  [1,2,3,4,5].forEach(s => {
+    const el = document.getElementById('star-' + s);
+    if (el) el.style.filter = s <= selectedStars ? 'grayscale(0)' : 'grayscale(1)';
+  });
+}
+
+function selectStar(n) {
+  selectedStars = n;
+  [1,2,3,4,5].forEach(s => {
+    const el = document.getElementById('star-' + s);
+    if (el) {
+      el.style.filter = s <= n ? 'grayscale(0)' : 'grayscale(1)';
+      el.style.transform = s === n ? 'scale(1.3)' : 'scale(1)';
+      setTimeout(() => { if (el) el.style.transform = 'scale(1)'; }, 200);
+    }
+  });
+  document.getElementById('star-label').textContent = STAR_LABELS[n];
+  document.getElementById('star-label').style.color = n >= 4 ? '#FFB347' : n >= 3 ? '#fff' : '#FF3B30';
+}
+
+function submitReview() {
+  if (!selectedStars) { showToast('Please select a star rating!'); return; }
+  const text = document.getElementById('review-text').value.trim();
+  if (!text) { showToast('Please write a short review!'); return; }
+
+  const o = ORDERS.find(x=>x.id===currentReviewOrderId);
+  if (!o) return;
+
+  // Save reviewed state
+  reviewedOrders[currentReviewOrderId] = { stars: selectedStars, text };
+
+  // Add to seller's rating
+  if (!SELLER_RATINGS[o.seller]) {
+    SELLER_RATINGS[o.seller] = { avg: selectedStars, count: 1, reviews: [] };
+  } else {
+    const sr = SELLER_RATINGS[o.seller];
+    const total = sr.avg * sr.count + selectedStars;
+    sr.count += 1;
+    sr.avg = Math.round((total / sr.count) * 10) / 10;
+  }
+
+  // Prepend review to seller's list
+  SELLER_RATINGS[o.seller].reviews.unshift({
+    name: 'dinobravo',
+    initials: 'DB',
+    color: '#FF3B30',
+    rating: selectedStars,
+    item: o.item,
+    text: text,
+    date: 'Just now'
+  });
+
+  // Add to REVIEWS_DATA for own profile page
+  REVIEWS_DATA.unshift({
+    name: 'dinobravo',
+    initials: 'DB',
+    color: '#FF3B30',
+    rating: selectedStars,
+    item: o.item,
+    text: text,
+    date: 'Just now'
+  });
+
+  document.getElementById('modal-review').style.display = 'none';
+  renderOrders(document.querySelector('.order-tab.active-tab span')?.textContent?.toLowerCase() || 'all');
+  showToast('⭐ Review posted! Thanks for your feedback.');
+}
+
+function getSellerRating(seller) {
+  return SELLER_RATINGS[seller] || { avg: 4.8, count: 12, reviews: [] };
+}
+
 // ── PROFILE SUB-SCREENS ───────────────────────────────────────────────────────
 
 const TXNS = [
@@ -2124,6 +2276,7 @@ function renderOrders(filter) {
                ORDERS.filter(o=>o.status==='Delivered');
   document.getElementById('orders-list').innerHTML = list.map(o => {
     const ss = STATUS_STYLES[o.status] || STATUS_STYLES['Processing'];
+    const reviewed = reviewedOrders[o.id];
     return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;">
       <div style="display:flex;gap:12px;padding:14px;">
         <div style="width:72px;height:72px;border-radius:12px;overflow:hidden;background:#111;flex-shrink:0;">
@@ -2142,6 +2295,17 @@ function renderOrders(filter) {
         <span style="color:rgba(255,255,255,.4);font-size:11px;">Tracking: ${o.tracking.slice(-8)}</span>
         <button onclick="showToast('Opening USPS tracking...')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 12px;color:rgba(255,255,255,.6);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Track →</button>
       </div>` : ''}
+      ${o.status === 'Delivered' ? `
+        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;">
+          ${reviewed ? `
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="color:#FFB347;font-size:14px;">${'⭐'.repeat(reviewed.stars)}</span>
+              <span style="color:rgba(255,255,255,.4);font-size:12px;">Your review posted</span>
+            </div>` : `
+            <button onclick="openReviewModal('${o.id}')" style="width:100%;background:linear-gradient(135deg,rgba(255,59,48,.15),rgba(255,59,48,.08));border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:10px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+              ⭐ Leave a Review for @${o.seller}
+            </button>`}
+        </div>` : ''}
     </div>`;
   }).join('') || '<div style="color:rgba(255,255,255,.3);text-align:center;padding:40px 0;">No orders yet</div>';
 }
