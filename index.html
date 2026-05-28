@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v17</title>
+<title>OneStopSwap v18</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -802,6 +802,11 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 
+<!-- SELLER PROFILE -->
+<div id="s-seller" class="screen" style="padding-bottom:0!important;">
+  <div id="seller-body"></div>
+</div>
+
 <!-- DETAIL -->
 <div id="s-detail" class="screen" style="padding-bottom:0!important;"><div id="detail-body"></div></div>
 
@@ -1103,7 +1108,7 @@ function showDetail(id) {
         <div style="display:flex;gap:12px;"><span style="color:rgba(255,255,255,.4);font-size:13px;">👁 ${p.views}</span><span style="color:rgba(255,255,255,.4);font-size:13px;">♥ ${p.likes}</span></div>
       </div>
       <h2 style="color:#fff;font-weight:800;font-size:22px;line-height:1.2;margin-bottom:16px;">${p.title}</h2>
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:20px;">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:20px;cursor:pointer;" onclick="openSellerProfile('${p.seller}')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
           <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:800;font-size:16px;">${p.seller[0].toUpperCase()}</span></div>
           <div><div style="color:#fff;font-weight:700;font-size:15px;">@${p.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${getSellerRating(p.seller).avg} · ${getSellerRating(p.seller).count} sales</div></div>
@@ -1346,7 +1351,7 @@ function openAuction(id) {
 
     <div style="padding:16px;padding-bottom:160px;">
       <!-- Seller -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:12px 14px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:12px 14px;cursor:pointer;" onclick="openSellerProfile('${a.seller}')">
         <div style="width:36px;height:36px;border-radius:10px;background:${a.sellerColor};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;">${a.sellerInitials}</div>
         <div style="flex:1;"><div style="color:#fff;font-weight:700;font-size:14px;">@${a.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${getSellerRating(a.seller).avg} · Verified seller ✓</div></div>
         <button onclick="openChat('${a.seller}','${a.sellerColor}','#FF3B30','${a.sellerInitials}')" style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Ask</button>
@@ -1947,6 +1952,148 @@ Rules:
   input.focus();
 }
 
+// ── SELLER PROFILE ────────────────────────────────────────────────────────────
+
+const SELLER_BIOS = {
+  sneakerhead_99: { bio: 'Sneaker collector since 2008 🔥 DS and VNDS only. Ships same day!', location: 'Austin, TX', joined: 'Jan 2022' },
+  ivyparklover:   { bio: 'Beyoncé x Adidas superfan. Rare pieces only. All authentic ✓', location: 'LA, CA', joined: 'Mar 2022' },
+  vintagequeen:   { bio: 'Y2K & vintage specialist 👑 Every piece hand-sourced from estate sales.', location: 'Brooklyn, NY', joined: 'Nov 2021' },
+  goldenthread:   { bio: 'Metallic & statement pieces. Making fashion fun again ✨', location: 'Nashville, TN', joined: 'Feb 2023' },
+  catfoshee:      { bio: 'Vintage goods, antiques & collectibles. Nashville picker 🎸', location: 'Nashville, TN', joined: 'Jun 2022' },
+  silverstyle:    { bio: 'All things silver & metallic. Futuristic fashion forward 🪐', location: 'Miami, FL', joined: 'Aug 2022' },
+  designerdrops:  { bio: 'Designer pieces at resale prices. Authenticated before listing.', location: 'Austin, TX', joined: 'Apr 2022' },
+  styledrops:     { bio: 'Curated streetwear & fashion. New drops every week 🔥', location: 'NYC, NY', joined: 'Sep 2022' },
+  kidswear22:     { bio: 'Quality kids clothing at fair prices. Mom of 3 👶', location: 'Boston, MA', joined: 'Jan 2023' },
+};
+
+const SELLER_SAMPLE_REVIEWS = {
+  sneakerhead_99: [
+    {name:'dinobravo',initials:'DB',color:'#FF3B30',rating:5,item:'Vans Daisy High Tops',text:'Super fast shipping, item exactly as described. Would definitely buy from again! 🙌',date:'2 days ago'},
+    {name:'retrofinds',initials:'RF',color:'#1a0000',rating:5,item:'Nike Court Borough',text:'Packaged perfectly, great condition. Already bought twice from this seller!',date:'1 week ago'},
+    {name:'goldenthread',initials:'GT',color:'#2d1b00',rating:4,item:'Puma Platform',text:'Solid seller, ships fast. Item was as described.',date:'2 weeks ago'},
+  ],
+  vintagequeen: [
+    {name:'dinobravo',initials:'DB',color:'#FF3B30',rating:5,item:'Y2K Betsey Johnson Dress',text:'Obsessed!! Exactly as pictured and packaged so carefully. 10/10 seller 🌟',date:'1 week ago'},
+    {name:'catfoshee',initials:'CF',color:'#3d1a00',rating:5,item:'Vintage Wrap Dress',text:'vintagequeen never disappoints. Third purchase and counting!',date:'3 weeks ago'},
+  ],
+  goldenthread: [
+    {name:'sneakerhead_99',initials:'SH',color:'#1a1a2e',rating:5,item:'Metallic Gold Shirt',text:'Ships so fast and very well packaged 🔥 Obsessed with this piece!!',date:'2 weeks ago'},
+    {name:'styledrops',initials:'SD',color:'#3d0035',rating:4,item:'Gold Sequin Top',text:'Beautiful item, color is slightly brighter in person but love it.',date:'1 month ago'},
+  ],
+};
+
+function openSellerProfile(seller) {
+  const rating = getSellerRating(seller);
+  const bio = SELLER_BIOS[seller] || { bio: 'OneStopSwap seller', location: 'USA', joined: '2023' };
+  const initials = seller.substring(0,2).toUpperCase();
+  const color = '#' + [...seller].reduce((h,c) => ((h<<5)-h+c.charCodeAt(0))|0, 0).toString(16).slice(-6).padStart(6,'0');
+
+  // Get seller listings
+  const listings = PRODS.filter(p => p.seller === seller);
+
+  // Get reviews — combine sample + any live reviews left by user
+  const liveReviews = rating.reviews || [];
+  const sampleReviews = SELLER_SAMPLE_REVIEWS[seller] || [];
+  const allReviews = [...liveReviews, ...sampleReviews];
+
+  // Rating breakdown
+  const pcts = [78, 15, 5, 1, 1];
+
+  document.getElementById('seller-body').innerHTML = `
+    <div style="position:sticky;top:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
+      <button onclick="go('${prevScreen}')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+      <div style="flex:1;">
+        <div style="color:#fff;font-weight:700;font-size:16px;">@${seller}</div>
+        <div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${rating.avg} · ${rating.count} reviews</div>
+      </div>
+      <button onclick="openChat('${seller}','#1a0000','#FF3B30','${initials}')" style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:8px 16px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Message</button>
+    </div>
+
+    <div style="padding:20px;padding-bottom:40px;">
+      <!-- Seller card -->
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:20px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+          <div style="width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#fff;flex-shrink:0;">${initials}</div>
+          <div style="flex:1;">
+            <div style="color:#fff;font-weight:900;font-size:18px;">@${seller}</div>
+            <div style="color:rgba(255,255,255,.4);font-size:12px;">📍 ${bio.location} · Member since ${bio.joined}</div>
+          </div>
+        </div>
+        <div style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.6;margin-bottom:14px;">${bio.bio}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div style="text-align:center;background:rgba(255,255,255,.04);border-radius:12px;padding:10px 6px;">
+            <div style="color:#FF3B30;font-weight:900;font-size:18px;">${listings.length}</div>
+            <div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Listings</div>
+          </div>
+          <div style="text-align:center;background:rgba(255,255,255,.04);border-radius:12px;padding:10px 6px;">
+            <div style="color:#FF3B30;font-weight:900;font-size:18px;">${rating.count}</div>
+            <div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Sales</div>
+          </div>
+          <div style="text-align:center;background:rgba(255,255,255,.04);border-radius:12px;padding:10px 6px;">
+            <div style="color:#FF3B30;font-weight:900;font-size:18px;">${rating.avg}⭐</div>
+            <div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Rating</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Listings -->
+      ${listings.length > 0 ? `
+      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Active Listings · ${listings.length}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;">
+        ${listings.map(p=>`
+          <div onclick="showDetail(${p.id})" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;cursor:pointer;">
+            <div style="height:120px;position:relative;background:#111;">
+              <img src="${p.img}" style="width:100%;height:100%;object-fit:cover;">
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.7));"></div>
+              <div style="position:absolute;bottom:6px;left:6px;background:${p.currency==='USD'?'linear-gradient(135deg,#00A550,#007A3D)':'linear-gradient(135deg,#FF3B30,#C0392B)'};border-radius:8px;padding:2px 8px;font-size:11px;font-weight:800;color:#fff;">${p.currency==='USD'?'$'+p.price:p.price+' SB'}</div>
+            </div>
+            <div style="padding:8px 10px;"><div style="color:#fff;font-weight:600;font-size:12px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.title}</div></div>
+          </div>`).join('')}
+      </div>` : ''}
+
+      <!-- Rating breakdown -->
+      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Reviews · ${allReviews.length + rating.count - (SELLER_SAMPLE_REVIEWS[seller]?.length||0)}</div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="text-align:center;">
+            <div style="color:#FF3B30;font-weight:900;font-size:44px;font-family:'Space Grotesk',sans-serif;line-height:1;">${rating.avg}</div>
+            <div style="color:#FFB347;font-size:16px;margin:4px 0;">${'⭐'.repeat(Math.round(rating.avg))}</div>
+            <div style="color:rgba(255,255,255,.4);font-size:11px;">${rating.count} reviews</div>
+          </div>
+          <div style="flex:1;">
+            ${[5,4,3,2,1].map((s,i)=>`
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+                <span style="color:rgba(255,255,255,.5);font-size:11px;width:8px;">${s}</span>
+                <div style="flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;">
+                  <div style="height:100%;width:${pcts[i]}%;background:${s>=4?'#FFB347':'rgba(255,255,255,.2)'};border-radius:3px;"></div>
+                </div>
+                <span style="color:rgba(255,255,255,.3);font-size:11px;width:28px;">${pcts[i]}%</span>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Reviews list -->
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        ${allReviews.length > 0 ? allReviews.map(r=>`
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <div style="width:34px;height:34px;border-radius:10px;background:${r.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;flex-shrink:0;">${r.initials}</div>
+              <div style="flex:1;">
+                <div style="color:#fff;font-weight:700;font-size:13px;">@${r.name}</div>
+                <div style="color:rgba(255,255,255,.35);font-size:11px;">${r.item} · ${r.date}</div>
+              </div>
+              <div style="color:#FFB347;font-size:13px;">${'⭐'.repeat(r.rating)}</div>
+            </div>
+            <div style="color:rgba(255,255,255,.7);font-size:13px;line-height:1.5;">${r.text}</div>
+          </div>`).join('') : `
+          <div style="color:rgba(255,255,255,.3);text-align:center;padding:30px 0;font-size:14px;">No reviews yet — be the first!</div>`}
+      </div>
+    </div>`;
+
+  go('seller');
+}
+
 // ── SELLER RATINGS & REVIEWS ─────────────────────────────────────────────────
 
 const reviewedOrders = {}; // tracks which orders have been reviewed
@@ -2375,8 +2522,8 @@ function go(name) {
   if (target) target.classList.add('active');
   const nb = document.getElementById('nb-' + name);
   if (nb) nb.classList.add('active');
-  if (!['detail','chat','all','my-listings','new-listing','my-orders','acct-settings','sb-wallet','my-reviews','support','auction'].includes(name)) prevScreen = name;
-  document.getElementById('nav').style.display = (name === 'chat' || name === 'auction' || name === 'detail') ? 'none' : '';
+  if (!['detail','chat','all','my-listings','new-listing','my-orders','acct-settings','sb-wallet','my-reviews','support','auction','seller'].includes(name)) prevScreen = name;
+  document.getElementById('nav').style.display = (name === 'chat' || name === 'auction' || name === 'detail' || name === 'seller') ? 'none' : '';
   window.scrollTo(0,0);
   // Sub-screen data rendering
   if (name === 'my-orders') renderOrders('all');
