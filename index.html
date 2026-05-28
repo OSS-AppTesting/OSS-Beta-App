@@ -665,6 +665,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div class="offer-tab" onclick="filterOffers('Pending',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">⏳ Pending</span></div>
       <div class="offer-tab" onclick="filterOffers('Countered',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">🔄 Countered</span></div>
       <div class="offer-tab" onclick="filterOffers('Accepted',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">✅ Accepted</span></div>
+      <div class="offer-tab" onclick="filterOffers('Completed',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">🎉 Completed</span></div>
       <div class="offer-tab" onclick="filterOffers('Declined',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">❌ Declined</span></div>
     </div>
     <div id="offers-list" style="display:flex;flex-direction:column;gap:12px;"></div>
@@ -3238,7 +3239,9 @@ function renderOffers(filter) {
   const el = document.getElementById('offers-list');
   if (!el) return;
 
-  const list = filter === 'all' ? OFFERS : OFFERS.filter(o => o.status === filter);
+  const list = filter === 'all' ? OFFERS : 
+               filter === 'Accepted' ? OFFERS.filter(o => o.status === 'Accepted' || o.status === 'Completing') :
+               OFFERS.filter(o => o.status === filter);
 
   // Update badge
   const pending = OFFERS.filter(o => o.status === 'Pending' || o.status === 'Countered').length;
