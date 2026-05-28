@@ -546,6 +546,41 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 
+<!-- REPORT ISSUE MODAL -->
+<div id="modal-report-issue" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:700;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <h3 style="color:#fff;font-weight:900;font-size:22px;">Report an Issue</h3>
+      <button onclick="document.getElementById('modal-report-issue').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:24px;cursor:pointer;">✕</button>
+    </div>
+    <p style="color:rgba(255,255,255,.4);font-size:13px;margin-bottom:6px;">Order: <span id="report-order-id" style="color:#fff;font-weight:600;"></span></p>
+    <p style="color:rgba(255,255,255,.4);font-size:13px;margin-bottom:20px;">Item: <span id="report-item-name" style="color:#fff;font-weight:600;"></span></p>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Issue Type</div>
+        <select id="report-issue-type" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
+          <option value="">Select an issue...</option>
+          <option>Item not received</option>
+          <option>Item damaged</option>
+          <option>Wrong item sent</option>
+          <option>Item not as described</option>
+          <option>Seller not responding</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Details</div>
+        <textarea id="report-details" rows="3" placeholder="Please describe the issue in detail..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;"></textarea>
+      </div>
+      <div style="background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:12px;padding:12px 14px;">
+        <div style="color:#FFB347;font-size:12px;font-weight:600;">⚡ Our team responds within 24 hours. If eligible, SwapBucks will be refunded.</div>
+      </div>
+      <button onclick="submitReport()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">Submit Report</button>
+    </div>
+  </div>
+</div>
+
 <!-- ORDER TRACKING -->
 <div id="s-order-track" class="screen" style="padding-bottom:0!important;">
   <div id="order-track-body"></div>
@@ -2463,6 +2498,35 @@ function getSellerRating(seller) {
   return SELLER_RATINGS[seller] || { avg: 4.8, count: 12, reviews: [] };
 }
 
+function confirmDelivery(orderId) {
+  const o = ORDERS.find(x => x.id === orderId);
+  if (!o) return;
+  o.status = 'Delivered';
+  o.timeline.forEach(t => t.done = true);
+  o.timeline[o.timeline.length-1].date = 'Just now';
+  addTransaction('earned', '✅', 'Delivery confirmed: ' + o.item, '@' + o.seller, 0);
+  showToast('✅ Delivery confirmed! You can now leave a review.');
+  openOrderTracking(orderId);
+}
+
+function openReportIssue(orderId) {
+  const o = ORDERS.find(x => x.id === orderId);
+  if (!o) return;
+  document.getElementById('modal-report-issue').style.display = 'flex';
+  document.getElementById('report-order-id').textContent = o.id;
+  document.getElementById('report-item-name').textContent = o.item;
+  window._reportOrderId = orderId;
+}
+
+function submitReport() {
+  const issue = document.getElementById('report-issue-type').value;
+  const details = document.getElementById('report-details').value.trim();
+  if (!issue) { showToast('Please select an issue type'); return; }
+  document.getElementById('modal-report-issue').style.display = 'none';
+  document.getElementById('report-details').value = '';
+  showToast('⚠️ Issue reported! Our team will respond within 24h.');
+}
+
 // ── ORDER TRACKING ────────────────────────────────────────────────────────────
 
 function openOrderTracking(orderId) {
@@ -2481,6 +2545,23 @@ function openOrderTracking(orderId) {
       </div>
       <span style="background:${ss.bg};border:1px solid ${ss.border};border-radius:10px;padding:4px 12px;color:${ss.color};font-size:12px;font-weight:700;">${ss.icon} ${o.status}</span>
     </div>
+
+    <!-- Est delivery banner -->
+    ${o.status !== 'Delivered' ? `
+    <div style="background:linear-gradient(135deg,rgba(255,59,48,.15),rgba(255,59,48,.05));border-bottom:1px solid rgba(255,59,48,.2);padding:12px 20px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">📅</span>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Estimated Delivery</div>
+        <div style="color:#fff;font-weight:800;font-size:15px;">${o.timeline[o.timeline.length-1].date}</div>
+      </div>
+    </div>` : `
+    <div style="background:linear-gradient(135deg,rgba(0,165,80,.15),rgba(0,165,80,.05));border-bottom:1px solid rgba(0,165,80,.2);padding:12px 20px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">🎉</span>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Delivered</div>
+        <div style="color:#00C864;font-weight:800;font-size:15px;">${o.timeline[o.timeline.length-1].date}</div>
+      </div>
+    </div>`}
 
     <div style="padding:20px;padding-bottom:40px;">
       <!-- Item summary -->
@@ -2560,6 +2641,19 @@ function openOrderTracking(orderId) {
         </div>
         <button onclick="openChat('${o.seller}','#1a0000','#FF3B30','${o.seller.substring(0,2).toUpperCase()}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:12px;padding:8px 16px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
       </div>
+
+      <!-- Confirm delivery -->
+      ${o.status === 'Shipped' ? `
+      <button onclick="confirmDelivery('${o.id}')" style="width:100%;margin-top:14px;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        ✅ Confirm I Received This Order
+      </button>
+      <div style="color:rgba(255,255,255,.3);font-size:11px;text-align:center;margin-top:8px;">Only confirm once you have the item in hand</div>` : ''}
+
+      <!-- Report issue -->
+      ${o.status !== 'Processing' ? `
+      <button onclick="openReportIssue('${o.id}')" style="width:100%;margin-top:${o.status==='Shipped'?'10px':'14px'};background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;color:rgba(255,255,255,.5);font-weight:600;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        ⚠️ Report an Issue
+      </button>` : ''}
     </div>`;
 
   go('order-track');
