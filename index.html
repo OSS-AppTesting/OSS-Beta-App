@@ -1671,13 +1671,19 @@ function filterPayment(type, el) {
   // If search is active re-run with new filter
   if (searchQuery) { runSearch(); return; }
 
-  const filtered = type === 'all' ? PRODS : PRODS.filter(p => p.currency === type);
-  if (type !== 'all') {
+  if (type === 'all') {
+    document.getElementById('shop-filtered').style.display = 'none';
+    document.getElementById('shop-default').style.display = 'block';
+    // Re-render categories in case they're empty
+    const cats = document.getElementById('shop-cats');
+    if (cats && cats.innerHTML === '') {
+      cats.innerHTML = CATS.map(catTileShop).join('');
+    }
+  } else {
+    const filtered = PRODS.filter(p => p.currency === type);
     document.getElementById('shop-filtered').style.display = 'block';
     document.getElementById('shop-cat-title').textContent = (type === 'USD' ? '💵 Cash Listings' : '💰 SwapBucks Listings') + ' ✦';
     document.getElementById('shop-grid').innerHTML = filtered.map((p,i)=>pCard(p,i)).join('');
-  } else {
-    document.getElementById('shop-filtered').style.display = 'none';
   }
 }
 
