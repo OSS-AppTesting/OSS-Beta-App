@@ -665,7 +665,11 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     <div style="margin-bottom:20px;">
       <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Your Rating</div>
       <div style="display:flex;gap:12px;justify-content:center;" id="star-row">
-        ${[1,2,3,4,5].map(s=>`<span id="star-${s}" onclick="selectStar(${s})" style="font-size:40px;cursor:pointer;filter:grayscale(1);transition:filter .15s,transform .15s;" onmouseenter="hoverStar(${s})" onmouseleave="unhoverStar()">⭐</span>`).join('')}
+        <span id="star-1" onclick="selectStar(1)" style="font-size:40px;cursor:pointer;filter:grayscale(1);transition:filter .15s,transform .15s;">⭐</span>
+        <span id="star-2" onclick="selectStar(2)" style="font-size:40px;cursor:pointer;filter:grayscale(1);transition:filter .15s,transform .15s;">⭐</span>
+        <span id="star-3" onclick="selectStar(3)" style="font-size:40px;cursor:pointer;filter:grayscale(1);transition:filter .15s,transform .15s;">⭐</span>
+        <span id="star-4" onclick="selectStar(4)" style="font-size:40px;cursor:pointer;filter:grayscale(1);transition:filter .15s,transform .15s;">⭐</span>
+        <span id="star-5" onclick="selectStar(5)" style="font-size:40px;cursor:pointer;filter:grayscale(1);transition:filter .15s,transform .15s;">⭐</span>
       </div>
       <div id="star-label" style="text-align:center;color:rgba(255,255,255,.4);font-size:13px;margin-top:8px;">Tap to rate</div>
     </div>
