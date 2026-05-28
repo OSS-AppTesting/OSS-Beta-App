@@ -254,7 +254,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:13px 16px 13px 42px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;"
         onfocus="this.style.borderColor='rgba(255,59,48,.5)'"
         onblur="this.style.borderColor='rgba(255,255,255,.12)'">
-      <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:none;border-radius:8px;width:26px;height:26px;color:#fff;font-size:14px;cursor:pointer;display:none;align-items:center;justify-content:center;">✕</button>
+      <button id="search-clear" onclick="clearSearch()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:none;border-radius:8px;width:26px;height:26px;color:#fff;font-size:14px;cursor:pointer;display:none;">✕</button>
     </div>
 
     <!-- Search results -->
@@ -1532,51 +1532,20 @@ function placeBid(auctionId, amount) {
 let searchQuery = '';
 let searchTimer = null;
 
-// Search synonyms — maps common words to what's in the data
-const SEARCH_SYNONYMS = {
-  'shoes': 'sneakers', 'shoe': 'sneakers', 'kicks': 'sneakers', 'boots': 'sneakers',
-  'trainers': 'sneakers', 'runners': 'sneakers', 'tennis shoes': 'sneakers',
-  'clothes': 'streetwear', 'clothing': 'streetwear', 'tops': 'streetwear',
-  'shirts': 'streetwear', 'shirt': 'streetwear', 'jacket': 'streetwear',
-  'pants': 'streetwear', 'jeans': 'streetwear', 'hoodie': 'streetwear',
-  'retro': 'vintage', 'old': 'vintage', 'classic': 'vintage', 'antique': 'vintage',
-  'thrift': 'vintage', 'secondhand': 'vintage', 'used': 'vintage',
-  'kids': 'kids & baby', 'baby': 'kids & baby', 'children': 'kids & baby',
-  'toddler': 'kids & baby', 'infant': 'kids & baby', 'child': 'kids & baby',
-  'cash': 'usd', 'money': 'usd', 'dollars': 'usd',
-  'swapbucks': 'sb', 'swap bucks': 'sb',
+const SYNONYMS = {
+  'shoes':'sneakers','shoe':'sneakers','kicks':'sneakers','boots':'sneakers',
+  'trainers':'sneakers','runners':'sneakers','sneaker':'sneakers',
+  'clothes':'streetwear','clothing':'streetwear','shirt':'streetwear',
+  'shirts':'streetwear','pants':'streetwear','jeans':'streetwear','hoodie':'streetwear',
+  'retro':'vintage','thrift':'vintage','antique':'vintage','old school':'vintage',
+  'kids':'kids & baby','baby':'kids & baby','children':'kids & baby','toddler':'kids & baby',
 };
-
-function expandQuery(q) {
-  // Return array of terms to search for
-  const terms = [q];
-  if (SEARCH_SYNONYMS[q]) terms.push(SEARCH_SYNONYMS[q]);
-  // Also check partial synonym matches
-  Object.entries(SEARCH_SYNONYMS).forEach(([k, v]) => {
-    if (q.includes(k) || k.includes(q)) terms.push(v);
-  });
-  return [...new Set(terms)];
-}
-
-function productMatchesSearch(p, terms) {
-  const searchable = [
-    p.title.toLowerCase(),
-    p.seller.toLowerCase(),
-    p.seller.toLowerCase().replace(/_/g, ' '), // sneakerhead_99 → sneakerhead 99
-    p.category.toLowerCase(),
-    (p.location || '').toLowerCase(),
-    (p.currency || '').toLowerCase(),
-  ].join(' ');
-
-  return terms.some(term => searchable.includes(term));
-}
 
 function handleSearch(val) {
   searchQuery = val.trim().toLowerCase();
-  const clearBtn = document.getElementById('search-clear');
-  if (clearBtn) clearBtn.style.display = searchQuery ? 'flex' : 'none';
+  document.getElementById('search-clear').style.display = searchQuery ? 'block' : 'none';
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => runSearch(), 120);
+  searchTimer = setTimeout(runSearch, 150);
 }
 
 function runSearch() {
@@ -1589,43 +1558,53 @@ function runSearch() {
     return;
   }
 
+  // Expand query with synonyms
+  const terms = [searchQuery];
+  if (SYNONYMS[searchQuery]) terms.push(SYNONYMS[searchQuery]);
+  Object.entries(SYNONYMS).forEach(([k,v]) => {
+    if (searchQuery.includes(k)) terms.push(v);
+  });
+
+  // Build searchable string per product
+  let pool = payFilter === 'all' ? PRODS : PRODS.filter(p => p.currency === payFilter);
+  const results = pool.filter(p => {
+    const hay = [
+      p.title, p.seller,
+      p.seller.replace(/_/g,' '),  // sneakerhead_99 → sneakerhead 99
+      p.category, p.location || ''
+    ].join(' ').toLowerCase();
+    return terms.some(t => hay.includes(t));
+  });
+
   resultsEl.style.display = 'block';
   defaultEl.style.display = 'none';
 
-  const terms = expandQuery(searchQuery);
-  let pool = payFilter === 'all' ? PRODS : PRODS.filter(p => p.currency === payFilter);
-  const results = pool.filter(p => productMatchesSearch(p, terms));
-
   const countEl = document.getElementById('search-count');
-  const gridEl = document.getElementById('search-grid');
+  const gridEl  = document.getElementById('search-grid');
   const emptyEl = document.getElementById('search-empty');
-  const sugEl = document.getElementById('search-suggestions');
 
-  if (results.length > 0) {
+  if (results.length) {
     countEl.innerHTML = `<span style="color:#fff;font-weight:700;">${results.length}</span> result${results.length!==1?'s':''} for "<span style="color:#FF3B30;">${searchQuery}</span>"`;
-    gridEl.style.display = 'grid';
     emptyEl.style.display = 'none';
+    gridEl.style.display  = 'grid';
     gridEl.innerHTML = results.map((p,i) => pCard(p,i)).join('');
   } else {
     countEl.innerHTML = `No results for "<span style="color:#FF3B30;">${searchQuery}</span>"`;
-    gridEl.style.display = 'none';
+    gridEl.style.display  = 'none';
     emptyEl.style.display = 'block';
-    const suggestions = ['Sneakers', 'Vintage', 'Streetwear', 'Kids & Baby', 'Nike', 'Adidas', 'Y2K'];
-    sugEl.innerHTML = suggestions.map(s =>
+    const sugs = ['Sneakers','Vintage','Streetwear','Kids & Baby','Nike','Adidas','Y2K'];
+    document.getElementById('search-suggestions').innerHTML = sugs.map(s =>
       `<div onclick="document.getElementById('search-input').value='${s}';handleSearch('${s}')"
         style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:6px 16px;cursor:pointer;">
         <span style="color:rgba(255,255,255,.7);font-size:13px;font-weight:600;">${s}</span>
-      </div>`
-    ).join('');
+      </div>`).join('');
   }
 }
 
 function clearSearch() {
   searchQuery = '';
-  const input = document.getElementById('search-input');
-  if (input) input.value = '';
-  const clearBtn = document.getElementById('search-clear');
-  if (clearBtn) clearBtn.style.display = 'none';
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').style.display = 'none';
   document.getElementById('search-results').style.display = 'none';
   document.getElementById('shop-default').style.display = 'block';
 }
@@ -2668,7 +2647,6 @@ function go(name) {
   if (name === 'my-reviews') renderReviews();
   if (name === 'support') renderFaq();
   if (name === 'live') { renderAuctionList(); const liveEl = document.getElementById('live-sb-display'); if(liveEl) liveEl.textContent = '💰 ' + SB + ' SB'; }
-  if (name !== 'shop') clearSearch();
 }
 
 // ── SEARCH ────────────────────────────────────────────────────────────────────
