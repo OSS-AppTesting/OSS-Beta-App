@@ -1536,12 +1536,18 @@ let searchQuery = '';
 let searchTimer = null;
 
 const SYNONYMS = {
-  'shoes':'sneakers','shoe':'sneakers','kicks':'sneakers','boots':'sneakers',
-  'trainers':'sneakers','runners':'sneakers','sneaker':'sneakers',
-  'clothes':'streetwear','clothing':'streetwear','shirt':'streetwear',
-  'shirts':'streetwear','pants':'streetwear','jeans':'streetwear','hoodie':'streetwear',
-  'retro':'vintage','thrift':'vintage','antique':'vintage','old school':'vintage',
-  'kids':'kids & baby','baby':'kids & baby','children':'kids & baby','toddler':'kids & baby',
+  // These map to a full category — search returns whole category
+  'shoes':'sneakers','shoe':'sneakers','kicks':'sneakers',
+  'trainers':'sneakers','runners':'sneakers','footwear':'sneakers',
+  'kids':'kids & baby','baby':'kids & baby','children':'kids & baby','toddler':'kids & baby','infant':'kids & baby',
+  'retro':'vintage','thrift':'vintage','antique':'vintage',
+};
+
+// Only these trigger a full category restriction
+const CATEGORY_MAP = {
+  'sneakers':'Sneakers',
+  'kids & baby':'Kids & Baby',
+  'vintage':'Vintage',
 };
 
 function fuzzyMatch(hay, needle) {
@@ -1584,7 +1590,6 @@ function runSearch() {
 
   // Check if query is a category synonym — if so restrict to that category only
   const synonymTarget = SYNONYMS[searchQuery];
-  const CATEGORY_MAP = {'sneakers':'Sneakers','streetwear':'Streetwear','vintage':'Vintage','kids & baby':'Kids & Baby'};
   const categoryOnly = synonymTarget ? CATEGORY_MAP[synonymTarget] : null;
 
   let results;
