@@ -1279,6 +1279,13 @@ function confirmSBCheckout() {
       updateAllSBDisplays();
       addTransaction('spent', '🏷️', 'Offer: ' + offer.title, '@' + offer.seller, -offer.offerAmount);
       offer.status = 'Completed';
+      // Update matching order status
+      const matchOrder = ORDERS.find(o => o.item === offer.title && o.status === 'Processing');
+      if (matchOrder) {
+        matchOrder.status = 'Shipped';
+        matchOrder.timeline[1].done = true;
+        matchOrder.timeline[1].date = 'Just now';
+      }
       window._offerCheckoutId = null;
       document.getElementById('modal-sb-checkout').style.display = 'none';
       showToast('⚡ Purchased at offer price! ' + offer.offerAmount + ' SB spent.');
@@ -3466,6 +3473,25 @@ function renderReceivedOffers() {
           <button onclick="respondToOffer('${o.id}','declined')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.6);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Decline</button>
           <button onclick="respondToOffer('${o.id}','countered')" style="flex:1;background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.3);border-radius:10px;padding:8px;color:#FFB347;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
           <button onclick="respondToOffer('${o.id}','accepted')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:10px;padding:8px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;">Accept ✓</button>
+        </div>` :
+        o.status === 'Accepted' ? `
+        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;">
+          <div style="background:rgba(0,200,100,.08);border:1px solid rgba(0,200,100,.2);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:20px;">🎉</span>
+            <div>
+              <div style="color:#00C864;font-weight:700;font-size:13px;">Offer Accepted!</div>
+              <div style="color:rgba(255,255,255,.4);font-size:11px;">Waiting for @${o.buyer} to complete payment</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="openChat('${o.buyer}','${o.buyerColor}','#00C864','${o.buyerInitials}')" style="flex:1;background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.25);border-radius:10px;padding:8px;color:#00C864;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Message Buyer</button>
+            <button onclick="showToast('Shipping label generator coming soon!')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.6);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">📦 Prep Shipment</button>
+          </div>
+        </div>` :
+        o.status === 'Countered' ? `
+        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:3px 10px;color:#4FC3F7;font-size:11px;font-weight:700;">🔄 Counter Sent: ${o.currency==='USD'?'$'+o.sellerCounter:o.sellerCounter+' SB'}</span>
+          <span style="color:rgba(255,255,255,.3);font-size:12px;">Waiting for buyer...</span>
         </div>` : `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
           <span style="background:${sc.bg};border:1px solid ${sc.border};border-radius:8px;padding:3px 10px;color:${sc.color};font-size:11px;font-weight:700;">${sc.icon} ${o.status}</span>
@@ -3479,7 +3505,37 @@ function respondToOffer(offerId, action) {
   if (!o) return;
   if (action === 'accepted') {
     o.status = 'Accepted';
-    showToast('✅ Offer accepted! Buyer has been notified.');
+
+    // Auto-create order
+    const p = PRODS.find(x => x.id === o.productId);
+    const newOrder = {
+      id: 'OSS-' + (1050 + ORDERS.length),
+      item: o.title,
+      img: Object.keys(I).find(k => I[k] === o.img) || 'gold_shirt',
+      price: o.offerAmount,
+      seller: 'dinobravo', // current user is seller
+      status: 'Processing',
+      date: 'Today',
+      currency: o.currency,
+      tracking: null,
+      carrier: 'USPS',
+      shipFrom: 'Nashville, TN',
+      shipTo: o.buyer + "'s address",
+      timeline: [
+        {status:'Order Placed',      date:'Today',    done:true,  icon:'🛍️'},
+        {status:'Payment Confirmed', date:'Pending',  done:false, icon:'✅'},
+        {status:'Seller Packaged',   date:'Pending',  done:false, icon:'📦'},
+        {status:'Shipped',           date:'Pending',  done:false, icon:'🚚'},
+        {status:'Out for Delivery',  date:'Pending',  done:false, icon:'🏃'},
+        {status:'Delivered',         date:'Pending',  done:false, icon:'🎉'},
+      ]
+    };
+    ORDERS.unshift(newOrder);
+
+    // Log to wallet as pending earning
+    addTransaction('pending', '🏷️', 'Offer accepted: ' + o.title, '@' + o.buyer + ' · awaiting payment', o.offerAmount);
+
+    showToast('✅ Offer accepted! Order created — waiting for buyer payment.');
     renderReceivedOffers();
   } else if (action === 'declined') {
     o.status = 'Declined';
