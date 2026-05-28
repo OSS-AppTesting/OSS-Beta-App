@@ -1560,14 +1560,18 @@ const ITEM_SYNONYMS = {
   'crop':['crop','cropped'],
   'tank':['tank','cami','sleeveless'],
   // Bottoms
-  'pants':['pants','trousers','slacks','bottoms'],
-  'jeans':['jeans','denim','pants'],
+  'pants':['pants','trousers','slacks','chinos','khakis','bottoms','wide leg','flare','bootcut','culottes','cargo'],
+  'jeans':['jeans','denim','pants','trousers'],
+  'slacks':['slacks','pants','trousers','chinos','khakis','bottoms'],
+  'trousers':['trousers','pants','slacks','chinos'],
+  'chinos':['chinos','pants','trousers','khakis'],
+  'khakis':['khakis','chinos','pants','trousers'],
   'shorts':['shorts','short'],
-  'skirt':['skirt'],
-  'leggings':['leggings','tights'],
-  'joggers':['jogger','sweatpant','track'],
-  'sweatpants':['sweatpant','jogger','track'],
-  'cargo':['cargo'],
+  'skirt':['skirt','mini','midi','maxi'],
+  'leggings':['leggings','tights','bottoms'],
+  'joggers':['jogger','sweatpant','track','bottoms'],
+  'sweatpants':['sweatpant','jogger','track','bottoms'],
+  'cargo':['cargo','cargos'],
   // Outerwear
   'jacket':['jacket','coat','blazer','bomber','windbreaker','parka','outerwear'],
   'coat':['coat','jacket','parka','outerwear'],
@@ -1599,6 +1603,12 @@ const CATEGORY_MAP = {
   'kids & baby':'Kids & Baby',
   'vintage':'Vintage',
 };
+
+function wordMatch(hay, term) {
+  // Whole word match — "top" won't match "high top" sneakers but will match "striped top"
+  const regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+  return regex.test(hay);
+}
 
 function fuzzyMatch(hay, needle) {
   if (hay.includes(needle)) return true;
@@ -1643,15 +1653,23 @@ function runSearch() {
   const categoryOnly = synonymTarget ? CATEGORY_MAP[synonymTarget] : null;
 
   // Check if query maps to item synonyms (e.g. "shirt" → search for tee, top, blouse etc)
-  const itemTerms = ITEM_SYNONYMS[searchQuery] || [searchQuery];
+  const itemTerms = ITEM_SYNONYMS[searchQuery] || null;
 
   let results;
   if (categoryOnly) {
     results = pool.filter(p => p.category === categoryOnly);
+  } else if (itemTerms) {
+    // Item search — use word match and exclude Sneakers to avoid "top" matching "High Top"
+    const isClothingTerm = !['boots','heels','sandals','loafers','platforms','high tops'].includes(searchQuery);
+    results = pool.filter(p => {
+      if (isClothingTerm && p.category === 'Sneakers') return false;
+      const hay = p.title.toLowerCase();
+      return itemTerms.some(t => wordMatch(hay, t));
+    });
   } else {
     results = pool.filter(p => {
       const hay = [p.title, p.seller, p.seller.replace(/_/g,' '), p.category, p.location||''].join(' ').toLowerCase();
-      return itemTerms.some(t => fuzzyMatch(hay, t));
+      return fuzzyMatch(hay, searchQuery);
     });
   }
 
