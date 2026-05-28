@@ -816,7 +816,7 @@ Rules:
     });
 
     const data = await response.json();
-    const reply = data.content?.[0]?.text || "Sorry, I missed that — can you resend? 😅";
+    const reply = data.content?.[0]?.text || "API says: " + JSON.stringify(data).slice(0, 200);
 
     setTypingIndicator(false);
     addChatBubble('them', reply);
