@@ -4720,19 +4720,29 @@ window.addEventListener('load', () => {
 
   let authResolved = false;
 
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !authResolved) {
-      authResolved = true;
-      currentUser = null; currentProfile = null;
-      await loadUserProfile(session.user);
-    } else if (event === 'SIGNED_OUT') {
-      authResolved = true;
-      currentUser = null; currentProfile = null;
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById('nav').style.display = 'none';
-      showScreen('login');
+  async function initAuth() {
+    // Wait for supabase to be available
+    if (typeof supabase === 'undefined' || !sb) {
+      setTimeout(initAuth, 100);
+      return;
     }
-  });
+
+    sb.auth.onAuthStateChange(async (event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !authResolved) {
+        authResolved = true;
+        currentUser = null; currentProfile = null;
+        await loadUserProfile(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        authResolved = true;
+        currentUser = null; currentProfile = null;
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('nav').style.display = 'none';
+        showScreen('login');
+      }
+    });
+  }
+
+  initAuth();
 
   setTimeout(async () => {
     document.getElementById('splash').classList.add('hide');
