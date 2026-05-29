@@ -2824,7 +2824,7 @@ Return ONLY the JSON. No markdown, no explanation, no backticks.`;
 
   } catch (err) {
     console.error('AI listing error:', err);
-    showToast('AI had trouble reading that photo — fill in manually 📝');
+    showToast('Proxy error: ' + err.message);
     document.getElementById('ai-generate-btn').style.display = 'block';
   }
 
