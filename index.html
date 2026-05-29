@@ -2514,7 +2514,7 @@ function togglePw(inputId) {
 
 // Listen for auth state changes (handles OAuth redirects)
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session && !currentUser) {
+  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !currentUser) {
     await loadUserProfile(session.user);
   } else if (event === 'SIGNED_OUT') {
     currentUser = null; currentProfile = null;
@@ -4692,7 +4692,10 @@ window.addEventListener('load', () => {
       if (session) {
         await loadUserProfile(session.user);
       } else {
-        showScreen('onboarding');
+        // Wait briefly for onAuthStateChange INITIAL_SESSION before showing onboarding
+        setTimeout(() => {
+          if (!currentUser) showScreen('onboarding');
+        }, 1500);
       }
     }, 800);
   }, 2000);
