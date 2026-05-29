@@ -30,7 +30,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 
 /* SCREENS — full width, full height */
 .screen{display:none;flex-direction:column;width:100%;min-height:100vh;background:#0A0A0A;padding-bottom:88px;overflow-y:auto;overflow-x:hidden;}
-.screen.active{display:flex;}
+.screen.active{display:flex;}.auth-screen{display:none;position:fixed;inset:0;z-index:8000;overflow-y:auto;background:#0A0A0A;}.auth-screen.active{display:flex;flex-direction:column;}
 
 /* BOTTOM NAV */
 #nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;align-items:center;padding:10px 0 24px;z-index:500;height:88px;}
@@ -143,7 +143,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 </div>
 
 <!-- ONBOARDING -->
-<div id="s-onboarding" style="display:none;position:fixed;inset:0;background:#0A0A0A;z-index:8000;overflow:hidden;">
+<div id="s-onboarding" class="auth-screen">
   <div id="onboard-slides" style="display:flex;transition:transform .4s ease;width:300%;">
 
     <!-- Slide 1 -->
@@ -183,7 +183,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 </div>
 
 <!-- LOGIN -->
-<div id="s-login" style="display:none;position:fixed;inset:0;background:#0A0A0A;z-index:8000;overflow-y:auto;">
+<div id="s-login" class="auth-screen">
   <div style="min-height:100vh;display:flex;flex-direction:column;padding:60px 24px 48px;">
     <!-- Logo -->
     <div style="text-align:center;margin-bottom:40px;">
@@ -242,7 +242,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 </div>
 
 <!-- SIGN UP -->
-<div id="s-signup" style="display:none;position:fixed;inset:0;background:#0A0A0A;z-index:8000;overflow-y:auto;">
+<div id="s-signup" class="auth-screen">
   <div style="min-height:100vh;display:flex;flex-direction:column;padding:60px 24px 48px;">
     <!-- Back -->
     <button onclick="showScreen('login')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:28px;">←</button>
@@ -2267,16 +2267,17 @@ let currentProfile = null;
 let onboardSlide = 0;
 
 function showScreen(name) {
-  const authScreens = ['onboarding', 'login', 'signup'];
+  // Use CSS classes only - no inline styles that fight specificity
   ['s-onboarding','s-login','s-signup'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
+    if (el) el.classList.remove('active');
   });
   const target = document.getElementById('s-' + name);
-  if (target) target.style.display = 'block';
-  // Show/hide bottom nav based on whether we're on an auth screen
+  if (target) target.classList.add('active');
+  // Nav: hidden on auth screens, visible otherwise
   const nav = document.getElementById('nav');
-  if (nav) nav.style.display = authScreens.includes(name) ? 'none' : '';
+  const isAuth = ['onboarding','login','signup'].includes(name);
+  if (nav) nav.style.display = isAuth ? 'none' : 'flex';
 }
 
 function nextSlide() {
@@ -4702,15 +4703,11 @@ function showToast(msg) {
 const AUTH_SCREENS = ['s-onboarding', 's-login', 's-signup'];
 const NAV_HIDDEN_SCREENS = ['chat', 'auction', 'detail', 'seller', 'order-track'];
 function go(name) {
-  // Reset all app screens, but keep auth screens explicitly hidden
+  // Remove active from ALL screens (CSS handles display:none/flex via .active class)
   document.querySelectorAll('.screen').forEach(s => {
-    if (AUTH_SCREENS.includes(s.id)) {
-      s.style.display = 'none'; // always hide auth screens when navigating app
-    } else {
-      s.style.display = '';
-    }
+    s.classList.remove('active');
+    s.style.display = ''; // clear any lingering inline styles
   });
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
   const target = document.getElementById('s-' + name);
   if (target) target.classList.add('active');
