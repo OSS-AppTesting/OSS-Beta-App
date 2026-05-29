@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title></title>
+<title>OneStopSwap v26</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -2267,16 +2267,12 @@ let currentProfile = null;
 let onboardSlide = 0;
 
 function showScreen(name) {
-  const authScreens = ['onboarding', 'login', 'signup'];
   ['s-onboarding','s-login','s-signup'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
   const target = document.getElementById('s-' + name);
   if (target) target.style.display = 'block';
-  // Show/hide bottom nav based on whether we're on an auth screen
-  const nav = document.getElementById('nav');
-  if (nav) nav.style.display = authScreens.includes(name) ? 'none' : '';
 }
 
 function nextSlide() {
@@ -2392,7 +2388,7 @@ async function completeLogin() {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  document.getElementById('nav').style.display = 'flex';
+  document.getElementById('nav').style.display = '';
   const firstName = currentProfile?.full_name?.split(' ')[0] || currentProfile?.username || 'there';
   showToast('Welcome back, ' + firstName + '! 👋');
   await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb()]);
@@ -2413,15 +2409,12 @@ async function signOut() {
 
 async function loadListings() {
   const { data, error } = await sb.from('listings').select('*, profiles(username, location)').eq('is_active', true).order('created_at', { ascending: false });
-  if (error) { console.error('loadListings error:', error); return; } // Keep demo data on error
-  if (!data || !data.length) return; // Keep demo data if DB empty
+  if (error || !data || !data.length) return; // Keep demo data if DB empty
   const mapped = data.map(l => ({
-    id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
-    seller: l.profiles?.username || l.seller_username || 'seller',
-    location: l.profiles?.location || l.location || '',
-    img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
-    likes: l.likes || 0, views: l.views || 0, hot: l.hot || false,
-    isNew: l.is_new || false, description: l.description || ''
+    id: l.id, title: l.title, price: l.price, currency: l.currency,
+    seller: l.profiles?.username || 'seller', location: l.profiles?.location || '',
+    img: l.image_url || I['gold_shirt'], category: l.category,
+    likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || ''
   }));
   // Replace demo products with real DB products
   PRODS.length = 0;
@@ -2872,7 +2865,7 @@ Return ONLY the JSON. No markdown, no explanation, no backticks.`;
   document.getElementById('ai-loading').style.display = 'none';
 }
 
-async function postListing() {
+function postListing() {
   const title = document.getElementById('f-title').value.trim();
   const desc = document.getElementById('f-desc').value.trim();
   const price = parseInt(document.getElementById('f-price').value) || 25;
@@ -2882,35 +2875,27 @@ async function postListing() {
 
   if (!title) { showToast('Please add a title first!'); return; }
 
-  const sellerName = currentProfile?.username || 'user';
+  const sellerName = currentProfile?.username || 'dinobravo';
 
-  // Only store a real URL, not base64 (too large for DB text columns)
-  const imgUrl = (aiPreviewDataUrl && !aiPreviewDataUrl.startsWith('data:'))
-    ? aiPreviewDataUrl
-    : I['gold_shirt'];
-
-  // Build new product object (optimistic UI)
-  const tempId = Date.now();
+  // Build new product object
+  const newId = PRODS.length + 100;
   const newProd = {
-    id: tempId, title, price, currency,
+    id: newId, title, price, currency,
     seller: sellerName, location,
-    img: aiPreviewDataUrl || I['gold_shirt'], // local preview can use base64
+    img: aiPreviewDataUrl || I['gold_shirt'],
     category, likes: 0, views: 1,
     hot: false, isNew: true, description: desc
   };
 
-  // Add to top of PRODS immediately (optimistic)
+  // Add to top of PRODS
   PRODS.unshift(newProd);
   renderAll();
 
-  // Save to Supabase and update with real DB id
+  // Save to Supabase
   if (currentUser) {
-    const saved = await saveListingToDb({ ...newProd, img: imgUrl });
-    if (saved) {
-      newProd.id = saved.id;
-    } else {
-      showToast('⚠️ Listing saved locally but failed to sync. Check connection.');
-    }
+    saveListingToDb(newProd).then(saved => {
+      if (saved) newProd.id = saved.id; // update with real DB id
+    });
   }
 
   // Log pending earning
@@ -4699,17 +4684,8 @@ function showToast(msg) {
 }
 
 // Override go() to trigger sub-screen renders
-const AUTH_SCREENS = ['s-onboarding', 's-login', 's-signup'];
-const NAV_HIDDEN_SCREENS = ['chat', 'auction', 'detail', 'seller', 'order-track'];
 function go(name) {
-  // Reset all app screens, but keep auth screens explicitly hidden
-  document.querySelectorAll('.screen').forEach(s => {
-    if (AUTH_SCREENS.includes(s.id)) {
-      s.style.display = 'none'; // always hide auth screens when navigating app
-    } else {
-      s.style.display = '';
-    }
-  });
+  document.querySelectorAll('.screen').forEach(s => s.style.display = '');
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
   const target = document.getElementById('s-' + name);
@@ -4717,8 +4693,7 @@ function go(name) {
   const nb = document.getElementById('nb-' + name);
   if (nb) nb.classList.add('active');
   if (!['detail','chat','all','my-listings','new-listing','my-orders','my-offers','acct-settings','sb-wallet','my-reviews','support','auction','seller','order-track','notifications'].includes(name)) prevScreen = name;
-  // Use 'flex' explicitly (not '') so nav is always definitively shown/hidden
-  document.getElementById('nav').style.display = NAV_HIDDEN_SCREENS.includes(name) ? 'none' : 'flex';
+  document.getElementById('nav').style.display = (name === 'chat' || name === 'auction' || name === 'detail' || name === 'seller' || name === 'order-track') ? 'none' : '';
   window.scrollTo(0,0);
   // Sub-screen data rendering
   if (name === 'my-orders') renderOrders('all');
