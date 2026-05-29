@@ -2906,7 +2906,15 @@ async function postListing() {
     }
     const dbProd = { ...newProd, img: imgUrl };
     saveListingToDb(dbProd).then(saved => {
-      if (saved) newProd.id = saved.id;
+      if (saved) {
+        const oldId = newProd.id;
+        newProd.id = saved.id;
+        // Update any rendered cards that still have the temp id
+        document.querySelectorAll('[onclick*="showDetail(\''+oldId+'\')"]').forEach(el => {
+          el.setAttribute('onclick', el.getAttribute('onclick').replace("showDetail('"+oldId+"')", "showDetail('"+saved.id+"')"));
+        });
+        renderAll(); // re-render with real id
+      }
     });
   }
 
