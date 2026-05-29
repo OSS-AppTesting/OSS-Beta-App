@@ -2353,9 +2353,9 @@ async function loadUserProfile(user) {
     currentProfile = profile; 
     SB = profile.sb_balance || 125; 
     updateAllSBDisplays(); 
-    showToast('Logged in as: ' + profile.username + ' (' + user.id.substring(0,8) + ')');
+
   } else {
-    showToast('No profile found for user: ' + user.id.substring(0,8));
+
   }
   completeLogin();
 }
@@ -2393,11 +2393,13 @@ async function loadListings() {
   const { data, error } = await sb.from('listings').select('*').eq('is_active', true).order('created_at', { ascending: false });
   if (error) { console.error('loadListings error:', error); return; }
   if (!data || !data.length) return;
+  const now = Date.now();
   const mapped = data.map(l => ({
     id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
     seller: l.seller_username || 'seller', location: l.location || '',
     img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
-    likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || ''
+    likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || '',
+    isNew: l.created_at ? (now - new Date(l.created_at).getTime()) < 86400000 : false
   }));
   PRODS.length = 0;
   PRODS.push(...mapped);
@@ -2463,8 +2465,7 @@ async function saveListingToDb(listing) {
     location: listing.location, image_url: listing.img, is_active: true
   }).select().single();
   if (error) { console.error('Listing save error:', error); showToast('DB Error: ' + error.message); return null; }
-  if (!data) { showToast('DB Error: no data returned'); return null; }
-  showToast('✅ Saved to DB! id:' + data.id);
+  if (!data) { console.error('DB Error: no data returned'); return null; }
   return data;
 }
 
@@ -2883,7 +2884,7 @@ async function postListing() {
   }
 
   if (currentUser) {
-    showToast('Saving... user: ' + currentUser.id.substring(0,8));
+
     const dbProd = { ...newProd, img: (aiPreviewDataUrl && !aiPreviewDataUrl.startsWith('data:')) ? aiPreviewDataUrl : '' };
     saveListingToDb(dbProd).then(saved => {
       if (saved) { newProd.id = saved.id; }
