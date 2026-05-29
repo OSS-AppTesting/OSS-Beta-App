@@ -2513,14 +2513,7 @@ function togglePw(inputId) {
 }
 
 // Listen for auth state changes (handles OAuth redirects)
-sb.auth.onAuthStateChange(async (event, session) => {
-  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !currentUser) {
-    await loadUserProfile(session.user);
-  } else if (event === 'SIGNED_OUT') {
-    currentUser = null; currentProfile = null;
-    showScreen('login');
-  }
-});
+// auth handled in window load handler
 
 // ── NOTIFICATION CENTER ───────────────────────────────────────────────────────
 
@@ -2847,6 +2840,32 @@ Return ONLY the JSON. No markdown, no explanation, no backticks.`;
   document.getElementById('ai-loading').style.display = 'none';
 }
 
+
+async function uploadToCloudinary(base64Data, mimeType) {
+  try {
+    // Convert base64 to blob
+    const byteString = atob(base64Data);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    const blob = new Blob([ab], { type: mimeType });
+
+    const formData = new FormData();
+    formData.append('file', blob);
+    formData.append('upload_preset', 'oss_listings');
+
+    const res = await fetch('https://api.cloudinary.com/v1_1/dbinpo6eg/image/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    return data.secure_url || null;
+  } catch (e) {
+    console.error('Cloudinary upload error:', e);
+    return null;
+  }
+}
+
 async function postListing() {
   const title = document.getElementById('f-title').value.trim();
   const desc = document.getElementById('f-desc').value.trim();
@@ -2873,13 +2892,19 @@ async function postListing() {
   PRODS.unshift(newProd);
   renderAll();
 
-  // Save to Supabase
+  // Upload image to Cloudinary then save to Supabase
   if (!currentUser) {
     const { data: { session } } = await sb.auth.getSession();
     if (session) currentUser = session.user;
   }
   if (currentUser) {
-    const dbProd = { ...newProd, img: (aiPreviewDataUrl && !aiPreviewDataUrl.startsWith('data:')) ? aiPreviewDataUrl : '' };
+    let imgUrl = '';
+    if (aiPhotoBase64 && aiPhotoMime) {
+      showToast('📤 Uploading photo...');
+      imgUrl = await uploadToCloudinary(aiPhotoBase64, aiPhotoMime) || '';
+      if (imgUrl) newProd.img = imgUrl; // update local display with real URL
+    }
+    const dbProd = { ...newProd, img: imgUrl };
     saveListingToDb(dbProd).then(saved => {
       if (saved) newProd.id = saved.id;
     });
@@ -4680,23 +4705,40 @@ function doSrch(q) {
 
 // ── SPLASH ────────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  PRODS.length = 0; PRODS.push(...DEMO_PRODS); // always start clean
+  PRODS.length = 0; PRODS.push(...DEMO_PRODS);
   renderAll();
   startAuctionTimers();
   updateNotifBadge();
+
+  let authResolved = false;
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !authResolved) {
+      authResolved = true;
+      currentUser = null; currentProfile = null;
+      await loadUserProfile(session.user);
+    } else if (event === 'SIGNED_OUT') {
+      authResolved = true;
+      currentUser = null; currentProfile = null;
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('nav').style.display = 'none';
+      showScreen('login');
+    }
+  });
+
   setTimeout(async () => {
     document.getElementById('splash').classList.add('hide');
     setTimeout(async () => {
-      document.getElementById('splash').style.display='none';
-      // Check for existing Supabase session
-      const { data: { session } } = await sb.auth.getSession();
-      if (session) {
-        await loadUserProfile(session.user);
-      } else {
-        // Wait briefly for onAuthStateChange INITIAL_SESSION before showing onboarding
-        setTimeout(() => {
-          if (!currentUser) showScreen('onboarding');
-        }, 1500);
+      document.getElementById('splash').style.display = 'none';
+      if (!authResolved) {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session && !authResolved) {
+          authResolved = true;
+          await loadUserProfile(session.user);
+        } else if (!authResolved) {
+          authResolved = true;
+          showScreen('onboarding');
+        }
       }
     }, 800);
   }, 2000);
