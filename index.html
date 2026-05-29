@@ -2390,12 +2390,13 @@ async function signOut() {
 // ── SUPABASE DATA FUNCTIONS ───────────────────────────────────────────────────
 
 async function loadListings() {
-  const { data, error } = await sb.from('listings').select('*, profiles(username, location)').eq('is_active', true).order('created_at', { ascending: false });
-  if (error || !data || !data.length) return;
+  const { data, error } = await sb.from('listings').select('*').eq('is_active', true).order('created_at', { ascending: false });
+  if (error) { console.error('loadListings error:', error); return; }
+  if (!data || !data.length) return;
   const mapped = data.map(l => ({
-    id: l.id, title: l.title, price: l.price, currency: l.currency,
-    seller: l.profiles?.username || 'seller', location: l.profiles?.location || '',
-    img: l.image_url || I['gold_shirt'], category: l.category,
+    id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
+    seller: l.seller_username || 'seller', location: l.location || '',
+    img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
     likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || ''
   }));
   PRODS.length = 0;
@@ -2456,7 +2457,8 @@ function buildTimeline(status) {
 async function saveListingToDb(listing) {
   if (!currentUser) return null;
   const { data, error } = await sb.from('listings').insert({
-    seller_id: currentUser.id, title: listing.title, description: listing.description,
+    seller_id: currentUser.id, seller_username: currentProfile?.username || '',
+    title: listing.title, description: listing.description,
     price: listing.price, currency: listing.currency, category: listing.category,
     location: listing.location, image_url: listing.img, is_active: true
   }).select().single();
