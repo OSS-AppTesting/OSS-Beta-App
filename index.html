@@ -2360,6 +2360,7 @@ async function completeLogin() {
   const firstName = currentProfile?.full_name?.split(' ')[0] || currentProfile?.username || 'there';
   showToast('Welcome back, ' + firstName + '! 👋');
   await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb()]);
+  renderAll(); // render once after all data loaded
   go('home');
 }
 
@@ -2390,7 +2391,6 @@ async function loadListings() {
   const demoOnly = PRODS.filter(p => !dbIds.has(String(p.id)));
   PRODS.length = 0;
   PRODS.push(...mapped, ...demoOnly);
-  renderAll();
 }
 
 async function loadOrders() {
