@@ -2352,10 +2352,13 @@ async function loadUserProfile(user) {
   if (profile) { 
     currentProfile = profile; 
     SB = profile.sb_balance || 125; 
-    updateAllSBDisplays(); 
-
+    updateAllSBDisplays();
+    showToast('👤 ' + profile.username + ' | ' + user.id.substring(0,6));
   } else {
-
+    // No profile row yet — create a basic one from auth data
+    const username = user.email?.split('@')[0] || 'user';
+    currentProfile = { username, full_name: username, sb_balance: 125 };
+    await sb.from('profiles').insert({ id: user.id, username, full_name: username, sb_balance: 125 }).single();
   }
   completeLogin();
 }
@@ -2383,6 +2386,9 @@ async function completeLogin() {
 async function signOut() {
   await sb.auth.signOut();
   currentUser = null; currentProfile = null;
+  // Hide all app screens
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('nav').style.display = 'none';
   showScreen('login');
   showToast('Signed out successfully');
 }
@@ -4699,6 +4705,9 @@ window.addEventListener('load', () => {
       // Check for existing Supabase session
       const { data: { session } } = await sb.auth.getSession();
       if (session) {
+        // Force fresh profile load — clear any stale state
+        currentUser = null;
+        currentProfile = null;
         await loadUserProfile(session.user);
       } else {
         showScreen('onboarding');
