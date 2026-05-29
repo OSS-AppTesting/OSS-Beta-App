@@ -2381,7 +2381,8 @@ async function loadListings() {
     img: l.image_url || I['gold_shirt'], category: l.category,
     likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || ''
   }));
-  PRODS.unshift(...mapped);
+  PRODS.length = 0;
+  PRODS.push(...mapped);
   renderAll();
 }
 
@@ -2442,7 +2443,9 @@ async function saveListingToDb(listing) {
     price: listing.price, currency: listing.currency, category: listing.category,
     location: listing.location, image_url: listing.img, is_active: true
   }).select().single();
-  if (error) { console.error('Listing save error:', error); return null; }
+  if (error) { console.error('Listing save error:', error); showToast('DB Error: ' + error.message); return null; }
+  if (!data) { showToast('DB Error: no data returned'); return null; }
+  showToast('✅ Saved to DB! id:' + data.id);
   return data;
 }
 
@@ -2854,10 +2857,12 @@ function postListing() {
   PRODS.unshift(newProd);
   renderAll();
 
-  // Save to Supabase
+  // Save to Supabase - strip base64 image (too large for DB), save placeholder
   if (currentUser) {
-    saveListingToDb(newProd).then(saved => {
-      if (saved) newProd.id = saved.id; // update with real DB id
+    const dbProd = { ...newProd, img: (aiPreviewDataUrl && !aiPreviewDataUrl.startsWith('data:')) ? aiPreviewDataUrl : '' };
+    saveListingToDb(dbProd).then(saved => {
+      if (saved) { newProd.id = saved.id; }
+      else { showToast('⚠️ Listing posted locally but not saved to DB.'); }
     });
   }
 
