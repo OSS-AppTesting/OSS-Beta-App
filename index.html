@@ -6,8 +6,14 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v24</title>
+<title>OneStopSwap v25</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://ynbqsjwyloumqiwtyjsc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 ::-webkit-scrollbar{display:none;}
@@ -269,7 +275,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Username</div>
         <div style="position:relative;">
           <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:15px;">@</span>
-          <input id="signup-username" type="text" placeholder="dinobravo" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px 14px 32px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" oninput="checkUsername(this.value)">
+          <input id="signup-username" type="text" placeholder="dinobravo" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px 14px 32px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" oninput="checkUsernameDb(this.value)">
         </div>
         <div id="username-check" style="font-size:12px;margin-top:6px;padding-left:4px;"></div>
       </div>
@@ -2254,11 +2260,11 @@ function confirmCheckout() {
   go('home');
 }
 
-// ── AUTH SYSTEM ───────────────────────────────────────────────────────────────
+// ── AUTH SYSTEM (Supabase) ────────────────────────────────────────────────────
 
 let currentUser = null;
+let currentProfile = null;
 let onboardSlide = 0;
-const TAKEN_USERNAMES = ['dinobravo','sneakerhead_99','goldenthread','catfoshee','vintagequeen','silverstyle'];
 
 function showScreen(name) {
   document.getElementById('s-onboarding').style.display = 'none';
@@ -2273,7 +2279,6 @@ function nextSlide() {
   if (onboardSlide < 2) {
     onboardSlide++;
     document.getElementById('onboard-slides').style.transform = `translateX(-${onboardSlide * 33.333}%)`;
-    // Update dots
     [0,1,2].forEach(i => {
       const dot = document.getElementById('dot-' + i);
       dot.style.width = i === onboardSlide ? '24px' : '8px';
@@ -2283,9 +2288,7 @@ function nextSlide() {
       document.getElementById('onboard-next-btn').textContent = "Let's Go! 🚀";
       document.getElementById('onboard-next-btn').onclick = skipOnboarding;
     }
-  } else {
-    skipOnboarding();
-  }
+  } else { skipOnboarding(); }
 }
 
 function skipOnboarding() {
@@ -2293,137 +2296,196 @@ function skipOnboarding() {
   showScreen('login');
 }
 
-function socialLogin(provider) {
-  // Simulate OAuth — in production this would use Supabase OAuth
-  const mockUser = {
-    name: 'Dean Klein',
-    username: 'dinobravo',
-    email: 'dean@onestopswap.com',
-    location: 'Nashville, TN',
-    provider: provider,
-    avatar: 'DB'
-  };
-  completeLogin(mockUser);
+async function socialLogin(provider) {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: provider.toLowerCase(),
+    options: { redirectTo: window.location.href }
+  });
+  if (error) showToast('Error: ' + error.message);
 }
 
-function handleLogin() {
+async function handleLogin() {
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   const errEl = document.getElementById('login-error');
-
-  if (!email || !password) {
-    errEl.textContent = 'Please fill in all fields.';
-    errEl.style.display = 'block';
-    return;
-  }
-  if (!email.includes('@')) {
-    errEl.textContent = 'Please enter a valid email address.';
-    errEl.style.display = 'block';
-    return;
-  }
-  if (password.length < 6) {
-    errEl.textContent = 'Password must be at least 6 characters.';
-    errEl.style.display = 'block';
-    return;
-  }
-
+  if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
-
-  // Simulate login — in production: Supabase auth.signInWithPassword()
-  const mockUser = {
-    name: 'Dean Klein',
-    username: email.split('@')[0],
-    email: email,
-    location: 'Nashville, TN',
-    provider: 'email',
-    avatar: email.substring(0,2).toUpperCase()
-  };
-  completeLogin(mockUser);
+  const btn = document.querySelector('#s-login button[onclick="handleLogin()"]');
+  if (btn) { btn.textContent = 'Signing in...'; btn.disabled = true; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
+  if (error) { errEl.textContent = error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message; errEl.style.display = 'block'; return; }
+  await loadUserProfile(data.user);
 }
 
-function handleSignup() {
+async function handleSignup() {
   const name = document.getElementById('signup-name').value.trim();
   const username = document.getElementById('signup-username').value.trim().toLowerCase();
   const email = document.getElementById('signup-email').value.trim();
   const password = document.getElementById('signup-password').value;
   const location = document.getElementById('signup-location').value.trim();
   const errEl = document.getElementById('signup-error');
-
-  if (!name || !username || !email || !password) {
-    errEl.textContent = 'Please fill in all required fields.';
-    errEl.style.display = 'block'; return;
-  }
-  if (!email.includes('@')) {
-    errEl.textContent = 'Please enter a valid email.';
-    errEl.style.display = 'block'; return;
-  }
-  if (password.length < 8) {
-    errEl.textContent = 'Password must be at least 8 characters.';
-    errEl.style.display = 'block'; return;
-  }
-  if (TAKEN_USERNAMES.includes(username)) {
-    errEl.textContent = '@' + username + ' is already taken. Try another.';
-    errEl.style.display = 'block'; return;
-  }
-
+  if (!name || !username || !email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return; }
+  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+  const { data: existing } = await sb.from('profiles').select('username').eq('username', username).single();
+  if (existing) { errEl.textContent = '@' + username + ' is already taken.'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
-
-  // Simulate signup — in production: Supabase auth.signUp()
-  const newUser = {
-    name, username, email,
-    location: location || 'USA',
-    provider: 'email',
-    avatar: name.substring(0,2).toUpperCase()
-  };
-  completeLogin(newUser);
+  const btn = document.querySelector('#s-signup button[onclick="handleSignup()"]');
+  if (btn) { btn.textContent = 'Creating account...'; btn.disabled = true; }
+  const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: name, username, location: location || 'USA' } } });
+  if (btn) { btn.textContent = 'Create Account 🚀'; btn.disabled = false; }
+  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+  if (data.user) {
+    await sb.from('profiles').upsert({ id: data.user.id, username, full_name: name, email, location: location || 'USA', sb_balance: 125 });
+    await loadUserProfile(data.user);
+  } else {
+    showScreen('login');
+    showToast('✅ Check your email to confirm your account!');
+  }
 }
 
-function completeLogin(user) {
+async function loadUserProfile(user) {
   currentUser = user;
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  if (profile) { currentProfile = profile; SB = profile.sb_balance || 125; updateAllSBDisplays(); }
+  completeLogin();
+}
 
-  // Update profile UI with user data
-  document.querySelectorAll('.pav span').forEach(el => {
-    if (el.style.position === 'relative') el.textContent = user.avatar;
-  });
-
-  // Hide auth screens
+async function completeLogin() {
   document.getElementById('s-onboarding').style.display = 'none';
   document.getElementById('s-login').style.display = 'none';
   document.getElementById('s-signup').style.display = 'none';
-
-  showToast('Welcome back, ' + user.name.split(' ')[0] + '! 👋');
+  const firstName = currentProfile?.full_name?.split(' ')[0] || currentProfile?.username || 'there';
+  showToast('Welcome back, ' + firstName + '! 👋');
+  await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb()]);
   go('home');
 }
 
-function checkUsername(val) {
-  const el = document.getElementById('username-check');
-  if (!val) { el.textContent = ''; return; }
-  if (val.length < 3) {
-    el.innerHTML = '<span style="color:rgba(255,255,255,.3);">Min 3 characters</span>';
-  } else if (TAKEN_USERNAMES.includes(val.toLowerCase())) {
-    el.innerHTML = '<span style="color:#FF3B30;">❌ @' + val + ' is taken</span>';
-  } else {
-    el.innerHTML = '<span style="color:#00C864;">✓ @' + val + ' is available</span>';
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null; currentProfile = null;
+  showScreen('login');
+  showToast('Signed out successfully');
+}
+
+// ── SUPABASE DATA FUNCTIONS ───────────────────────────────────────────────────
+
+async function loadListings() {
+  const { data, error } = await sb.from('listings').select('*, profiles(username, location)').eq('is_active', true).order('created_at', { ascending: false });
+  if (error || !data || !data.length) return;
+  const mapped = data.map(l => ({
+    id: l.id, title: l.title, price: l.price, currency: l.currency,
+    seller: l.profiles?.username || 'seller', location: l.profiles?.location || '',
+    img: l.image_url || I['gold_shirt'], category: l.category,
+    likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || ''
+  }));
+  PRODS.unshift(...mapped);
+  renderAll();
+}
+
+async function loadOrders() {
+  if (!currentUser) return;
+  const { data, error } = await sb.from('orders').select('*').eq('buyer_id', currentUser.id).order('created_at', { ascending: false });
+  if (error || !data || !data.length) return;
+  const mapped = data.map(o => ({
+    id: o.id, item: o.title, price: o.price, currency: o.currency || 'SB',
+    seller: o.seller_id, status: o.status, date: new Date(o.created_at).toLocaleDateString(),
+    tracking: o.tracking_number, carrier: o.carrier || 'USPS',
+    shipFrom: o.ship_from, shipTo: o.ship_to, timeline: buildTimeline(o.status)
+  }));
+  ORDERS.unshift(...mapped);
+}
+
+async function loadTransactions() {
+  if (!currentUser) return;
+  const { data, error } = await sb.from('transactions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  if (error || !data || !data.length) return;
+  const mapped = data.map(t => ({
+    type: t.type, icon: t.icon, label: t.label, sub: t.sub_label,
+    amt: t.amount, date: new Date(t.created_at).toLocaleDateString(),
+    clr: t.amount > 0 ? '#00C864' : '#FF3B30'
+  }));
+  TXN_LOG.unshift(...mapped);
+}
+
+async function loadNotificationsFromDb() {
+  if (!currentUser) return;
+  const { data, error } = await sb.from('notifications').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  if (error || !data || !data.length) return;
+  const mapped = data.map(n => ({
+    id: n.id, type: n.type, read: n.read,
+    icon: n.icon, iconBg: 'rgba(255,59,48,.15)', iconBorder: 'rgba(255,59,48,.3)',
+    title: n.title, body: n.body, time: new Date(n.created_at).toLocaleDateString(),
+    actionLabel: n.action_label, action: () => go(n.action_target || 'home')
+  }));
+  NOTIFICATIONS.unshift(...mapped);
+  updateNotifBadge();
+}
+
+function buildTimeline(status) {
+  return [
+    {status:'Order Placed',      done:true, icon:'🛍️', date:'Ordered'},
+    {status:'Payment Confirmed', done:true, icon:'✅', date:'Confirmed'},
+    {status:'Seller Packaged',   done:status!=='Processing', icon:'📦', date:'Pending'},
+    {status:'Shipped',           done:['Shipped','Out for Delivery','Delivered'].includes(status), icon:'🚚', date:'Pending'},
+    {status:'Out for Delivery',  done:['Out for Delivery','Delivered'].includes(status), icon:'🏃', date:'Pending'},
+    {status:'Delivered',         done:status==='Delivered', icon:'🎉', date:'Pending'},
+  ];
+}
+
+async function saveListingToDb(listing) {
+  if (!currentUser) return null;
+  const { data, error } = await sb.from('listings').insert({
+    seller_id: currentUser.id, title: listing.title, description: listing.description,
+    price: listing.price, currency: listing.currency, category: listing.category,
+    location: listing.location, image_url: listing.img, is_active: true
+  }).select().single();
+  if (error) { console.error('Listing save error:', error); return null; }
+  return data;
+}
+
+async function saveOrderToDb(title, price, currency, shipFrom) {
+  if (!currentUser) return null;
+  const fee = Math.round(price * 0.06);
+  const { data, error } = await sb.from('orders').insert({
+    buyer_id: currentUser.id, title, price, currency,
+    status: 'Processing', ship_from: shipFrom,
+    ship_to: currentProfile?.location || 'Your address',
+    platform_fee: fee
+  }).select().single();
+  if (error) { console.error('Order save error:', error); return null; }
+  return data;
+}
+
+async function saveTransactionToDb(type, icon, label, subLabel, amount) {
+  if (!currentUser) return;
+  await sb.from('transactions').insert({ user_id: currentUser.id, type, icon, label, sub_label: subLabel, amount });
+  if (type !== 'pending') {
+    await sb.from('profiles').update({ sb_balance: SB }).eq('id', currentUser.id);
   }
+}
+
+async function checkUsernameDb(val) {
+  const el = document.getElementById('username-check');
+  if (!val || val.length < 3) { el.innerHTML = '<span style="color:rgba(255,255,255,.3);">Min 3 characters</span>'; return; }
+  const { data } = await sb.from('profiles').select('username').eq('username', val.toLowerCase()).single();
+  el.innerHTML = data
+    ? '<span style="color:#FF3B30;">❌ @' + val + ' is taken</span>'
+    : '<span style="color:#00C864;">✓ @' + val + ' is available</span>';
 }
 
 function checkPasswordStrength(val) {
   const bar = document.getElementById('pw-strength-bar');
   const label = document.getElementById('pw-strength-label');
   if (!val) { bar.style.width = '0%'; label.textContent = ''; return; }
-  let strength = 0;
-  if (val.length >= 8) strength++;
-  if (val.length >= 12) strength++;
-  if (/[A-Z]/.test(val)) strength++;
-  if (/[0-9]/.test(val)) strength++;
-  if (/[^A-Za-z0-9]/.test(val)) strength++;
-  const pcts = ['20%','40%','60%','80%','100%'];
-  const colors = ['#FF3B30','#FF6B35','#FFB347','#90EE90','#00C864'];
-  const labels = ['Too weak','Weak','Fair','Strong','Very strong'];
-  bar.style.width = pcts[strength-1] || '0%';
-  bar.style.background = colors[strength-1] || '#FF3B30';
-  label.textContent = labels[strength-1] || '';
-  label.style.color = colors[strength-1] || 'rgba(255,255,255,.3)';
+  let s = 0;
+  if (val.length >= 8) s++; if (val.length >= 12) s++;
+  if (/[A-Z]/.test(val)) s++; if (/[0-9]/.test(val)) s++; if (/[^A-Za-z0-9]/.test(val)) s++;
+  const pcts=['20%','40%','60%','80%','100%'], colors=['#FF3B30','#FF6B35','#FFB347','#90EE90','#00C864'], labels=['Too weak','Weak','Fair','Strong','Very strong'];
+  bar.style.width = pcts[s-1]||'0%'; bar.style.background = colors[s-1]||'#FF3B30';
+  label.textContent = labels[s-1]||''; label.style.color = colors[s-1]||'rgba(255,255,255,.3)';
 }
 
 function togglePw(inputId) {
@@ -2431,11 +2493,15 @@ function togglePw(inputId) {
   el.type = el.type === 'password' ? 'text' : 'password';
 }
 
-function signOut() {
-  currentUser = null;
-  showScreen('login');
-  showToast('Signed out successfully');
-}
+// Listen for auth state changes (handles OAuth redirects)
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session && !currentUser) {
+    await loadUserProfile(session.user);
+  } else if (event === 'SIGNED_OUT') {
+    currentUser = null; currentProfile = null;
+    showScreen('login');
+  }
+});
 
 // ── NOTIFICATION CENTER ───────────────────────────────────────────────────────
 
@@ -2772,33 +2838,31 @@ function postListing() {
 
   if (!title) { showToast('Please add a title first!'); return; }
 
+  const sellerName = currentProfile?.username || 'dinobravo';
+
   // Build new product object
   const newId = PRODS.length + 100;
   const newProd = {
-    id: newId,
-    title: title,
-    price: price,
-    currency: currency,
-    seller: 'dinobravo',
-    location: location,
+    id: newId, title, price, currency,
+    seller: sellerName, location,
     img: aiPreviewDataUrl || I['gold_shirt'],
-    category: category,
-    likes: 0,
-    views: 1,
-    hot: false,
-    isNew: true,
-    description: desc
+    category, likes: 0, views: 1,
+    hot: false, isNew: true, description: desc
   };
 
   // Add to top of PRODS
   PRODS.unshift(newProd);
-
-  // Re-render home and shop
   renderAll();
+
+  // Save to Supabase
+  if (currentUser) {
+    saveListingToDb(newProd).then(saved => {
+      if (saved) newProd.id = saved.id; // update with real DB id
+    });
+  }
 
   // Log pending earning
   addTransaction('pending', '🏪', 'Listed: ' + title, 'Pending first sale', 0);
-
   showToast('🎉 Listing posted! Live in the shop now.');
 
   // Reset the form
@@ -3928,10 +3992,15 @@ const TXN_LOG = [
 ];
 
 function addTransaction(type, icon, label, sub, amt) {
-  TXN_LOG.unshift({type, icon, label, sub, amt, date:'Just now', clr: amt > 0 ? '#00C864' : '#FF3B30'});
-  // Update stats
+  TXN_LOG.unshift({type, icon, label, sub, amt, date:"Just now", clr: amt > 0 ? "#00C864" : "#FF3B30"});
   refreshWalletStats();
+  if (currentUser) saveTransactionToDb(type, icon, label, sub, amt);
 }
+
+
+
+
+
 
 function refreshWalletStats() {
   const earned = TXN_LOG.filter(t=>t.type==='earned').reduce((s,t)=>s+Math.abs(t.amt),0);
@@ -4590,13 +4659,17 @@ window.addEventListener('load', () => {
   renderAll();
   startAuctionTimers();
   updateNotifBadge();
-  setTimeout(() => {
+  setTimeout(async () => {
     document.getElementById('splash').classList.add('hide');
-    setTimeout(() => {
+    setTimeout(async () => {
       document.getElementById('splash').style.display='none';
-      // Show onboarding for new users, login for returning
-      // In production: check Supabase session
-      showScreen('onboarding');
+      // Check for existing Supabase session
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        await loadUserProfile(session.user);
+      } else {
+        showScreen('onboarding');
+      }
     }, 800);
   }, 2000);
 });
