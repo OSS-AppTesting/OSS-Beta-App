@@ -6,14 +6,8 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title></title>
+<title>OneStopSwap v22</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = 'https://ynbqsjwyloumqiwtyjsc.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 ::-webkit-scrollbar{display:none;}
@@ -26,14 +20,13 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 .sp-word{color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:900;font-size:24px;letter-spacing:3px;animation:spFade .6s .4s ease both;opacity:0;}
 @keyframes spPop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes spFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 
 /* SCREENS — full width, full height */
 .screen{display:none;flex-direction:column;width:100%;min-height:100vh;background:#0A0A0A;padding-bottom:88px;overflow-y:auto;overflow-x:hidden;}
-.screen.active{display:flex;}.auth-screen{display:none;position:fixed;inset:0;z-index:8000;overflow-y:auto;background:#0A0A0A;}.auth-screen.active{display:flex;flex-direction:column;}
+.screen.active{display:flex;}
 
 /* BOTTOM NAV */
-#nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;align-items:center;padding:10px 0 24px;z-index:9000;height:88px;}#nav.nav-hidden{display:none!important;}
+#nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;align-items:center;padding:10px 0 24px;z-index:500;height:88px;}
 .nb{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 16px;background:none;border:none;cursor:pointer;position:relative;flex:1;}
 .nb svg{width:24px;height:24px;}
 .nb span{font-size:10px;font-weight:700;color:rgba(255,255,255,.3);font-family:'DM Sans',sans-serif;}
@@ -142,184 +135,6 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 
-<!-- ONBOARDING -->
-<div id="s-onboarding" class="auth-screen">
-  <div id="onboard-slides" style="display:flex;transition:transform .4s ease;width:300%;">
-
-    <!-- Slide 1 -->
-    <div style="width:33.333%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;text-align:center;">
-      <div style="font-size:80px;margin-bottom:28px;animation:float 3s ease-in-out infinite;">👟</div>
-      <h2 style="color:#fff;font-weight:900;font-size:32px;font-family:'Space Grotesk',sans-serif;line-height:1.1;margin-bottom:16px;">Buy & Sell<br><span style="color:#FF3B30;">Anything</span></h2>
-      <p style="color:rgba(255,255,255,.5);font-size:16px;line-height:1.7;max-width:280px;">Sneakers, streetwear, vintage finds, kids clothing — all in one place.</p>
-    </div>
-
-    <!-- Slide 2 -->
-    <div style="width:33.333%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;text-align:center;">
-      <div style="font-size:80px;margin-bottom:28px;animation:float 3s ease-in-out infinite;">💰</div>
-      <h2 style="color:#fff;font-weight:900;font-size:32px;font-family:'Space Grotesk',sans-serif;line-height:1.1;margin-bottom:16px;">Pay with<br><span style="color:#FF3B30;">SwapBucks</span></h2>
-      <p style="color:rgba(255,255,255,.5);font-size:16px;line-height:1.7;max-width:280px;">Use our in-app currency or pay with cash. Make offers, counter-offer, and win auctions.</p>
-    </div>
-
-    <!-- Slide 3 -->
-    <div style="width:33.333%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;text-align:center;">
-      <div style="font-size:80px;margin-bottom:28px;animation:float 3s ease-in-out infinite;">⚡</div>
-      <h2 style="color:#fff;font-weight:900;font-size:32px;font-family:'Space Grotesk',sans-serif;line-height:1.1;margin-bottom:16px;">AI-Powered<br><span style="color:#FF3B30;">Listings</span></h2>
-      <p style="color:rgba(255,255,255,.5);font-size:16px;line-height:1.7;max-width:280px;">Snap a photo — AI writes your title, description, category, and price instantly.</p>
-    </div>
-  </div>
-
-  <!-- Dots -->
-  <div style="position:absolute;bottom:160px;left:0;right:0;display:flex;justify-content:center;gap:8px;">
-    <div id="dot-0" style="width:24px;height:8px;border-radius:4px;background:#FF3B30;transition:all .3s;"></div>
-    <div id="dot-1" style="width:8px;height:8px;border-radius:4px;background:rgba(255,255,255,.2);transition:all .3s;"></div>
-    <div id="dot-2" style="width:8px;height:8px;border-radius:4px;background:rgba(255,255,255,.2);transition:all .3s;"></div>
-  </div>
-
-  <!-- Buttons -->
-  <div style="position:absolute;bottom:48px;left:24px;right:24px;display:flex;gap:12px;align-items:center;">
-    <button onclick="skipOnboarding()" style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;color:rgba(255,255,255,.6);font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">Skip</button>
-    <button id="onboard-next-btn" onclick="nextSlide()" style="flex:2;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">Next →</button>
-  </div>
-</div>
-
-<!-- LOGIN -->
-<div id="s-login" class="auth-screen">
-  <div style="min-height:100vh;display:flex;flex-direction:column;padding:60px 24px 48px;">
-    <!-- Logo -->
-    <div style="text-align:center;margin-bottom:40px;">
-      <div class="oss" style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:900;letter-spacing:-.5px;"><span class="r">ONE</span><span class="w">STOP</span><span class="r">SWAP</span></div>
-      <div style="color:rgba(255,255,255,.4);font-size:14px;margin-top:8px;">The resale marketplace</div>
-    </div>
-
-    <h2 style="color:#fff;font-weight:900;font-size:28px;margin-bottom:8px;">Welcome back 👋</h2>
-    <p style="color:rgba(255,255,255,.4);font-size:15px;margin-bottom:32px;">Sign in to your account</p>
-
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      <!-- Google SSO -->
-      <button onclick="socialLogin('Google')" style="background:#fff;border:none;border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">
-        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-        <span style="color:#333;font-weight:700;font-size:15px;">Continue with Google</span>
-      </button>
-
-      <!-- Apple SSO -->
-      <button onclick="socialLogin('Apple')" style="background:#000;border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-        <span style="color:#fff;font-weight:700;font-size:15px;">Continue with Apple</span>
-      </button>
-
-      <!-- Divider -->
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="flex:1;height:1px;background:rgba(255,255,255,.1);"></div>
-        <span style="color:rgba(255,255,255,.3);font-size:13px;">or sign in with email</span>
-        <div style="flex:1;height:1px;background:rgba(255,255,255,.1);"></div>
-      </div>
-
-      <!-- Email -->
-      <div>
-        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Email</div>
-        <input id="login-email" type="email" placeholder="you@example.com" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
-      </div>
-
-      <!-- Password -->
-      <div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-          <span style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Password</span>
-          <button onclick="showToast('Password reset email sent!')" style="background:none;border:none;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Forgot?</button>
-        </div>
-        <div style="position:relative;">
-          <input id="login-password" type="password" placeholder="••••••••" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
-          <button onclick="togglePw('login-password')" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.4);font-size:18px;cursor:pointer;">👁</button>
-        </div>
-      </div>
-
-      <div id="login-error" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:12px 16px;color:#FF3B30;font-size:13px;font-weight:600;"></div>
-
-      <button onclick="handleLogin()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">Sign In</button>
-
-      <p style="text-align:center;color:rgba(255,255,255,.4);font-size:14px;">Don't have an account? <button onclick="showScreen('signup')" style="background:none;border:none;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Sign Up</button></p>
-    </div>
-  </div>
-</div>
-
-<!-- SIGN UP -->
-<div id="s-signup" class="auth-screen">
-  <div style="min-height:100vh;display:flex;flex-direction:column;padding:60px 24px 48px;">
-    <!-- Back -->
-    <button onclick="showScreen('login')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:28px;">←</button>
-
-    <h2 style="color:#fff;font-weight:900;font-size:28px;margin-bottom:8px;">Create account 🎉</h2>
-    <p style="color:rgba(255,255,255,.4);font-size:15px;margin-bottom:32px;">Join thousands of buyers and sellers</p>
-
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      <!-- Google SSO -->
-      <button onclick="socialLogin('Google')" style="background:#fff;border:none;border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">
-        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-        <span style="color:#333;font-weight:700;font-size:15px;">Sign up with Google</span>
-      </button>
-
-      <!-- Divider -->
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="flex:1;height:1px;background:rgba(255,255,255,.1);"></div>
-        <span style="color:rgba(255,255,255,.3);font-size:13px;">or with email</span>
-        <div style="flex:1;height:1px;background:rgba(255,255,255,.1);"></div>
-      </div>
-
-      <!-- Full name -->
-      <div>
-        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Full Name</div>
-        <input id="signup-name" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
-      </div>
-
-      <!-- Username -->
-      <div>
-        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Username</div>
-        <div style="position:relative;">
-          <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:15px;">@</span>
-          <input id="signup-username" type="text" placeholder="dinobravo" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px 14px 32px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" oninput="checkUsernameDb(this.value)">
-        </div>
-        <div id="username-check" style="font-size:12px;margin-top:6px;padding-left:4px;"></div>
-      </div>
-
-      <!-- Email -->
-      <div>
-        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Email</div>
-        <input id="signup-email" type="email" placeholder="you@example.com" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
-      </div>
-
-      <!-- Password -->
-      <div>
-        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Password</div>
-        <div style="position:relative;">
-          <input id="signup-password" type="password" placeholder="Min 8 characters" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" oninput="checkPasswordStrength(this.value)">
-          <button onclick="togglePw('signup-password')" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.4);font-size:18px;cursor:pointer;">👁</button>
-        </div>
-        <!-- Password strength bar -->
-        <div style="margin-top:8px;">
-          <div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">
-            <div id="pw-strength-bar" style="height:100%;width:0%;background:#FF3B30;border-radius:2px;transition:width .3s,background .3s;"></div>
-          </div>
-          <div id="pw-strength-label" style="color:rgba(255,255,255,.3);font-size:11px;margin-top:4px;"></div>
-        </div>
-      </div>
-
-      <!-- Location -->
-      <div>
-        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From (City, State)</div>
-        <input id="signup-location" type="text" placeholder="Nashville, TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
-      </div>
-
-      <div id="signup-error" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:12px 16px;color:#FF3B30;font-size:13px;font-weight:600;"></div>
-
-      <!-- Terms -->
-      <p style="color:rgba(255,255,255,.3);font-size:12px;text-align:center;line-height:1.6;">By signing up you agree to our <span style="color:#FF3B30;cursor:pointer;" onclick="showToast('Terms coming soon!')">Terms of Service</span> and <span style="color:#FF3B30;cursor:pointer;" onclick="showToast('Privacy policy coming soon!')">Privacy Policy</span></p>
-
-      <button onclick="handleSignup()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">Create Account 🚀</button>
-
-      <p style="text-align:center;color:rgba(255,255,255,.4);font-size:14px;">Already have an account? <button onclick="showScreen('login')" style="background:none;border:none;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Sign In</button></p>
-    </div>
-  </div>
-</div>
-
 <!-- SEARCH OVERLAY -->
 <div id="srch">
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
@@ -341,34 +156,6 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   <div id="srch-res"></div>
 </div>
 
-<!-- NOTIFICATIONS -->
-<div id="s-notifications" class="screen">
-  <div style="padding:52px 20px 20px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <button onclick="go('home')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
-        <h2 style="color:#fff;font-weight:900;font-size:24px;">Notifications</h2>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="markAllRead()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:6px 12px;color:rgba(255,255,255,.5);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Mark all read</button>
-        <button onclick="clearAllNotifs()" style="background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:6px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Clear all</button>
-      </div>
-    </div>
-
-    <!-- Filter tabs -->
-    <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;">
-      <div class="notif-tab notif-active" onclick="filterNotifs('all',this)" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:#FF3B30;font-size:13px;font-weight:700;">All</span></div>
-      <div class="notif-tab" onclick="filterNotifs('offer',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">🏷️ Offers</span></div>
-      <div class="notif-tab" onclick="filterNotifs('order',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">📦 Orders</span></div>
-      <div class="notif-tab" onclick="filterNotifs('auction',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">⚡ Auctions</span></div>
-      <div class="notif-tab" onclick="filterNotifs('message',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">💬 Messages</span></div>
-      <div class="notif-tab" onclick="filterNotifs('wallet',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">💰 Wallet</span></div>
-    </div>
-
-    <div id="notif-list" style="display:flex;flex-direction:column;gap:2px;"></div>
-  </div>
-</div>
-
 <!-- HOME -->
 <div id="s-home" class="screen active">
   <div style="padding:52px 20px 16px;background:linear-gradient(180deg,#1A0000,#0A0A0A);">
@@ -378,12 +165,6 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <button onclick="document.getElementById('modal-sb').style.display='flex'" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:20px;padding:6px 14px;display:flex;align-items:center;gap:6px;cursor:pointer;">
           <span style="font-size:13px;">💰</span>
           <span id="sb-pill" style="color:#fff;font-weight:700;font-size:13px;font-family:'DM Sans',sans-serif;">125 SB</span>
-        </button>
-        <button onclick="go('notifications')" style="position:relative;background:rgba(255,255,255,.08);border:none;border-radius:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6V11c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="rgba(255,255,255,.8)"/></svg>
-          <div id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;background:#FF3B30;border:2px solid #0A0A0A;display:flex;align-items:center;justify-content:center;">
-            <span id="notif-count" style="color:#fff;font-size:9px;font-weight:800;">0</span>
-          </div>
         </button>
         <button onclick="openSrch()" style="background:rgba(255,255,255,.08);border:none;border-radius:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" stroke-width="2"/><path d="M17 17l4 4" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -610,7 +391,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   <div style="padding:52px 20px 20px;">
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
       <div class="pav"><span style="color:#fff;font-weight:900;font-size:26px;position:relative;z-index:1;">DB</span><div class="pav-badge">✓</div></div>
-      <div><div style="color:#fff;font-weight:800;font-size:20px;" data-profile-name>Dino Bravo</div><div style="color:rgba(255,255,255,.4);font-size:13px;" data-profile-username>@dinobravo · Store Open 🟢</div></div>
+      <div><div style="color:#fff;font-weight:800;font-size:20px;">Dino Bravo</div><div style="color:rgba(255,255,255,.4);font-size:13px;">@dinobravo · Store Open 🟢</div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#fff;font-weight:900;font-size:22px;">24</div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:2px;">Listings</div></div>
@@ -631,7 +412,6 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div onclick="go('sb-wallet')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">💰</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">SwapBucks Wallet</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
       <div onclick="go('my-reviews')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">⭐</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Seller Reviews</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
       <div onclick="go('support')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🎧</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Support</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
-      <div onclick="signOut()" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;border-top:1px solid rgba(255,255,255,.05);"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.08);display:flex;align-items:center;justify-content:center;font-size:18px;">🚪</div><span style="color:#FF3B30;font-weight:600;font-size:15px;flex:1;">Sign Out</span><span style="color:rgba(255,59,48,.3);font-size:20px;">›</span></div>
     </div>
   </div>
 </div>
@@ -1567,7 +1347,7 @@ function showDetail(id) {
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
           <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:800;font-size:16px;">${p.seller[0].toUpperCase()}</span></div>
           <div><div style="color:#fff;font-weight:700;font-size:15px;">@${p.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${getSellerRating(p.seller).avg} · ${getSellerRating(p.seller).count} sales</div></div>
-          <button onclick="event.stopPropagation();openChat('${p.seller}','#1a0000','#FF3B30','${p.seller.substring(0,2).toUpperCase()}')" style="margin-left:auto;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
+          <button onclick="openChat('${p.seller}','#1a0000','#FF3B30','${p.seller.substring(0,2).toUpperCase()}')" style="margin-left:auto;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
         </div>
         <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:12px;display:flex;gap:20px;">
           <div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Ships from</div><div style="color:#fff;font-weight:600;font-size:13px;">${p.location}</div></div>
@@ -1945,10 +1725,6 @@ function placeBid(auctionId, amount) {
       }
 
       showToast('🔥 @' + comp.user + ' outbid you! ' + compBid + ' SB');
-      addNotification('auction','⚡','rgba(255,179,71,.15)','rgba(255,179,71,.3)',
-        "You've been outbid!",
-        '@' + comp.user + ' bid ' + compBid + ' SB. You were leading at ' + a.currentBid + ' SB.',
-        'Bid Again', () => openAuction(a.id));
     }, delay);
   }
 }
@@ -2260,500 +2036,6 @@ function confirmCheckout() {
   go('home');
 }
 
-// ── AUTH SYSTEM (Supabase) ────────────────────────────────────────────────────
-
-let currentUser = null;
-let currentProfile = null;
-let onboardSlide = 0;
-
-function showScreen(name) {
-  // Use CSS classes only - no inline styles that fight specificity
-  ['s-onboarding','s-login','s-signup'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('active');
-  });
-  const target = document.getElementById('s-' + name);
-  if (target) target.classList.add('active');
-  // Nav: hidden on auth screens, visible otherwise
-  const nav = document.getElementById('nav');
-  const isAuth = ['onboarding','login','signup'].includes(name);
-  if (nav) { if(isAuth){nav.classList.add('nav-hidden');}else{nav.classList.remove('nav-hidden');} }
-}
-
-function nextSlide() {
-  if (onboardSlide < 2) {
-    onboardSlide++;
-    document.getElementById('onboard-slides').style.transform = `translateX(-${onboardSlide * 33.333}%)`;
-    [0,1,2].forEach(i => {
-      const dot = document.getElementById('dot-' + i);
-      dot.style.width = i === onboardSlide ? '24px' : '8px';
-      dot.style.background = i === onboardSlide ? '#FF3B30' : 'rgba(255,255,255,.2)';
-    });
-    if (onboardSlide === 2) {
-      document.getElementById('onboard-next-btn').textContent = "Let's Go! 🚀";
-      document.getElementById('onboard-next-btn').onclick = skipOnboarding;
-    }
-  } else { skipOnboarding(); }
-}
-
-function skipOnboarding() {
-  document.getElementById('s-onboarding').style.display = 'none';
-  showScreen('login');
-}
-
-async function socialLogin(provider) {
-  const { error } = await sb.auth.signInWithOAuth({
-    provider: provider.toLowerCase(),
-    options: { redirectTo: window.location.href }
-  });
-  if (error) showToast('Error: ' + error.message);
-}
-
-async function handleLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  const errEl = document.getElementById('login-error');
-  if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
-  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return; }
-  errEl.style.display = 'none';
-  const btn = document.querySelector('#s-login button[onclick="handleLogin()"]');
-  if (btn) { btn.textContent = 'Signing in...'; btn.disabled = true; }
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
-  if (error) { errEl.textContent = error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message; errEl.style.display = 'block'; return; }
-  await loadUserProfile(data.user);
-}
-
-async function handleSignup() {
-  const name = document.getElementById('signup-name').value.trim();
-  const username = document.getElementById('signup-username').value.trim().toLowerCase();
-  const email = document.getElementById('signup-email').value.trim();
-  const password = document.getElementById('signup-password').value;
-  const location = document.getElementById('signup-location').value.trim();
-  const errEl = document.getElementById('signup-error');
-  if (!name || !username || !email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
-  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return; }
-  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
-  const { data: existing } = await sb.from('profiles').select('username').eq('username', username).single();
-  if (existing) { errEl.textContent = '@' + username + ' is already taken.'; errEl.style.display = 'block'; return; }
-  errEl.style.display = 'none';
-  const btn = document.querySelector('#s-signup button[onclick="handleSignup()"]');
-  if (btn) { btn.textContent = 'Creating account...'; btn.disabled = true; }
-  const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: name, username, location: location || 'USA' } } });
-  if (btn) { btn.textContent = 'Create Account 🚀'; btn.disabled = false; }
-  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
-  if (data.user) {
-    await sb.from('profiles').upsert({ id: data.user.id, username, full_name: name, email, location: location || 'USA', sb_balance: 125 });
-    await loadUserProfile(data.user);
-  } else {
-    showScreen('login');
-    showToast('✅ Check your email to confirm your account!');
-  }
-}
-
-async function loadUserProfile(user) {
-  currentUser = user;
-  const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
-  if (profile) {
-    currentProfile = profile;
-    SB = profile.sb_balance || 125;
-    updateAllSBDisplays();
-    updateProfileUI(profile);
-  }
-  completeLogin();
-}
-
-function updateProfileUI(profile) {
-  const name = profile.full_name || profile.username || 'User';
-  const username = profile.username || 'user';
-  const initials = name.substring(0,2).toUpperCase();
-
-  // Update all avatar initials (the span inside .pav)
-  document.querySelectorAll('.pav span').forEach(el => {
-    if (!el.classList.contains('pav-badge')) el.textContent = initials;
-  });
-
-  // Update profile name and username via data attributes
-  document.querySelectorAll('[data-profile-name]').forEach(el => el.textContent = name);
-  document.querySelectorAll('[data-profile-username]').forEach(el => el.textContent = '@' + username + ' · Store Open 🟢');
-
-  // Update settings inputs if they exist
-  const usernameInput = document.getElementById('settings-username');
-  if (usernameInput) usernameInput.value = username;
-  const nameInput = document.getElementById('settings-name');
-  if (nameInput) nameInput.value = name;
-  const locationInput = document.getElementById('settings-location');
-  if (locationInput) locationInput.value = profile.location || '';
-
-  updateAllSBDisplays();
-}
-
-async function completeLogin() {
-  ['s-onboarding','s-login','s-signup'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
-  document.getElementById('nav').classList.remove('nav-hidden');
-  const firstName = currentProfile?.full_name?.split(' ')[0] || currentProfile?.username || 'there';
-  showToast('Welcome back, ' + firstName + '! 👋');
-  await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb()]);
-  go('home');
-}
-
-async function signOut() {
-  await sb.auth.signOut();
-  currentUser = null;
-  currentProfile = null;
-  // Hide nav and go to login
-  document.getElementById('nav').classList.add('nav-hidden');
-  showScreen('login');
-  showToast('Signed out successfully');
-}
-
-// ── SUPABASE DATA FUNCTIONS ───────────────────────────────────────────────────
-
-async function loadListings() {
-  const { data, error } = await sb.from('listings').select('*, profiles(username, location)').eq('is_active', true).order('created_at', { ascending: false });
-  if (error) { console.error('loadListings error:', error); return; } // Keep demo data on error
-  if (!data || !data.length) return; // Keep demo data if DB empty
-  const mapped = data.map(l => ({
-    id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
-    seller: l.profiles?.username || l.seller_username || 'seller',
-    location: l.profiles?.location || l.location || '',
-    img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
-    likes: l.likes || 0, views: l.views || 0, hot: l.hot || false,
-    isNew: l.is_new || false, description: l.description || ''
-  }));
-  // Replace demo products with real DB products
-  PRODS.length = 0;
-  PRODS.push(...mapped);
-  renderAll();
-}
-
-async function loadOrders() {
-  if (!currentUser) return;
-  const { data, error } = await sb.from('orders').select('*').eq('buyer_id', currentUser.id).order('created_at', { ascending: false });
-  if (error || !data || !data.length) return;
-  const mapped = data.map(o => ({
-    id: o.id, item: o.title, price: o.price, currency: o.currency || 'SB',
-    seller: o.seller_id, status: o.status, date: new Date(o.created_at).toLocaleDateString(),
-    tracking: o.tracking_number, carrier: o.carrier || 'USPS',
-    shipFrom: o.ship_from, shipTo: o.ship_to, timeline: buildTimeline(o.status)
-  }));
-  ORDERS.unshift(...mapped);
-}
-
-async function loadTransactions() {
-  if (!currentUser) return;
-  const { data, error } = await sb.from('transactions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-  if (error || !data || !data.length) return;
-  const mapped = data.map(t => ({
-    type: t.type, icon: t.icon, label: t.label, sub: t.sub_label,
-    amt: t.amount, date: new Date(t.created_at).toLocaleDateString(),
-    clr: t.amount > 0 ? '#00C864' : '#FF3B30'
-  }));
-  TXN_LOG.unshift(...mapped);
-}
-
-async function loadNotificationsFromDb() {
-  if (!currentUser) return;
-  const { data, error } = await sb.from('notifications').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-  if (error || !data || !data.length) return;
-  const mapped = data.map(n => ({
-    id: n.id, type: n.type, read: n.read,
-    icon: n.icon, iconBg: 'rgba(255,59,48,.15)', iconBorder: 'rgba(255,59,48,.3)',
-    title: n.title, body: n.body, time: new Date(n.created_at).toLocaleDateString(),
-    actionLabel: n.action_label, action: () => go(n.action_target || 'home')
-  }));
-  NOTIFICATIONS.unshift(...mapped);
-  updateNotifBadge();
-}
-
-function buildTimeline(status) {
-  return [
-    {status:'Order Placed',      done:true, icon:'🛍️', date:'Ordered'},
-    {status:'Payment Confirmed', done:true, icon:'✅', date:'Confirmed'},
-    {status:'Seller Packaged',   done:status!=='Processing', icon:'📦', date:'Pending'},
-    {status:'Shipped',           done:['Shipped','Out for Delivery','Delivered'].includes(status), icon:'🚚', date:'Pending'},
-    {status:'Out for Delivery',  done:['Out for Delivery','Delivered'].includes(status), icon:'🏃', date:'Pending'},
-    {status:'Delivered',         done:status==='Delivered', icon:'🎉', date:'Pending'},
-  ];
-}
-
-async function saveListingToDb(listing) {
-  if (!currentUser) return null;
-  const { data, error } = await sb.from('listings').insert({
-    seller_id: currentUser.id, title: listing.title, description: listing.description,
-    price: listing.price, currency: listing.currency, category: listing.category,
-    location: listing.location, image_url: listing.img, is_active: true
-  }).select().single();
-  if (error) { console.error('Listing save error:', error); return null; }
-  return data;
-}
-
-async function saveOrderToDb(title, price, currency, shipFrom) {
-  if (!currentUser) return null;
-  const fee = Math.round(price * 0.06);
-  const { data, error } = await sb.from('orders').insert({
-    buyer_id: currentUser.id, title, price, currency,
-    status: 'Processing', ship_from: shipFrom,
-    ship_to: currentProfile?.location || 'Your address',
-    platform_fee: fee
-  }).select().single();
-  if (error) { console.error('Order save error:', error); return null; }
-  return data;
-}
-
-async function saveTransactionToDb(type, icon, label, subLabel, amount) {
-  if (!currentUser) return;
-  await sb.from('transactions').insert({ user_id: currentUser.id, type, icon, label, sub_label: subLabel, amount });
-  if (type !== 'pending') {
-    await sb.from('profiles').update({ sb_balance: SB }).eq('id', currentUser.id);
-  }
-}
-
-async function checkUsernameDb(val) {
-  const el = document.getElementById('username-check');
-  if (!val || val.length < 3) { el.innerHTML = '<span style="color:rgba(255,255,255,.3);">Min 3 characters</span>'; return; }
-  const { data } = await sb.from('profiles').select('username').eq('username', val.toLowerCase()).single();
-  el.innerHTML = data
-    ? '<span style="color:#FF3B30;">❌ @' + val + ' is taken</span>'
-    : '<span style="color:#00C864;">✓ @' + val + ' is available</span>';
-}
-
-function checkPasswordStrength(val) {
-  const bar = document.getElementById('pw-strength-bar');
-  const label = document.getElementById('pw-strength-label');
-  if (!val) { bar.style.width = '0%'; label.textContent = ''; return; }
-  let s = 0;
-  if (val.length >= 8) s++; if (val.length >= 12) s++;
-  if (/[A-Z]/.test(val)) s++; if (/[0-9]/.test(val)) s++; if (/[^A-Za-z0-9]/.test(val)) s++;
-  const pcts=['20%','40%','60%','80%','100%'], colors=['#FF3B30','#FF6B35','#FFB347','#90EE90','#00C864'], labels=['Too weak','Weak','Fair','Strong','Very strong'];
-  bar.style.width = pcts[s-1]||'0%'; bar.style.background = colors[s-1]||'#FF3B30';
-  label.textContent = labels[s-1]||''; label.style.color = colors[s-1]||'rgba(255,255,255,.3)';
-}
-
-function togglePw(inputId) {
-  const el = document.getElementById(inputId);
-  el.type = el.type === 'password' ? 'text' : 'password';
-}
-
-// Listen for auth state changes (handles OAuth redirects)
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session && !currentUser) {
-    await loadUserProfile(session.user);
-  } else if (event === 'SIGNED_OUT') {
-    currentUser = null; currentProfile = null;
-    showScreen('login');
-  }
-});
-
-// ── NOTIFICATION CENTER ───────────────────────────────────────────────────────
-
-const NOTIFICATIONS = [
-  {
-    id:'n001', type:'offer', read:false,
-    icon:'🏷️', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
-    title:'New offer on your listing',
-    body:'@sneakerhead_99 offered 20 SB on Metallic Gold Long-Sleeve Shirt',
-    time:'2 min ago', action:()=>go('my-offers'),
-    actionLabel:'View Offer'
-  },
-  {
-    id:'n002', type:'offer', read:false,
-    icon:'🔄', iconBg:'rgba(79,195,247,.15)', iconBorder:'rgba(79,195,247,.3)',
-    title:'Counter offer received',
-    body:'@ivyparklover countered your offer with $135 on Adidas x Ivy Park Stan Smith',
-    time:'8 min ago', action:()=>go('my-offers'),
-    actionLabel:'Respond'
-  },
-  {
-    id:'n003', type:'auction', read:false,
-    icon:'⚡', iconBg:'rgba(255,179,71,.15)', iconBorder:'rgba(255,179,71,.3)',
-    title:"You've been outbid!",
-    body:'@retrofinds just bid 123 SB on Y2K Betsey Johnson Dress. You were leading at 118 SB.',
-    time:'14 min ago', action:()=>go('live'),
-    actionLabel:'Bid Again'
-  },
-  {
-    id:'n004', type:'order', read:false,
-    icon:'📦', iconBg:'rgba(79,195,247,.15)', iconBorder:'rgba(79,195,247,.3)',
-    title:'Your order has shipped!',
-    body:'Adidas x Ivy Park Stan Smith is on its way from LA, CA. Est. delivery May 28-29.',
-    time:'1 hour ago', action:()=>openOrderTracking('OSS-1038'),
-    actionLabel:'Track Order'
-  },
-  {
-    id:'n005', type:'message', read:false,
-    icon:'💬', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
-    title:'New message from @vintagequeen',
-    body:'Hey! Yes I can ship same day if you buy before 2pm 😊',
-    time:'2 hours ago', action:()=>openChat('vintagequeen','#2d1b00','#FF3B30','VQ'),
-    actionLabel:'Reply'
-  },
-  {
-    id:'n006', type:'wallet', read:true,
-    icon:'💰', iconBg:'rgba(0,200,100,.15)', iconBorder:'rgba(0,200,100,.3)',
-    title:'SwapBucks received!',
-    body:'@goldenthread sent you 25 SB for the baseball glove.',
-    time:'3 hours ago', action:()=>go('sb-wallet'),
-    actionLabel:'View Wallet'
-  },
-  {
-    id:'n007', type:'offer', read:true,
-    icon:'✅', iconBg:'rgba(0,200,100,.15)', iconBorder:'rgba(0,200,100,.3)',
-    title:'Offer accepted!',
-    body:'@goldenthread accepted your offer of 18 SB on Metallic Gold Long-Sleeve Shirt.',
-    time:'Yesterday', action:()=>go('my-offers'),
-    actionLabel:'Complete Purchase'
-  },
-  {
-    id:'n008', type:'order', read:true,
-    icon:'🎉', iconBg:'rgba(0,200,100,.15)', iconBorder:'rgba(0,200,100,.3)',
-    title:'Order delivered!',
-    body:'Your Y2K Betsey Johnson Dress has been delivered. How was it?',
-    time:'Yesterday', action:()=>go('my-orders'),
-    actionLabel:'Leave Review'
-  },
-  {
-    id:'n009', type:'auction', read:true,
-    icon:'🏆', iconBg:'rgba(255,179,71,.15)', iconBorder:'rgba(255,179,71,.3)',
-    title:"You won the auction!",
-    body:'Congratulations! You won the Metallic Gold Long-Sleeve Shirt for 38 SB.',
-    time:'2 days ago', action:()=>go('my-orders'),
-    actionLabel:'View Order'
-  },
-  {
-    id:'n010', type:'offer', read:true,
-    icon:'❌', iconBg:'rgba(255,59,48,.08)', iconBorder:'rgba(255,59,48,.2)',
-    title:'Offer declined',
-    body:'@silverstyle declined your offer of $6 on Metallic Silver Pants.',
-    time:'2 days ago', action:()=>go('my-offers'),
-    actionLabel:'Try Again'
-  },
-  {
-    id:'n011', type:'wallet', read:true,
-    icon:'🔥', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
-    title:'Price drop on liked item!',
-    body:'Adidas x Ivy Park Stan Smith dropped from $175 to $150. You liked this item.',
-    time:'3 days ago', action:()=>showDetail(5),
-    actionLabel:'View Item'
-  },
-  {
-    id:'n012', type:'message', read:true,
-    icon:'💬', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
-    title:'New message from @sneakerhead_99',
-    body:'Ships USPS Priority, usually 1-2 days. Happy to bundle!',
-    time:'3 days ago', action:()=>openChat('sneakerhead_99','#1a1a2e','#FF3B30','SH'),
-    actionLabel:'Reply'
-  },
-];
-
-let notifFilter = 'all';
-
-function renderNotifications(filter) {
-  const el = document.getElementById('notif-list');
-  if (!el) return;
-
-  const list = filter === 'all' ? NOTIFICATIONS : NOTIFICATIONS.filter(n => n.type === filter);
-  const unread = NOTIFICATIONS.filter(n => !n.read).length;
-
-  // Update badge
-  updateNotifBadge();
-
-  if (!list.length) {
-    el.innerHTML = `
-      <div style="text-align:center;padding:60px 20px;">
-        <div style="font-size:48px;margin-bottom:16px;">🔔</div>
-        <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:8px;">All caught up!</div>
-        <div style="color:rgba(255,255,255,.4);font-size:14px;">No notifications in this category yet.</div>
-      </div>`;
-    return;
-  }
-
-  // Group by today/yesterday/older
-  const groups = { 'Recent': [], 'Earlier Today': [], 'Yesterday': [], 'Older': [] };
-  list.forEach(n => {
-    if (n.time.includes('min') || n.time.includes('hour') || n.time === 'Just now') groups['Recent'].push(n);
-    else if (n.time === 'Yesterday') groups['Yesterday'].push(n);
-    else groups['Older'].push(n);
-  });
-
-  let html = '';
-  Object.entries(groups).forEach(([label, items]) => {
-    if (!items.length) return;
-    html += `<div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:16px 0 8px;">${label}</div>`;
-    html += items.map(n => `
-      <div onclick="tapNotification('${n.id}')" style="display:flex;gap:12px;padding:14px;background:${n.read?'rgba(255,255,255,.02)':'rgba(255,59,48,.04)'};border:1px solid ${n.read?'rgba(255,255,255,.06)':'rgba(255,59,48,.12)'};border-radius:16px;margin-bottom:8px;cursor:pointer;position:relative;transition:opacity .15s;" onmousedown="this.style.opacity='.7'" onmouseup="this.style.opacity='1'">
-        ${!n.read ? '<div style="position:absolute;top:14px;right:14px;width:8px;height:8px;border-radius:50%;background:#FF3B30;"></div>' : ''}
-        <div style="width:44px;height:44px;border-radius:14px;background:${n.iconBg};border:1px solid ${n.iconBorder};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${n.icon}</div>
-        <div style="flex:1;min-width:0;padding-right:${n.read?'0':'16px'};">
-          <div style="color:${n.read?'rgba(255,255,255,.7)':'#fff'};font-weight:${n.read?'600':'700'};font-size:14px;margin-bottom:3px;">${n.title}</div>
-          <div style="color:rgba(255,255,255,.45);font-size:12px;line-height:1.5;margin-bottom:6px;">${n.body}</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <span style="color:rgba(255,255,255,.25);font-size:11px;">${n.time}</span>
-            <span style="color:#FF3B30;font-size:12px;font-weight:700;">${n.actionLabel} →</span>
-          </div>
-        </div>
-      </div>`).join('');
-  });
-
-  el.innerHTML = html;
-}
-
-function tapNotification(id) {
-  const n = NOTIFICATIONS.find(x => x.id === id);
-  if (!n) return;
-  n.read = true;
-  updateNotifBadge();
-  if (n.action) n.action();
-}
-
-function updateNotifBadge() {
-  const unread = NOTIFICATIONS.filter(n => !n.read).length;
-  const badge = document.getElementById('notif-badge');
-  const count = document.getElementById('notif-count');
-  if (badge) badge.style.display = unread > 0 ? 'flex' : 'none';
-  if (count) count.textContent = unread > 9 ? '9+' : unread;
-}
-
-function markAllRead() {
-  NOTIFICATIONS.forEach(n => n.read = true);
-  updateNotifBadge();
-  renderNotifications(notifFilter);
-  showToast('All notifications marked as read ✓');
-}
-
-function clearAllNotifs() {
-  NOTIFICATIONS.length = 0;
-  updateNotifBadge();
-  renderNotifications(notifFilter);
-  showToast('Notifications cleared');
-}
-
-function filterNotifs(type, el) {
-  notifFilter = type;
-  document.querySelectorAll('.notif-tab').forEach(t => {
-    t.style.background = 'rgba(255,255,255,.06)';
-    t.style.border = '1px solid rgba(255,255,255,.1)';
-    t.querySelector('span').style.color = 'rgba(255,255,255,.5)';
-  });
-  el.style.background = 'rgba(255,59,48,.2)';
-  el.style.border = '1px solid rgba(255,59,48,.4)';
-  el.querySelector('span').style.color = '#FF3B30';
-  renderNotifications(type);
-}
-
-function addNotification(type, icon, iconBg, iconBorder, title, body, actionLabel, action) {
-  NOTIFICATIONS.unshift({
-    id: 'n' + Date.now(), type, read: false,
-    icon, iconBg, iconBorder, title, body,
-    time: 'Just now', action, actionLabel
-  });
-  updateNotifBadge();
-  showToast('🔔 ' + title);
-}
-
 // ── AI LISTING GENERATOR ─────────────────────────────────────────────────────
 let aiPhotoBase64 = null;
 let aiPhotoMime = null;
@@ -2811,7 +2093,7 @@ Return ONLY the JSON. No markdown, no explanation, no backticks.`;
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20251001',
+        model: 'claude-sonnet-4-5',
         max_tokens: 500,
         system: systemPrompt,
         messages: [{
@@ -2873,7 +2155,7 @@ Return ONLY the JSON. No markdown, no explanation, no backticks.`;
   document.getElementById('ai-loading').style.display = 'none';
 }
 
-async function postListing() {
+function postListing() {
   const title = document.getElementById('f-title').value.trim();
   const desc = document.getElementById('f-desc').value.trim();
   const price = parseInt(document.getElementById('f-price').value) || 25;
@@ -2883,39 +2165,33 @@ async function postListing() {
 
   if (!title) { showToast('Please add a title first!'); return; }
 
-  const sellerName = currentProfile?.username || 'user';
-
-  // Only store a real URL, not base64 (too large for DB text columns)
-  const imgUrl = (aiPreviewDataUrl && !aiPreviewDataUrl.startsWith('data:'))
-    ? aiPreviewDataUrl
-    : I['gold_shirt'];
-
-  // Build new product object (optimistic UI)
-  const tempId = Date.now();
+  // Build new product object
+  const newId = PRODS.length + 100;
   const newProd = {
-    id: tempId, title, price, currency,
-    seller: sellerName, location,
-    img: aiPreviewDataUrl || I['gold_shirt'], // local preview can use base64
-    category, likes: 0, views: 1,
-    hot: false, isNew: true, description: desc
+    id: newId,
+    title: title,
+    price: price,
+    currency: currency,
+    seller: 'dinobravo',
+    location: location,
+    img: aiPreviewDataUrl || I['gold_shirt'],
+    category: category,
+    likes: 0,
+    views: 1,
+    hot: false,
+    isNew: true,
+    description: desc
   };
 
-  // Add to top of PRODS immediately (optimistic)
+  // Add to top of PRODS
   PRODS.unshift(newProd);
-  renderAll();
 
-  // Save to Supabase and update with real DB id
-  if (currentUser) {
-    const saved = await saveListingToDb({ ...newProd, img: imgUrl });
-    if (saved) {
-      newProd.id = saved.id;
-    } else {
-      showToast('⚠️ Listing saved locally but failed to sync. Check connection.');
-    }
-  }
+  // Re-render home and shop
+  renderAll();
 
   // Log pending earning
   addTransaction('pending', '🏪', 'Listed: ' + title, 'Pending first sale', 0);
+
   showToast('🎉 Listing posted! Live in the shop now.');
 
   // Reset the form
@@ -3063,17 +2339,6 @@ async function sendChatMsg() {
   btn.style.opacity = '0.4';
   btn.disabled = true;
 
-  // Save user message to Supabase
-  if (currentUser) {
-    sb.from('messages').insert({
-      sender_id: currentUser.id,
-      sender_username: currentProfile?.username || 'user',
-      receiver_username: currentChatSeller,
-      message: text,
-      is_ai_response: false
-    }).catch(e => console.error('Message save error:', e));
-  }
-
   // Add to history
   if (!chatHistory[currentChatSeller]) chatHistory[currentChatSeller] = [];
   chatHistory[currentChatSeller].push({ role: 'user', content: text });
@@ -3113,20 +2378,15 @@ Rules:
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20251001',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1000,
         system: systemPrompt,
         messages: chatHistory[currentChatSeller]
       })
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Proxy error:', response.status, errText);
-      throw new Error(`Proxy returned ${response.status}: ${errText}`);
-    }
     const data = await response.json();
-    const reply = data.content?.[0]?.text || data.error?.message || "Sorry, I missed that — can you resend? 😅";
+    const reply = data.content?.[0]?.text || "Sorry, I missed that — can you resend? 😅";
 
     setTypingIndicator(false);
     addChatBubble('them', reply);
@@ -3134,31 +2394,15 @@ Rules:
     // Add to history
     chatHistory[currentChatSeller].push({ role: 'assistant', content: reply });
 
-    // Save AI reply to Supabase
-    if (currentUser) {
-      sb.from('messages').insert({
-        sender_id: currentUser.id,
-        sender_username: currentChatSeller,
-        receiver_username: currentProfile?.username || 'user',
-        message: reply,
-        is_ai_response: true
-      }).catch(e => console.error('AI message save error:', e));
-    }
-
   } catch (err) {
     setTypingIndicator(false);
-    const isAllowlist = err.message?.includes('403') || err.message?.includes('allowlist');
-    const errMsg = isAllowlist 
-      ? "Chat is temporarily offline — proxy config needed 🔧" 
-      : "Hey sorry — bad signal right now. Try again in a sec! 📶";
-    addChatBubble('them', errMsg);
-    console.error('AI chat error:', err.message);
-  } finally {
-    // Always re-enable send button regardless of success or failure
-    btn.style.opacity = '1';
-    btn.disabled = false;
-    input.focus();
+    addChatBubble('them', "Hey sorry — bad signal right now. Try again in a sec! 📶");
+    console.error('AI chat error:', err);
   }
+
+  btn.style.opacity = '1';
+  btn.disabled = false;
+  input.focus();
 }
 
 // ── SELLER PROFILE ────────────────────────────────────────────────────────────
@@ -3398,13 +2642,10 @@ function submitReview() {
     sr.avg = Math.round((total / sr.count) * 10) / 10;
   }
 
-  const reviewerName = currentProfile?.username || 'dinobravo';
-  const reviewerInitials = (currentProfile?.full_name || reviewerName).substring(0,2).toUpperCase();
-
   // Prepend review to seller's list
   SELLER_RATINGS[o.seller].reviews.unshift({
-    name: reviewerName,
-    initials: reviewerInitials,
+    name: 'dinobravo',
+    initials: 'DB',
     color: '#FF3B30',
     rating: selectedStars,
     item: o.item,
@@ -3414,26 +2655,14 @@ function submitReview() {
 
   // Add to REVIEWS_DATA for own profile page
   REVIEWS_DATA.unshift({
-    name: reviewerName,
-    initials: reviewerInitials,
+    name: 'dinobravo',
+    initials: 'DB',
     color: '#FF3B30',
     rating: selectedStars,
     item: o.item,
     text: text,
     date: 'Just now'
   });
-
-  // Save to Supabase
-  if (currentUser) {
-    sb.from('reviews').insert({
-      reviewer_id: currentUser.id,
-      listing_title: o.item,
-      stars: selectedStars,
-      review_text: text
-    }).then(({ error }) => {
-      if (error) console.error('Review save error:', error);
-    });
-  }
 
   document.getElementById('modal-review').style.display = 'none';
   renderOrders(document.querySelector('.order-tab.active-tab span')?.textContent?.toLowerCase() || 'all');
@@ -3701,12 +2930,6 @@ function submitOffer() {
   } else {
     showToast('🏷️ Offer sent to @' + p.seller + '!');
   }
-
-  // Add to notification center
-  addNotification('offer','🏷️','rgba(255,59,48,.15)','rgba(255,59,48,.3)',
-    'Offer sent to @' + p.seller,
-    'Your offer of ' + (chosenCurrency==='USD'?'$'+amount:amount+' SB') + ' on ' + p.title + ' is pending.',
-    'View Offer', () => go('my-offers'));
 
   // Simulate seller response after 4-8 seconds
   const pct = (amount / p.price) * 100;
@@ -4092,15 +3315,10 @@ const TXN_LOG = [
 ];
 
 function addTransaction(type, icon, label, sub, amt) {
-  TXN_LOG.unshift({type, icon, label, sub, amt, date:"Just now", clr: amt > 0 ? "#00C864" : "#FF3B30"});
+  TXN_LOG.unshift({type, icon, label, sub, amt, date:'Just now', clr: amt > 0 ? '#00C864' : '#FF3B30'});
+  // Update stats
   refreshWalletStats();
-  if (currentUser) saveTransactionToDb(type, icon, label, sub, amt);
 }
-
-
-
-
-
 
 function refreshWalletStats() {
   const earned = TXN_LOG.filter(t=>t.type==='earned').reduce((s,t)=>s+Math.abs(t.amt),0);
@@ -4318,10 +3536,6 @@ function respondToOffer(offerId, action) {
     addTransaction('pending', '🏷️', 'Offer accepted: ' + o.title, '@' + o.buyer + ' · awaiting payment', o.offerAmount);
 
     showToast('✅ Offer accepted! Order created — waiting for buyer payment.');
-    addNotification('offer','✅','rgba(0,200,100,.15)','rgba(0,200,100,.3)',
-      'You accepted an offer',
-      '@' + o.buyer + '\'s offer of ' + (o.currency==='USD'?'$'+o.offerAmount:o.offerAmount+' SB') + ' on ' + o.title + '. Order created!',
-      'View Order', () => go('my-orders'));
     renderReceivedOffers();
   } else if (action === 'declined') {
     o.status = 'Declined';
@@ -4710,27 +3924,20 @@ function showToast(msg) {
 }
 
 // Override go() to trigger sub-screen renders
-const AUTH_SCREENS = ['s-onboarding', 's-login', 's-signup'];
-const NAV_HIDDEN_SCREENS = ['chat', 'auction', 'detail', 'seller', 'order-track'];
 function go(name) {
-  // Remove active from ALL screens (CSS handles display:none/flex via .active class)
-  document.querySelectorAll('.screen').forEach(s => {
-    s.classList.remove('active');
-    s.style.display = ''; // clear any lingering inline styles
-  });
+  document.querySelectorAll('.screen').forEach(s => s.style.display = '');
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
   const target = document.getElementById('s-' + name);
   if (target) target.classList.add('active');
   const nb = document.getElementById('nb-' + name);
   if (nb) nb.classList.add('active');
-  if (!['detail','chat','all','my-listings','new-listing','my-orders','my-offers','acct-settings','sb-wallet','my-reviews','support','auction','seller','order-track','notifications'].includes(name)) prevScreen = name;
-  // Use 'flex' explicitly (not '') so nav is always definitively shown/hidden
-  const navEl = document.getElementById('nav'); if(NAV_HIDDEN_SCREENS.includes(name)){navEl.classList.add('nav-hidden');}else{navEl.classList.remove('nav-hidden');}
+  if (!['detail','chat','all','my-listings','new-listing','my-orders','my-offers','acct-settings','sb-wallet','my-reviews','support','auction','seller','order-track'].includes(name)) prevScreen = name;
+  document.getElementById('nav').style.display = (name === 'chat' || name === 'auction' || name === 'detail' || name === 'seller' || name === 'order-track') ? 'none' : '';
   window.scrollTo(0,0);
   // Sub-screen data rendering
   if (name === 'my-orders') renderOrders('all');
   if (name === 'my-offers') renderOffers('all');
-  if (name === 'notifications') renderNotifications(notifFilter);
   if (name === 'my-listings') renderMyListings();
   if (name === 'sb-wallet') renderWallet();
   if (name === 'my-reviews') renderReviews();
@@ -4764,19 +3971,9 @@ function doSrch(q) {
 window.addEventListener('load', () => {
   renderAll();
   startAuctionTimers();
-  updateNotifBadge();
-  document.getElementById('nav').classList.add('nav-hidden'); // hide until logged in
-  setTimeout(async () => {
+  setTimeout(() => {
     document.getElementById('splash').classList.add('hide');
-    setTimeout(async () => {
-      document.getElementById('splash').style.display='none';
-      const { data: { session } } = await sb.auth.getSession();
-      if (session) {
-        await loadUserProfile(session.user);
-      } else {
-        showScreen('onboarding');
-      }
-    }, 800);
+    setTimeout(() => { document.getElementById('splash').style.display='none'; }, 800);
   }, 2000);
 });
 </script>
