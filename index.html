@@ -2392,7 +2392,7 @@ async function completeLogin() {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  document.getElementById('nav').style.display = '';
+  document.getElementById('nav').style.display = 'flex';
   const firstName = currentProfile?.full_name?.split(' ')[0] || currentProfile?.username || 'there';
   showToast('Welcome back, ' + firstName + '! 👋');
   await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb()]);
@@ -4699,8 +4699,17 @@ function showToast(msg) {
 }
 
 // Override go() to trigger sub-screen renders
+const AUTH_SCREENS = ['s-onboarding', 's-login', 's-signup'];
+const NAV_HIDDEN_SCREENS = ['chat', 'auction', 'detail', 'seller', 'order-track'];
 function go(name) {
-  document.querySelectorAll('.screen').forEach(s => s.style.display = '');
+  // Reset all app screens, but keep auth screens explicitly hidden
+  document.querySelectorAll('.screen').forEach(s => {
+    if (AUTH_SCREENS.includes(s.id)) {
+      s.style.display = 'none'; // always hide auth screens when navigating app
+    } else {
+      s.style.display = '';
+    }
+  });
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
   const target = document.getElementById('s-' + name);
@@ -4708,7 +4717,8 @@ function go(name) {
   const nb = document.getElementById('nb-' + name);
   if (nb) nb.classList.add('active');
   if (!['detail','chat','all','my-listings','new-listing','my-orders','my-offers','acct-settings','sb-wallet','my-reviews','support','auction','seller','order-track','notifications'].includes(name)) prevScreen = name;
-  document.getElementById('nav').style.display = (name === 'chat' || name === 'auction' || name === 'detail' || name === 'seller' || name === 'order-track') ? 'none' : '';
+  // Use 'flex' explicitly (not '') so nav is always definitively shown/hidden
+  document.getElementById('nav').style.display = NAV_HIDDEN_SCREENS.includes(name) ? 'none' : 'flex';
   window.scrollTo(0,0);
   // Sub-screen data rendering
   if (name === 'my-orders') renderOrders('all');
