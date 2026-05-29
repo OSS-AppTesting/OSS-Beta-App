@@ -2380,6 +2380,7 @@ async function completeLogin() {
   if (el_u) el_u.textContent = '@' + uname + ' · Store Open 🟢';
   const firstName = currentProfile?.full_name?.split(' ')[0] || uname;
   showToast('Welcome back, ' + firstName + '! 👋');
+  PRODS.length = 0; // clear before DB load to prevent duplicates
   await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb()]);
   go('home');
 }
@@ -4697,21 +4698,20 @@ function doSrch(q) {
 
 // ── SPLASH ────────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  renderAll();
   startAuctionTimers();
   updateNotifBadge();
   setTimeout(async () => {
     document.getElementById('splash').classList.add('hide');
     setTimeout(async () => {
       document.getElementById('splash').style.display='none';
-      // Check for existing Supabase session
       const { data: { session } } = await sb.auth.getSession();
       if (session) {
-        // Force fresh profile load — clear any stale state
-        currentUser = null;
-        currentProfile = null;
         await loadUserProfile(session.user);
       } else {
+        // No session - show demo data and onboarding
+        PRODS.length = 0;
+        PRODS.push(...DEMO_PRODS);
+        renderAll();
         showScreen('onboarding');
       }
     }, 800);
