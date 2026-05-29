@@ -2396,9 +2396,9 @@ async function loadListings() {
     likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || '',
     isNew: l.created_at ? (now - new Date(l.created_at).getTime()) < 86400000 : false
   }));
-  // Prepend DB listings to demo data - always filter DEMO_PRODS not current PRODS
-  const dbIds = new Set(mapped.map(l => String(l.id)));
-  const demoOnly = DEMO_PRODS.filter(p => !dbIds.has(String(p.id)));
+  // Only add DB listings at top - demo items already in PRODS from window load
+  // Remove any previous DB items first (identified by non-numeric IDs)
+  const demoOnly = PRODS.filter(p => typeof p.id === 'number');
   PRODS.length = 0;
   PRODS.push(...mapped, ...demoOnly);
 }
