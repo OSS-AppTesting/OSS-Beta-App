@@ -33,7 +33,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 .screen.active{display:flex;}.auth-screen{display:none;position:fixed;inset:0;z-index:8000;overflow-y:auto;background:#0A0A0A;}.auth-screen.active{display:flex;flex-direction:column;}
 
 /* BOTTOM NAV */
-#nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;align-items:center;padding:10px 0 24px;z-index:500;height:88px;}
+#nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;align-items:center;padding:10px 0 24px;z-index:9000;height:88px;}#nav.nav-hidden{display:none!important;}
 .nb{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 16px;background:none;border:none;cursor:pointer;position:relative;flex:1;}
 .nb svg{width:24px;height:24px;}
 .nb span{font-size:10px;font-weight:700;color:rgba(255,255,255,.3);font-family:'DM Sans',sans-serif;}
@@ -2277,7 +2277,7 @@ function showScreen(name) {
   // Nav: hidden on auth screens, visible otherwise
   const nav = document.getElementById('nav');
   const isAuth = ['onboarding','login','signup'].includes(name);
-  if (nav) nav.style.display = isAuth ? 'none' : 'flex';
+  if (nav) { if(isAuth){nav.classList.add('nav-hidden');}else{nav.classList.remove('nav-hidden');} }
 }
 
 function nextSlide() {
@@ -2393,7 +2393,7 @@ async function completeLogin() {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  document.getElementById('nav').style.display = 'flex';
+  document.getElementById('nav').classList.remove('nav-hidden');
   const firstName = currentProfile?.full_name?.split(' ')[0] || currentProfile?.username || 'there';
   showToast('Welcome back, ' + firstName + '! 👋');
   await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb()]);
@@ -2405,7 +2405,7 @@ async function signOut() {
   currentUser = null;
   currentProfile = null;
   // Hide nav and go to login
-  document.getElementById('nav').style.display = 'none';
+  document.getElementById('nav').classList.add('nav-hidden');
   showScreen('login');
   showToast('Signed out successfully');
 }
@@ -2811,7 +2811,7 @@ Return ONLY the JSON. No markdown, no explanation, no backticks.`;
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-5-20251001',
         max_tokens: 500,
         system: systemPrompt,
         messages: [{
@@ -3113,15 +3113,20 @@ Rules:
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-5-20251001',
         max_tokens: 1000,
         system: systemPrompt,
         messages: chatHistory[currentChatSeller]
       })
     });
 
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Proxy error:', response.status, errText);
+      throw new Error(`Proxy returned ${response.status}: ${errText}`);
+    }
     const data = await response.json();
-    const reply = data.content?.[0]?.text || "Sorry, I missed that — can you resend? 😅";
+    const reply = data.content?.[0]?.text || data.error?.message || "Sorry, I missed that — can you resend? 😅";
 
     setTypingIndicator(false);
     addChatBubble('them', reply);
@@ -3142,8 +3147,12 @@ Rules:
 
   } catch (err) {
     setTypingIndicator(false);
-    addChatBubble('them', "Hey sorry — bad signal right now. Try again in a sec! 📶");
-    console.error('AI chat error:', err);
+    const isAllowlist = err.message?.includes('403') || err.message?.includes('allowlist');
+    const errMsg = isAllowlist 
+      ? "Chat is temporarily offline — proxy config needed 🔧" 
+      : "Hey sorry — bad signal right now. Try again in a sec! 📶";
+    addChatBubble('them', errMsg);
+    console.error('AI chat error:', err.message);
   } finally {
     // Always re-enable send button regardless of success or failure
     btn.style.opacity = '1';
@@ -4716,7 +4725,7 @@ function go(name) {
   if (nb) nb.classList.add('active');
   if (!['detail','chat','all','my-listings','new-listing','my-orders','my-offers','acct-settings','sb-wallet','my-reviews','support','auction','seller','order-track','notifications'].includes(name)) prevScreen = name;
   // Use 'flex' explicitly (not '') so nav is always definitively shown/hidden
-  document.getElementById('nav').style.display = NAV_HIDDEN_SCREENS.includes(name) ? 'none' : 'flex';
+  const navEl = document.getElementById('nav'); if(NAV_HIDDEN_SCREENS.includes(name)){navEl.classList.add('nav-hidden');}else{navEl.classList.remove('nav-hidden');}
   window.scrollTo(0,0);
   // Sub-screen data rendering
   if (name === 'my-orders') renderOrders('all');
@@ -4756,7 +4765,7 @@ window.addEventListener('load', () => {
   renderAll();
   startAuctionTimers();
   updateNotifBadge();
-  document.getElementById('nav').style.display = 'none'; // hide until logged in
+  document.getElementById('nav').classList.add('nav-hidden'); // hide until logged in
   setTimeout(async () => {
     document.getElementById('splash').classList.add('hide');
     setTimeout(async () => {
