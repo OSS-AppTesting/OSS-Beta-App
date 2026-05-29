@@ -1343,7 +1343,7 @@ function priceBadge(p) {
 
 function pCard(p, i) {
   const lk = liked[p.id];
-  return `<div class="pcard" style="animation-delay:${i*50}ms" onclick="showDetail(${p.id})">
+  return `<div class="pcard" style="animation-delay:${i*50}ms" onclick="showDetail('${p.id}')">
     <div class="cimg">
       <img src="${p.img}" alt="${p.title}" loading="lazy">
       <div class="cov"></div>
@@ -1396,7 +1396,7 @@ function renderAll() {
   // Hot strip
   const hotPs = PRODS.filter(p=>p.hot);
   document.getElementById('hot-strip').innerHTML = hotPs.map((p,i) => `
-    <div onclick="showDetail(${p.id})" style="flex-shrink:0;width:200px;border-radius:18px;overflow:hidden;background:#1A1A1A;border:1px solid rgba(255,255,255,.08);cursor:pointer;">
+    <div onclick="showDetail('${p.id}')" style="flex-shrink:0;width:200px;border-radius:18px;overflow:hidden;background:#1A1A1A;border:1px solid rgba(255,255,255,.08);cursor:pointer;">
       <div style="position:relative;height:160px;overflow:hidden;background:#111;">
         <img src="${p.img}" style="width:100%;height:100%;object-fit:cover;">
         <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.8) 100%);"></div>
@@ -1465,7 +1465,7 @@ function buySB(amt) {
 let currentSBCheckoutId = null;
 
 function swapItem(id) {
-  const p = PRODS.find(x=>x.id===id);
+  const p = PRODS.find(x=>String(x.id)===String(id));
   if (!p || SB < p.price) return;
   currentSBCheckoutId = id;
 
@@ -1581,7 +1581,7 @@ function showDetail(id) {
         <div style="color:#fff;font-weight:900;font-size:18px;margin-bottom:14px;">You Might Also Like</div>
         <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;">
           ${similar.map(r=>`
-            <div class="alc" onclick="showDetail(${r.id})">
+            <div class="alc" onclick="showDetail('${r.id}')">
               <div style="height:110px;overflow:hidden;position:relative;background:#111;">
                 <img src="${r.img}" style="width:100%;height:100%;object-fit:cover;">
                 <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.7) 100%);"></div>
@@ -3189,7 +3189,7 @@ function openSellerProfile(seller) {
       <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Active Listings · ${listings.length}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;">
         ${listings.map(p=>`
-          <div onclick="showDetail(${p.id})" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;cursor:pointer;">
+          <div onclick="showDetail('${p.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;cursor:pointer;">
             <div style="height:120px;position:relative;background:#111;">
               <img src="${p.img}" style="width:100%;height:100%;object-fit:cover;">
               <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.7));"></div>
@@ -4671,7 +4671,7 @@ function doSrch(q) {
   document.getElementById('srch-lbl').textContent = v ? 'Results' : 'Popular Right Now';
   const list = v ? PRODS.filter(p=>p.title.toLowerCase().includes(v)||p.category.toLowerCase().includes(v)||(v==='hot'&&p.hot)) : [...PRODS].sort((a,b)=>b.views-a.views).slice(0,6);
   document.getElementById('srch-res').innerHTML = list.length ? list.map(p=>`
-    <div class="srow" onclick="closeSrch();showDetail(${p.id})">
+    <div class="srow" onclick="closeSrch();showDetail('${p.id}')">
       <div style="width:48px;height:48px;border-radius:10px;overflow:hidden;background:#111;flex-shrink:0;"><img src="${p.img}" style="width:100%;height:100%;object-fit:cover;"></div>
       <div style="flex:1;min-width:0;"><div style="color:#fff;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">@${p.seller} · ${p.category}</div></div>
       <div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:8px;padding:3px 10px;flex-shrink:0;"><span style="color:#fff;font-weight:800;font-size:13px;">${p.price} SB</span></div>
@@ -4680,6 +4680,7 @@ function doSrch(q) {
 
 // ── SPLASH ────────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
+  PRODS.length = 0; PRODS.push(...DEMO_PRODS); // always start clean
   renderAll();
   startAuctionTimers();
   updateNotifBadge();
