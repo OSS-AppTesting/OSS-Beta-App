@@ -2859,11 +2859,14 @@ function postListing() {
 
   // Save to Supabase - strip base64 image (too large for DB), save placeholder
   if (currentUser) {
+    showToast('Saving... user: ' + currentUser.id.substring(0,8));
     const dbProd = { ...newProd, img: (aiPreviewDataUrl && !aiPreviewDataUrl.startsWith('data:')) ? aiPreviewDataUrl : '' };
     saveListingToDb(dbProd).then(saved => {
       if (saved) { newProd.id = saved.id; }
       else { showToast('⚠️ Listing posted locally but not saved to DB.'); }
     });
+  } else {
+    showToast('⚠️ Not logged in — listing not saved to DB.');
   }
 
   // Log pending earning
