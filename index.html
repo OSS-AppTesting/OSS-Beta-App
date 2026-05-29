@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v22</title>
+<title>OneStopSwap v23</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -156,6 +156,34 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   <div id="srch-res"></div>
 </div>
 
+<!-- NOTIFICATIONS -->
+<div id="s-notifications" class="screen">
+  <div style="padding:52px 20px 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button onclick="go('home')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+        <h2 style="color:#fff;font-weight:900;font-size:24px;">Notifications</h2>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="markAllRead()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:6px 12px;color:rgba(255,255,255,.5);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Mark all read</button>
+        <button onclick="clearAllNotifs()" style="background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:6px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Clear all</button>
+      </div>
+    </div>
+
+    <!-- Filter tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;">
+      <div class="notif-tab notif-active" onclick="filterNotifs('all',this)" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:#FF3B30;font-size:13px;font-weight:700;">All</span></div>
+      <div class="notif-tab" onclick="filterNotifs('offer',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">🏷️ Offers</span></div>
+      <div class="notif-tab" onclick="filterNotifs('order',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">📦 Orders</span></div>
+      <div class="notif-tab" onclick="filterNotifs('auction',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">⚡ Auctions</span></div>
+      <div class="notif-tab" onclick="filterNotifs('message',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">💬 Messages</span></div>
+      <div class="notif-tab" onclick="filterNotifs('wallet',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">💰 Wallet</span></div>
+    </div>
+
+    <div id="notif-list" style="display:flex;flex-direction:column;gap:2px;"></div>
+  </div>
+</div>
+
 <!-- HOME -->
 <div id="s-home" class="screen active">
   <div style="padding:52px 20px 16px;background:linear-gradient(180deg,#1A0000,#0A0A0A);">
@@ -165,6 +193,12 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <button onclick="document.getElementById('modal-sb').style.display='flex'" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:20px;padding:6px 14px;display:flex;align-items:center;gap:6px;cursor:pointer;">
           <span style="font-size:13px;">💰</span>
           <span id="sb-pill" style="color:#fff;font-weight:700;font-size:13px;font-family:'DM Sans',sans-serif;">125 SB</span>
+        </button>
+        <button onclick="go('notifications')" style="position:relative;background:rgba(255,255,255,.08);border:none;border-radius:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6V11c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="rgba(255,255,255,.8)"/></svg>
+          <div id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;background:#FF3B30;border:2px solid #0A0A0A;display:flex;align-items:center;justify-content:center;">
+            <span id="notif-count" style="color:#fff;font-size:9px;font-weight:800;">0</span>
+          </div>
         </button>
         <button onclick="openSrch()" style="background:rgba(255,255,255,.08);border:none;border-radius:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" stroke-width="2"/><path d="M17 17l4 4" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -1725,6 +1759,10 @@ function placeBid(auctionId, amount) {
       }
 
       showToast('🔥 @' + comp.user + ' outbid you! ' + compBid + ' SB');
+      addNotification('auction','⚡','rgba(255,179,71,.15)','rgba(255,179,71,.3)',
+        "You've been outbid!",
+        '@' + comp.user + ' bid ' + compBid + ' SB. You were leading at ' + a.currentBid + ' SB.',
+        'Bid Again', () => openAuction(a.id));
     }, delay);
   }
 }
@@ -2034,6 +2072,212 @@ function confirmCheckout() {
   addTransaction('spent', '💳', 'Purchased: ' + p.title, '@' + p.seller + ' · USD', -p.price);
   showToast('🎉 Order placed! Check My Orders for tracking.');
   go('home');
+}
+
+// ── NOTIFICATION CENTER ───────────────────────────────────────────────────────
+
+const NOTIFICATIONS = [
+  {
+    id:'n001', type:'offer', read:false,
+    icon:'🏷️', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
+    title:'New offer on your listing',
+    body:'@sneakerhead_99 offered 20 SB on Metallic Gold Long-Sleeve Shirt',
+    time:'2 min ago', action:()=>go('my-offers'),
+    actionLabel:'View Offer'
+  },
+  {
+    id:'n002', type:'offer', read:false,
+    icon:'🔄', iconBg:'rgba(79,195,247,.15)', iconBorder:'rgba(79,195,247,.3)',
+    title:'Counter offer received',
+    body:'@ivyparklover countered your offer with $135 on Adidas x Ivy Park Stan Smith',
+    time:'8 min ago', action:()=>go('my-offers'),
+    actionLabel:'Respond'
+  },
+  {
+    id:'n003', type:'auction', read:false,
+    icon:'⚡', iconBg:'rgba(255,179,71,.15)', iconBorder:'rgba(255,179,71,.3)',
+    title:"You've been outbid!",
+    body:'@retrofinds just bid 123 SB on Y2K Betsey Johnson Dress. You were leading at 118 SB.',
+    time:'14 min ago', action:()=>go('live'),
+    actionLabel:'Bid Again'
+  },
+  {
+    id:'n004', type:'order', read:false,
+    icon:'📦', iconBg:'rgba(79,195,247,.15)', iconBorder:'rgba(79,195,247,.3)',
+    title:'Your order has shipped!',
+    body:'Adidas x Ivy Park Stan Smith is on its way from LA, CA. Est. delivery May 28-29.',
+    time:'1 hour ago', action:()=>openOrderTracking('OSS-1038'),
+    actionLabel:'Track Order'
+  },
+  {
+    id:'n005', type:'message', read:false,
+    icon:'💬', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
+    title:'New message from @vintagequeen',
+    body:'Hey! Yes I can ship same day if you buy before 2pm 😊',
+    time:'2 hours ago', action:()=>openChat('vintagequeen','#2d1b00','#FF3B30','VQ'),
+    actionLabel:'Reply'
+  },
+  {
+    id:'n006', type:'wallet', read:true,
+    icon:'💰', iconBg:'rgba(0,200,100,.15)', iconBorder:'rgba(0,200,100,.3)',
+    title:'SwapBucks received!',
+    body:'@goldenthread sent you 25 SB for the baseball glove.',
+    time:'3 hours ago', action:()=>go('sb-wallet'),
+    actionLabel:'View Wallet'
+  },
+  {
+    id:'n007', type:'offer', read:true,
+    icon:'✅', iconBg:'rgba(0,200,100,.15)', iconBorder:'rgba(0,200,100,.3)',
+    title:'Offer accepted!',
+    body:'@goldenthread accepted your offer of 18 SB on Metallic Gold Long-Sleeve Shirt.',
+    time:'Yesterday', action:()=>go('my-offers'),
+    actionLabel:'Complete Purchase'
+  },
+  {
+    id:'n008', type:'order', read:true,
+    icon:'🎉', iconBg:'rgba(0,200,100,.15)', iconBorder:'rgba(0,200,100,.3)',
+    title:'Order delivered!',
+    body:'Your Y2K Betsey Johnson Dress has been delivered. How was it?',
+    time:'Yesterday', action:()=>go('my-orders'),
+    actionLabel:'Leave Review'
+  },
+  {
+    id:'n009', type:'auction', read:true,
+    icon:'🏆', iconBg:'rgba(255,179,71,.15)', iconBorder:'rgba(255,179,71,.3)',
+    title:"You won the auction!",
+    body:'Congratulations! You won the Metallic Gold Long-Sleeve Shirt for 38 SB.',
+    time:'2 days ago', action:()=>go('my-orders'),
+    actionLabel:'View Order'
+  },
+  {
+    id:'n010', type:'offer', read:true,
+    icon:'❌', iconBg:'rgba(255,59,48,.08)', iconBorder:'rgba(255,59,48,.2)',
+    title:'Offer declined',
+    body:'@silverstyle declined your offer of $6 on Metallic Silver Pants.',
+    time:'2 days ago', action:()=>go('my-offers'),
+    actionLabel:'Try Again'
+  },
+  {
+    id:'n011', type:'wallet', read:true,
+    icon:'🔥', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
+    title:'Price drop on liked item!',
+    body:'Adidas x Ivy Park Stan Smith dropped from $175 to $150. You liked this item.',
+    time:'3 days ago', action:()=>showDetail(5),
+    actionLabel:'View Item'
+  },
+  {
+    id:'n012', type:'message', read:true,
+    icon:'💬', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
+    title:'New message from @sneakerhead_99',
+    body:'Ships USPS Priority, usually 1-2 days. Happy to bundle!',
+    time:'3 days ago', action:()=>openChat('sneakerhead_99','#1a1a2e','#FF3B30','SH'),
+    actionLabel:'Reply'
+  },
+];
+
+let notifFilter = 'all';
+
+function renderNotifications(filter) {
+  const el = document.getElementById('notif-list');
+  if (!el) return;
+
+  const list = filter === 'all' ? NOTIFICATIONS : NOTIFICATIONS.filter(n => n.type === filter);
+  const unread = NOTIFICATIONS.filter(n => !n.read).length;
+
+  // Update badge
+  updateNotifBadge();
+
+  if (!list.length) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="font-size:48px;margin-bottom:16px;">🔔</div>
+        <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:8px;">All caught up!</div>
+        <div style="color:rgba(255,255,255,.4);font-size:14px;">No notifications in this category yet.</div>
+      </div>`;
+    return;
+  }
+
+  // Group by today/yesterday/older
+  const groups = { 'Recent': [], 'Earlier Today': [], 'Yesterday': [], 'Older': [] };
+  list.forEach(n => {
+    if (n.time.includes('min') || n.time.includes('hour') || n.time === 'Just now') groups['Recent'].push(n);
+    else if (n.time === 'Yesterday') groups['Yesterday'].push(n);
+    else groups['Older'].push(n);
+  });
+
+  let html = '';
+  Object.entries(groups).forEach(([label, items]) => {
+    if (!items.length) return;
+    html += `<div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:16px 0 8px;">${label}</div>`;
+    html += items.map(n => `
+      <div onclick="tapNotification('${n.id}')" style="display:flex;gap:12px;padding:14px;background:${n.read?'rgba(255,255,255,.02)':'rgba(255,59,48,.04)'};border:1px solid ${n.read?'rgba(255,255,255,.06)':'rgba(255,59,48,.12)'};border-radius:16px;margin-bottom:8px;cursor:pointer;position:relative;transition:opacity .15s;" onmousedown="this.style.opacity='.7'" onmouseup="this.style.opacity='1'">
+        ${!n.read ? '<div style="position:absolute;top:14px;right:14px;width:8px;height:8px;border-radius:50%;background:#FF3B30;"></div>' : ''}
+        <div style="width:44px;height:44px;border-radius:14px;background:${n.iconBg};border:1px solid ${n.iconBorder};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${n.icon}</div>
+        <div style="flex:1;min-width:0;padding-right:${n.read?'0':'16px'};">
+          <div style="color:${n.read?'rgba(255,255,255,.7)':'#fff'};font-weight:${n.read?'600':'700'};font-size:14px;margin-bottom:3px;">${n.title}</div>
+          <div style="color:rgba(255,255,255,.45);font-size:12px;line-height:1.5;margin-bottom:6px;">${n.body}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="color:rgba(255,255,255,.25);font-size:11px;">${n.time}</span>
+            <span style="color:#FF3B30;font-size:12px;font-weight:700;">${n.actionLabel} →</span>
+          </div>
+        </div>
+      </div>`).join('');
+  });
+
+  el.innerHTML = html;
+}
+
+function tapNotification(id) {
+  const n = NOTIFICATIONS.find(x => x.id === id);
+  if (!n) return;
+  n.read = true;
+  updateNotifBadge();
+  if (n.action) n.action();
+}
+
+function updateNotifBadge() {
+  const unread = NOTIFICATIONS.filter(n => !n.read).length;
+  const badge = document.getElementById('notif-badge');
+  const count = document.getElementById('notif-count');
+  if (badge) badge.style.display = unread > 0 ? 'flex' : 'none';
+  if (count) count.textContent = unread > 9 ? '9+' : unread;
+}
+
+function markAllRead() {
+  NOTIFICATIONS.forEach(n => n.read = true);
+  updateNotifBadge();
+  renderNotifications(notifFilter);
+  showToast('All notifications marked as read ✓');
+}
+
+function clearAllNotifs() {
+  NOTIFICATIONS.length = 0;
+  updateNotifBadge();
+  renderNotifications(notifFilter);
+  showToast('Notifications cleared');
+}
+
+function filterNotifs(type, el) {
+  notifFilter = type;
+  document.querySelectorAll('.notif-tab').forEach(t => {
+    t.style.background = 'rgba(255,255,255,.06)';
+    t.style.border = '1px solid rgba(255,255,255,.1)';
+    t.querySelector('span').style.color = 'rgba(255,255,255,.5)';
+  });
+  el.style.background = 'rgba(255,59,48,.2)';
+  el.style.border = '1px solid rgba(255,59,48,.4)';
+  el.querySelector('span').style.color = '#FF3B30';
+  renderNotifications(type);
+}
+
+function addNotification(type, icon, iconBg, iconBorder, title, body, actionLabel, action) {
+  NOTIFICATIONS.unshift({
+    id: 'n' + Date.now(), type, read: false,
+    icon, iconBg, iconBorder, title, body,
+    time: 'Just now', action, actionLabel
+  });
+  updateNotifBadge();
+  showToast('🔔 ' + title);
 }
 
 // ── AI LISTING GENERATOR ─────────────────────────────────────────────────────
@@ -2931,6 +3175,12 @@ function submitOffer() {
     showToast('🏷️ Offer sent to @' + p.seller + '!');
   }
 
+  // Add to notification center
+  addNotification('offer','🏷️','rgba(255,59,48,.15)','rgba(255,59,48,.3)',
+    'Offer sent to @' + p.seller,
+    'Your offer of ' + (chosenCurrency==='USD'?'$'+amount:amount+' SB') + ' on ' + p.title + ' is pending.',
+    'View Offer', () => go('my-offers'));
+
   // Simulate seller response after 4-8 seconds
   const pct = (amount / p.price) * 100;
   const delay = 4000 + Math.random() * 4000;
@@ -3536,6 +3786,10 @@ function respondToOffer(offerId, action) {
     addTransaction('pending', '🏷️', 'Offer accepted: ' + o.title, '@' + o.buyer + ' · awaiting payment', o.offerAmount);
 
     showToast('✅ Offer accepted! Order created — waiting for buyer payment.');
+    addNotification('offer','✅','rgba(0,200,100,.15)','rgba(0,200,100,.3)',
+      'You accepted an offer',
+      '@' + o.buyer + '\'s offer of ' + (o.currency==='USD'?'$'+o.offerAmount:o.offerAmount+' SB') + ' on ' + o.title + '. Order created!',
+      'View Order', () => go('my-orders'));
     renderReceivedOffers();
   } else if (action === 'declined') {
     o.status = 'Declined';
@@ -3932,12 +4186,13 @@ function go(name) {
   if (target) target.classList.add('active');
   const nb = document.getElementById('nb-' + name);
   if (nb) nb.classList.add('active');
-  if (!['detail','chat','all','my-listings','new-listing','my-orders','my-offers','acct-settings','sb-wallet','my-reviews','support','auction','seller','order-track'].includes(name)) prevScreen = name;
+  if (!['detail','chat','all','my-listings','new-listing','my-orders','my-offers','acct-settings','sb-wallet','my-reviews','support','auction','seller','order-track','notifications'].includes(name)) prevScreen = name;
   document.getElementById('nav').style.display = (name === 'chat' || name === 'auction' || name === 'detail' || name === 'seller' || name === 'order-track') ? 'none' : '';
   window.scrollTo(0,0);
   // Sub-screen data rendering
   if (name === 'my-orders') renderOrders('all');
   if (name === 'my-offers') renderOffers('all');
+  if (name === 'notifications') renderNotifications(notifFilter);
   if (name === 'my-listings') renderMyListings();
   if (name === 'sb-wallet') renderWallet();
   if (name === 'my-reviews') renderReviews();
@@ -3971,6 +4226,7 @@ function doSrch(q) {
 window.addEventListener('load', () => {
   renderAll();
   startAuctionTimers();
+  updateNotifBadge();
   setTimeout(() => {
     document.getElementById('splash').classList.add('hide');
     setTimeout(() => { document.getElementById('splash').style.display='none'; }, 800);
