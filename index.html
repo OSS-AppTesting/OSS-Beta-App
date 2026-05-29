@@ -2831,7 +2831,7 @@ Return ONLY the JSON. No markdown, no explanation, no backticks.`;
   document.getElementById('ai-loading').style.display = 'none';
 }
 
-function postListing() {
+async function postListing() {
   const title = document.getElementById('f-title').value.trim();
   const desc = document.getElementById('f-desc').value.trim();
   const price = parseInt(document.getElementById('f-price').value) || 25;
@@ -2857,7 +2857,12 @@ function postListing() {
   PRODS.unshift(newProd);
   renderAll();
 
-  // Save to Supabase - strip base64 image (too large for DB), save placeholder
+  // Save to Supabase - if currentUser is null, try to recover session first
+  if (!currentUser) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { currentUser = session.user; }
+  }
+
   if (currentUser) {
     showToast('Saving... user: ' + currentUser.id.substring(0,8));
     const dbProd = { ...newProd, img: (aiPreviewDataUrl && !aiPreviewDataUrl.startsWith('data:')) ? aiPreviewDataUrl : '' };
