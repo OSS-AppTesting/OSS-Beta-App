@@ -2267,12 +2267,12 @@ let currentProfile = null;
 let onboardSlide = 0;
 
 function showScreen(name) {
-  document.getElementById('s-onboarding').style.display = 'none';
-  document.getElementById('s-login').style.display = 'none';
-  document.getElementById('s-signup').style.display = 'none';
-  if (name === 'onboarding') document.getElementById('s-onboarding').style.display = 'block';
-  else if (name === 'login') document.getElementById('s-login').style.display = 'block';
-  else if (name === 'signup') document.getElementById('s-signup').style.display = 'block';
+  ['s-onboarding','s-login','s-signup'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const target = document.getElementById('s-' + name);
+  if (target) target.style.display = 'block';
 }
 
 function nextSlide() {
@@ -2363,20 +2363,16 @@ function updateProfileUI(profile) {
   const username = profile.username || 'user';
   const initials = name.substring(0,2).toUpperCase();
 
-  // Update all avatar initials
-  document.querySelectorAll('.pav span:not(.pav-badge)').forEach(el => {
-    el.textContent = initials;
+  // Update all avatar initials (the span inside .pav)
+  document.querySelectorAll('.pav span').forEach(el => {
+    if (!el.classList.contains('pav-badge')) el.textContent = initials;
   });
 
-  // Update profile name displays
-  document.querySelectorAll('[data-profile-name]').forEach(el => {
-    el.textContent = name;
-  });
-  document.querySelectorAll('[data-profile-username]').forEach(el => {
-    el.textContent = '@' + username + ' · Store Open 🟢';
-  });
+  // Update profile name and username via data attributes
+  document.querySelectorAll('[data-profile-name]').forEach(el => el.textContent = name);
+  document.querySelectorAll('[data-profile-username]').forEach(el => el.textContent = '@' + username + ' · Store Open 🟢');
 
-  // Update settings inputs
+  // Update settings inputs if they exist
   const usernameInput = document.getElementById('settings-username');
   if (usernameInput) usernameInput.value = username;
   const nameInput = document.getElementById('settings-name');
@@ -2384,14 +2380,15 @@ function updateProfileUI(profile) {
   const locationInput = document.getElementById('settings-location');
   if (locationInput) locationInput.value = profile.location || '';
 
-  // Update SB balance display
   updateAllSBDisplays();
 }
 
 async function completeLogin() {
-  document.getElementById('s-onboarding').style.display = 'none';
-  document.getElementById('s-login').style.display = 'none';
-  document.getElementById('s-signup').style.display = 'none';
+  ['s-onboarding','s-login','s-signup'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('nav').style.display = '';
   const firstName = currentProfile?.full_name?.split(' ')[0] || currentProfile?.username || 'there';
   showToast('Welcome back, ' + firstName + '! 👋');
   await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb()]);
@@ -2400,7 +2397,10 @@ async function completeLogin() {
 
 async function signOut() {
   await sb.auth.signOut();
-  currentUser = null; currentProfile = null;
+  currentUser = null;
+  currentProfile = null;
+  // Hide nav and go to login
+  document.getElementById('nav').style.display = 'none';
   showScreen('login');
   showToast('Signed out successfully');
 }
@@ -4733,11 +4733,11 @@ window.addEventListener('load', () => {
   renderAll();
   startAuctionTimers();
   updateNotifBadge();
+  document.getElementById('nav').style.display = 'none'; // hide until logged in
   setTimeout(async () => {
     document.getElementById('splash').classList.add('hide');
     setTimeout(async () => {
       document.getElementById('splash').style.display='none';
-      // Check for existing Supabase session
       const { data: { session } } = await sb.auth.getSession();
       if (session) {
         await loadUserProfile(session.user);
