@@ -3256,6 +3256,19 @@ const SELLER_SAMPLE_REVIEWS = {
   ],
 };
 
+function openReviewFromProfile(seller) {
+  // Open review modal pre-filled for this seller (no order required)
+  currentReviewOrderId = 'direct_' + seller + '_' + Date.now();
+  selectedStars = 0;
+  // Create a fake order object so submitReview works
+  if (!ORDERS.find(x => x.id === currentReviewOrderId)) {
+    ORDERS.push({ id: currentReviewOrderId, seller, item: 'Purchase from @' + seller });
+  }
+  document.getElementById('review-stars').querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('review-text').value = '';
+  document.getElementById('modal-review').style.display = 'flex';
+}
+
 function openSellerProfile(seller) {
   const rating = getSellerRating(seller);
   const bio = SELLER_BIOS[seller] || { bio: 'OneStopSwap seller', location: 'USA', joined: '2023' };
@@ -3281,6 +3294,7 @@ function openSellerProfile(seller) {
         <div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${rating.avg} · ${rating.count} reviews</div>
       </div>
       <button onclick="openChat('${seller}','#1a0000','#FF3B30','${initials}')" style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:8px 16px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Message</button>
+      <button onclick="openReviewFromProfile('${seller}')" style="background:rgba(255,200,0,.15);border:1px solid rgba(255,200,0,.3);border-radius:12px;padding:8px 16px;color:#FFD700;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">⭐ Review</button>
     </div>
 
     <div style="padding:20px;padding-bottom:40px;">
