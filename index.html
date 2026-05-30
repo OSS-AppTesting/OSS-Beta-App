@@ -2547,8 +2547,8 @@ async function loadReviews() {
           name: myUsername,
           initials: myUsername.substring(0,2).toUpperCase(),
           color: '#FF3B30',
-          rating: r.rating,
-          item: r.item_title,
+          rating: r.stars,
+          item: r.listing_title,
           text: r.review_text,
           date: new Date(r.created_at).toLocaleDateString()
         });
@@ -2557,17 +2557,17 @@ async function loadReviews() {
   }
 
   // Load reviews written about me as a seller
-  const { data: sellerData } = await sb.from('reviews').select('*').eq('seller_username', myUsername).order('created_at', { ascending: false });
+  const { data: sellerData } = await sb.from('reviews').select('*').eq('seller_id', currentUser.id).order('created_at', { ascending: false });
   if (sellerData && sellerData.length) {
     if (!SELLER_RATINGS[myUsername]) SELLER_RATINGS[myUsername] = { avg: 0, count: 0, reviews: [] };
     const sr = SELLER_RATINGS[myUsername];
     sellerData.forEach(r => {
       const exists = sr.reviews.find(x => x.text === r.review_text);
       if (!exists) {
-        sr.reviews.unshift({ name: r.reviewer_username, initials: (r.reviewer_username||'').substring(0,2).toUpperCase(), color: '#FF3B30', rating: r.rating, item: r.item_title, text: r.review_text, date: new Date(r.created_at).toLocaleDateString() });
+        sr.reviews.unshift({ name: r.reviewer_username, initials: (r.reviewer_username||'').substring(0,2).toUpperCase(), color: '#FF3B30', rating: r.stars, item: r.listing_title, text: r.review_text, date: new Date(r.created_at).toLocaleDateString() });
       }
     });
-    const total = sellerData.reduce((sum, r) => sum + r.rating, 0);
+    const total = sellerData.reduce((sum, r) => sum + r.stars, 0);
     sr.count = sellerData.length;
     sr.avg = Math.round((total / sr.count) * 10) / 10;
   }
@@ -3527,7 +3527,7 @@ function openSellerProfile(seller) {
                 <div style="color:#fff;font-weight:700;font-size:13px;">@${r.name}</div>
                 <div style="color:rgba(255,255,255,.35);font-size:11px;">${r.item} · ${r.date}</div>
               </div>
-              <div style="color:#FFB347;font-size:13px;">${'⭐'.repeat(r.rating)}</div>
+              <div style="color:#FFB347;font-size:13px;">${'⭐'.repeat(r.stars)}</div>
             </div>
             <div style="color:rgba(255,255,255,.7);font-size:13px;line-height:1.5;">${r.text}</div>
           </div>`).join('') : `
@@ -3660,12 +3660,13 @@ async function submitReview() {
     const btn = document.querySelector('#modal-review button[onclick="submitReview()"]');
     if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
 
-    // DEBUG: show exactly what we're sending
+    // Match exact DB schema: reviewer_id(uuid), seller_id(uuid→use username as text workaround), listing_title, stars, review_text
     const payload = {
       reviewer_id: currentUser.id,
       reviewer_username: reviewer,
       seller_username: sellerName,
       item_title: itemName,
+      listing_title: itemName,
       rating: selectedStars,
       review_text: text
     };
@@ -3678,7 +3679,7 @@ async function submitReview() {
     if (error) {
       console.error('Review save error:', error);
       showToast('❌ ' + (error.message || error.code || JSON.stringify(error)));
-      return; // Don't close modal on error
+      return;
     }
     if (!insertData || insertData.length === 0) {
       showToast('❌ RLS blocked — row not saved. Check Supabase policy.');
@@ -4756,7 +4757,7 @@ function renderReviews() {
           <div style="color:#fff;font-weight:700;font-size:14px;">@${r.name}</div>
           <div style="color:rgba(255,255,255,.35);font-size:11px;">${r.item} · ${r.date}</div>
         </div>
-        <div style="color:#FFB347;font-size:14px;">${'⭐'.repeat(r.rating)}</div>
+        <div style="color:#FFB347;font-size:14px;">${'⭐'.repeat(r.stars)}</div>
       </div>
       <div style="color:rgba(255,255,255,.7);font-size:13px;line-height:1.5;">${r.text}</div>
     </div>`).join('');
