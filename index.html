@@ -2968,17 +2968,21 @@ async function openChat(seller, color, accent, initials) {
   currentChatColor = color;
   currentChatAccent = accent;
 
-  // Load message history from Supabase if logged in
+  // Always load fresh from Supabase when opening chat
   let msgs = CHAT_DATA[seller] || [{f:'them',t:"Hey! Happy to answer any questions 😊",ts:"Just now"}];
-  if (currentUser && !chatHistory[seller]) {
-    const { data } = await sb.from('messages')
+  if (currentUser) {
+    const myUsername = currentProfile?.username || '';
+    const { data, error } = await sb.from('messages')
       .select('*')
-      .or(`and(sender_username.eq.${currentProfile?.username || ''},receiver_username.eq.${seller}),and(sender_username.eq.${seller},receiver_username.eq.${currentProfile?.username || ''})`)
+      .or(`and(sender_username.eq.${myUsername},receiver_username.eq.${seller}),and(sender_username.eq.${seller},receiver_username.eq.${myUsername})`)
       .order('created_at', { ascending: true })
       .limit(50);
+    if (error) console.error('Load messages error:', error);
     if (data && data.length) {
-      msgs = data.map(m => ({ f: m.is_ai_response ? 'them' : 'me', t: m.message, ts: new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) }));
-      chatHistory[seller] = data.map(m => ({ role: m.is_ai_response ? 'assistant' : 'user', content: m.message }));
+      msgs = data.map(m => ({ f: m.sender_username === myUsername && !m.is_ai_response ? 'me' : 'them', t: m.message, ts: new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) }));
+      chatHistory[seller] = data.map(m => ({ role: m.sender_username === myUsername && !m.is_ai_response ? 'user' : 'assistant', content: m.message }));
+    } else {
+      chatHistory[seller] = [];
     }
   }
 
