@@ -1764,6 +1764,7 @@ function swapItem(id) {
 }
 
 async function confirmSBCheckout() {
+  if (!requirePayment('complete a purchase')) return;
   const name = document.getElementById('sbc-name').value.trim();
   const addr = document.getElementById('sbc-addr').value.trim();
   if (!name || !addr) { showToast('Please fill in your shipping info!'); return; }
@@ -2076,6 +2077,7 @@ async function openAuction(id) {
 }
 
 async function placeBid(auctionId, amount) {
+  if (!requirePayment('place a bid')) return;
   const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
   if (!a || SB < amount) return;
   if (!currentUser) { showToast('Sign in to place bids!'); return; }
@@ -2555,6 +2557,7 @@ function openCheckout(id) {
 }
 
 async function confirmCheckout() {
+  if (!requirePayment('complete a purchase')) return;
   const name = document.getElementById('co-name').value.trim();
   const addr = document.getElementById('co-addr').value.trim();
   if (!name || !addr) { showToast('Please fill in your shipping info!'); return; }
@@ -3471,6 +3474,7 @@ async function uploadToCloudinary(base64Data, mimeType, removeBackground = false
 }
 
 async function postListing() {
+  if (!requirePayment('post a listing')) return;
   const title = document.getElementById('f-title').value.trim();
   const desc = document.getElementById('f-desc').value.trim();
   const category = document.getElementById('f-category').value || 'Streetwear';
@@ -3558,6 +3562,7 @@ async function postListing() {
 }
 
 async function postAuction(title, desc, category, condition) {
+  if (!requirePayment('start an auction')) return;
   const startBid = parseInt(document.getElementById('f-start-bid').value) || 10;
   const reserve = parseInt(document.getElementById('f-reserve').value) || 0;
   const location = document.getElementById('f-auction-location').value.trim() || currentProfile?.location || 'USA';
@@ -4562,6 +4567,7 @@ function openMakeOffer(productId) {
 }
 
 function submitOffer() {
+  if (!requirePayment('make an offer')) return;
   const p = PRODS.find(x => x.id === currentOfferProductId);
   if (!p) return;
   const amount = parseFloat(document.getElementById('offer-amount').value);
@@ -6029,6 +6035,16 @@ function toggleFaq(i) {
 }
 
 // Toast notification
+function requirePayment(action) {
+  if (!currentUser) { showToast('Please sign in first'); return false; }
+  if (!currentProfile?.card_last4) {
+    showToast('💳 Add a payment method to ' + action);
+    setTimeout(() => go('acct-settings'), 1200);
+    return false;
+  }
+  return true;
+}
+
 function showToast(msg) {
   let t = document.getElementById('toast');
   if (!t) {
