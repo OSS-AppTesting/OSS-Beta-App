@@ -2548,7 +2548,7 @@ async function loadReviews() {
           initials: myUsername.substring(0,2).toUpperCase(),
           color: '#FF3B30',
           rating: r.rating,
-          item: r.listing_title,
+          item: r.item_title,
           text: r.review_text,
           date: new Date(r.created_at).toLocaleDateString()
         });
@@ -2557,14 +2557,14 @@ async function loadReviews() {
   }
 
   // Load reviews written about me as a seller
-  const { data: sellerData } = await sb.from('reviews').select('*').eq('seller_id', myUsername).order('created_at', { ascending: false });
+  const { data: sellerData } = await sb.from('reviews').select('*').eq('seller_username', myUsername).order('created_at', { ascending: false });
   if (sellerData && sellerData.length) {
     if (!SELLER_RATINGS[myUsername]) SELLER_RATINGS[myUsername] = { avg: 0, count: 0, reviews: [] };
     const sr = SELLER_RATINGS[myUsername];
     sellerData.forEach(r => {
       const exists = sr.reviews.find(x => x.text === r.review_text);
       if (!exists) {
-        sr.reviews.unshift({ name: r.reviewer_username, initials: (r.reviewer_username||'').substring(0,2).toUpperCase(), color: '#FF3B30', rating: r.rating, item: r.listing_title, text: r.review_text, date: new Date(r.created_at).toLocaleDateString() });
+        sr.reviews.unshift({ name: r.reviewer_username, initials: (r.reviewer_username||'').substring(0,2).toUpperCase(), color: '#FF3B30', rating: r.rating, item: r.item_title, text: r.review_text, date: new Date(r.created_at).toLocaleDateString() });
       }
     });
     const total = sellerData.reduce((sum, r) => sum + r.rating, 0);
@@ -3662,8 +3662,8 @@ async function submitReview() {
     const { error } = await sb.from('reviews').insert({
       reviewer_id: currentUser.id,
       reviewer_username: reviewer,
-      seller_id: sellerName,
-      listing_title: itemName,
+      seller_username: sellerName,
+      item_title: itemName,
       rating: selectedStars,
       review_text: text
     });
