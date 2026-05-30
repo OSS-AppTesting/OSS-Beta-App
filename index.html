@@ -3427,8 +3427,19 @@ async function loadAuctionsFromDb() {
     .gt('ends_at', new Date().toISOString())
     .order('created_at', { ascending: false });
 
-  if (error) { console.error('loadAuctions error:', error); return; }
-  if (!data || !data.length) return;
+  console.log('loadAuctions:', data, error);
+
+  if (error) {
+    console.error('loadAuctions error:', error);
+    const el = document.getElementById('auction-list');
+    if (el) el.innerHTML = '<div style="color:#FF3B30;padding:20px;text-align:center;">Error: ' + error.message + '</div>';
+    return;
+  }
+  if (!data || !data.length) {
+    AUCTIONS.length = 0;
+    renderAuctionList(); // show empty state
+    return;
+  }
 
   // Map DB rows to local auction format
   AUCTIONS.length = 0;
