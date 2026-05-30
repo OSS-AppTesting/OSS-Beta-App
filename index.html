@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v28</title>
+<title>OneStopSwap v29</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -1465,7 +1465,7 @@ function swapItem(id) {
   document.getElementById('modal-sb-checkout').style.display = 'flex';
 }
 
-function confirmSBCheckout() {
+async function confirmSBCheckout() {
   const name = document.getElementById('sbc-name').value.trim();
   const addr = document.getElementById('sbc-addr').value.trim();
   if (!name || !addr) { showToast('Please fill in your shipping info!'); return; }
@@ -1479,30 +1479,37 @@ function confirmSBCheckout() {
       updateAllSBDisplays();
       addTransaction('spent', '🏷️', 'Offer: ' + offer.title, '@' + offer.seller, -offer.offerAmount);
       offer.status = 'Completed';
-      // Update matching order status
-      const matchOrder = ORDERS.find(o => o.item === offer.title && o.status === 'Processing');
-      if (matchOrder) {
-        matchOrder.status = 'Shipped';
-        matchOrder.timeline[1].done = true;
-        matchOrder.timeline[1].date = 'Just now';
-      }
       window._offerCheckoutId = null;
       document.getElementById('modal-sb-checkout').style.display = 'none';
+      if (currentUser) {
+        saveOrderToDb(offer.title, offer.offerAmount, 'SB', offer.seller);
+        sb.from('offers').update({ status: 'Completed' }).eq('id', offerId).then(() => {});
+      }
       showToast('⚡ Purchased at offer price! ' + offer.offerAmount + ' SB spent.');
       go('home');
       return;
     }
   }
 
-  const p = PRODS.find(x=>x.id===currentSBCheckoutId);
+  const p = PRODS.find(x=>String(x.id)===String(currentSBCheckoutId));
   if (!p || SB < p.price) return;
+  const fee = Math.round(p.price * 0.06);
   SB -= p.price;
   updateAllSBDisplays();
   addTransaction('spent', '🛍️', 'Purchased: ' + p.title, '@' + p.seller, -p.price);
   document.getElementById('modal-sb-checkout').style.display = 'none';
-  showToast('⚡ Swapped! ' + p.price + ' SB spent. Check My Orders.');
+  // Save order to DB
+  if (currentUser) {
+    const dbOrder = await saveOrderToDb(p.title, p.price, 'SB', p.location || p.seller);
+    if (dbOrder) {
+      const localOrder = { id: dbOrder.id, item: p.title, price: p.price, currency: 'SB', seller: p.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') };
+      ORDERS.unshift(localOrder);
+    }
+  }
+  showToast('⚡ Swapped! ' + p.price + ' SB spent (6% fee: ' + fee + ' SB). Check My Orders.');
   go('home');
 }
+
 
 function notifyMe() {
   const b = document.getElementById('notify-btn');
@@ -1520,13 +1527,13 @@ function showDetail(id) {
     : `<div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:12px;padding:6px 14px;display:inline-flex;align-items:center;gap:6px;"><span style="color:#fff;font-weight:900;font-size:22px;">${p.price}</span><span style="color:rgba(255,255,255,.8);font-size:13px;font-weight:600;">SwapBucks</span></div>`;
   const buyBtn = isUSD
     ? `<div style="display:flex;gap:10px;">
-        <button class="rbtn" onclick="openCheckout(${p.id})" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);color:#fff;cursor:pointer;">💳 Buy for $${p.price}</button>
-        <button onclick="openMakeOffer(${p.id})" style="flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:15px 18px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer</button>
+        <button class="rbtn" onclick="openCheckout('${p.id}')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);color:#fff;cursor:pointer;">💳 Buy for $${p.price}</button>
+        <button onclick="openMakeOffer('${p.id}')" style="flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:15px 18px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer</button>
       </div>`
     : canBuy
       ? `<div style="display:flex;gap:10px;">
-          <button class="rbtn" onclick="swapItem(${p.id})" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);color:#fff;cursor:pointer;">⚡ Swap for ${p.price} SB</button>
-          <button onclick="openMakeOffer(${p.id})" style="flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:15px 18px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer</button>
+          <button class="rbtn" onclick="swapItem('${p.id}')" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);color:#fff;cursor:pointer;">⚡ Swap for ${p.price} SB</button>
+          <button onclick="openMakeOffer('${p.id}')" style="flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:15px 18px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer</button>
         </div>`
       : `<button class="rbtn" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.3);cursor:not-allowed;">🔒 Need ${p.price} SwapBucks to Swap</button>`;
   const similar = PRODS.filter(x=>x.category===p.category && x.id!==p.id).slice(0,4);
@@ -2213,7 +2220,7 @@ function openCheckout(id) {
   document.getElementById('modal-checkout').style.display = 'flex';
 }
 
-function confirmCheckout() {
+async function confirmCheckout() {
   const name = document.getElementById('co-name').value.trim();
   const addr = document.getElementById('co-addr').value.trim();
   if (!name || !addr) { showToast('Please fill in your shipping info!'); return; }
@@ -2224,22 +2231,39 @@ function confirmCheckout() {
     const offer = OFFERS.find(o => o.id === offerId);
     if (offer) {
       offer.status = 'Completed';
+      const fee = Math.round(offer.offerAmount * 0.06 * 100) / 100;
       addTransaction('spent', '🏷️', 'Offer: ' + offer.title, '@' + offer.seller, -offer.offerAmount);
       window._offerCheckoutId = null;
       document.getElementById('modal-checkout').style.display = 'none';
+      // Save offer order to DB
+      if (currentUser) {
+        saveOrderToDb(offer.title, offer.offerAmount, offer.currency || 'USD', offer.seller);
+        // Update offer status in DB
+        sb.from('offers').update({ status: 'Completed' }).eq('id', offerId).then(() => {});
+      }
       showToast('🎉 Order placed at offer price of $' + offer.offerAmount + '!');
       go('home');
       return;
     }
   }
 
-  const p = PRODS.find(x=>x.id===currentCheckoutId);
+  const p = PRODS.find(x=>String(x.id)===String(currentCheckoutId));
   if (!p) return;
+  const fee = Math.round(p.price * 0.06 * 100) / 100;
   document.getElementById('modal-checkout').style.display = 'none';
   addTransaction('spent', '💳', 'Purchased: ' + p.title, '@' + p.seller + ' · USD', -p.price);
-  showToast('🎉 Order placed! Check My Orders for tracking.');
+  // Save order to DB
+  if (currentUser) {
+    const dbOrder = await saveOrderToDb(p.title, p.price, 'USD', p.location || p.seller);
+    if (dbOrder) {
+      const localOrder = { id: dbOrder.id, item: p.title, price: p.price, currency: 'USD', seller: p.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') };
+      ORDERS.unshift(localOrder);
+    }
+  }
+  showToast('🎉 Order placed! 6% platform fee: $' + fee + '. Check My Orders for tracking.');
   go('home');
 }
+
 
 // ── AUTH SYSTEM (Supabase) ────────────────────────────────────────────────────
 
@@ -2349,12 +2373,89 @@ async function completeLogin() {
   if (el_u) el_u.textContent = '@' + uname + ' · Store Open 🟢';
   const firstName = fname.split(' ')[0] || uname;
   showToast('Welcome back, ' + firstName + '! 👋');
-  await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb(), loadReviews()]);
+  await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb(), loadReviews(), loadOffersFromDb()]);
   renderAll(); // render once after all data loaded
+  setupRealtimeSubscriptions(uname);
   go('home');
 }
 
+let _realtimeChannels = [];
+function setupRealtimeSubscriptions(myUsername) {
+  // Clean up any existing subscriptions
+  _realtimeChannels.forEach(ch => sb.removeChannel(ch));
+  _realtimeChannels = [];
+
+  // Realtime: new messages
+  const msgCh = sb.channel('messages-' + currentUser.id)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `receiver_username=eq.${myUsername}`
+    }, payload => {
+      const m = payload.new;
+      addNotification('message','💬','rgba(255,59,48,.15)','rgba(255,59,48,.3)',
+        'New message from @' + m.sender_username, m.message, 'Reply',
+        () => openChat(m.sender_username, '#1a0000', '#FF3B30', m.sender_username.substring(0,2).toUpperCase()));
+      // If chat is open with this sender, append message live
+      if (currentChatSeller === m.sender_username) {
+        const chatMsgs = document.getElementById('chat-messages');
+        if (chatMsgs) {
+          chatMsgs.insertAdjacentHTML('beforeend', chatBubble('them', m.message, new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})));
+          chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        }
+      }
+      // Refresh messages inbox if open
+      if (document.getElementById('s-messages')?.classList.contains('active')) renderMessages();
+    })
+    .subscribe();
+  _realtimeChannels.push(msgCh);
+
+  // Realtime: offer updates for seller
+  const offerCh = sb.channel('offers-' + myUsername)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'offers',
+      filter: `seller_username=eq.${myUsername}`
+    }, payload => {
+      if (payload.eventType === 'INSERT') {
+        const o = payload.new;
+        addNotification('offer','🏷️','rgba(255,59,48,.15)','rgba(255,59,48,.3)',
+          'New offer on your listing',
+          '@' + o.buyer_username + ' offered ' + (o.offer_currency==='USD'?'$':'')+o.offer_amount+(o.offer_currency==='SB'?' SB':'') + ' on ' + o.listing_title,
+          'View Offer', () => go('my-offers'));
+        loadOffersFromDb(); // refresh offers list
+      }
+    })
+    .subscribe();
+  _realtimeChannels.push(offerCh);
+
+  // Realtime: listings refresh (new items from anyone)
+  const listingCh = sb.channel('listings-feed')
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'listings'
+    }, payload => {
+      const l = payload.new;
+      if (l.seller_username === myUsername) return; // own listing already added
+      const now = Date.now();
+      const newProd = {
+        id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
+        seller: l.seller_username || 'user', location: l.location || '',
+        img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
+        likes: 0, views: 0, hot: false,
+        isNew: true, description: l.description || ''
+      };
+      // Only add if not already in list
+      if (!PRODS.find(x => x.id === l.id)) {
+        PRODS.unshift(newProd);
+        renderAll();
+      }
+    })
+    .subscribe();
+  _realtimeChannels.push(listingCh);
+}
+
+
 async function signOut() {
+  _realtimeChannels.forEach(ch => sb.removeChannel(ch));
+  _realtimeChannels = [];
   await sb.auth.signOut();
   currentUser = null; currentProfile = null;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -2470,6 +2571,48 @@ async function loadReviews() {
     sr.count = sellerData.length;
     sr.avg = Math.round((total / sr.count) * 10) / 10;
   }
+}
+
+async function loadOffersFromDb() {
+  if (!currentUser) return;
+  const myUsername = currentProfile?.username || '';
+  const { data, error } = await sb.from('offers').select('*')
+    .or(`buyer_id.eq.${currentUser.id},seller_username.eq.${myUsername}`)
+    .order('created_at', { ascending: false });
+  if (error || !data || !data.length) return;
+  // Merge DB offers, avoiding duplicates with local demo offers
+  data.forEach(o => {
+    const localId = 'DB-' + o.id;
+    if (!OFFERS.find(x => x.id === localId || x.dbId === o.id)) {
+      const isReceived = o.seller_username === myUsername;
+      if (isReceived) {
+        // Add to received offers
+        if (!RECEIVED_OFFERS.find(x => x.dbId === o.id)) {
+          RECEIVED_OFFERS.unshift({
+            id: 'RDBO-' + o.id, dbId: o.id,
+            productId: o.listing_id, title: o.listing_title,
+            buyer: o.buyer_username, buyerInitials: (o.buyer_username||'').substring(0,2).toUpperCase(),
+            buyerColor: '#1a0000', listedPrice: o.listed_price,
+            offerAmount: o.offer_amount, currency: o.offer_currency,
+            currencyChanged: o.currency_changed, message: o.message,
+            status: o.status, date: new Date(o.created_at).toLocaleDateString(),
+            expiresAt: o.expires_at ? new Date(o.expires_at).getTime() : null
+          });
+        }
+      } else {
+        OFFERS.unshift({
+          id: localId, dbId: o.id,
+          productId: o.listing_id, title: o.listing_title,
+          seller: o.seller_username, listedPrice: o.listed_price,
+          listedCurrency: o.listed_currency, offerAmount: o.offer_amount,
+          currency: o.offer_currency, currencyChanged: o.currency_changed,
+          message: o.message, status: o.status,
+          date: new Date(o.created_at).toLocaleDateString(),
+          expiresAt: o.expires_at ? new Date(o.expires_at).getTime() : null
+        });
+      }
+    }
+  });
 }
 
 async function saveListingToDb(listing) {
@@ -3509,24 +3652,34 @@ async function submitReview() {
   // Save to Supabase - recover session if needed
   if (!currentUser) {
     const { data: { session } } = await sb.auth.getSession();
-    if (session) currentUser = session.user;
+    if (session) { currentUser = session.user; }
   }
-  document.getElementById('modal-review').style.display = 'none';
-  renderOrders(document.querySelector('.order-tab.active-tab span')?.textContent?.toLowerCase() || 'all');
 
   if (currentUser) {
+    // Show saving state
+    const btn = document.querySelector('#modal-review button[onclick="submitReview()"]');
+    if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
     const { error } = await sb.from('reviews').insert({
       reviewer_id: currentUser.id,
+      reviewer_username: reviewer,
       seller_id: sellerName,
       listing_title: itemName,
       stars: selectedStars,
       review_text: text
     });
-    if (error) { showToast('❌ ' + error.message); } 
-    else { showToast('⭐ Review posted! Thanks for your feedback.'); }
+    if (btn) { btn.textContent = 'Post Review ⭐'; btn.disabled = false; }
+    if (error) {
+      console.error('Review save error:', error);
+      showToast('❌ Review error: ' + error.message);
+      return; // Don't close modal on error
+    }
+    showToast('⭐ Review saved! Thanks for your feedback.');
   } else {
     showToast('⭐ Review posted! (Login to save permanently)');
   }
+
+  document.getElementById('modal-review').style.display = 'none';
+  renderOrders(document.querySelector('.order-tab.active-tab span')?.textContent?.toLowerCase() || 'all');
 }
 
 function getSellerRating(seller) {
@@ -3783,6 +3936,28 @@ function submitOffer() {
   OFFERS.unshift(offer);
 
   document.getElementById('modal-make-offer').style.display = 'none';
+
+  // Save offer to Supabase
+  if (currentUser) {
+    sb.from('offers').insert({
+      buyer_id: currentUser.id,
+      buyer_username: currentProfile?.username || '',
+      seller_username: p.seller,
+      listing_id: String(p.id),
+      listing_title: p.title,
+      listed_price: p.price,
+      listed_currency: p.currency,
+      offer_amount: amount,
+      offer_currency: chosenCurrency,
+      currency_changed: currencyChanged,
+      message: message,
+      status: 'Pending',
+      expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+    }).select().single().then(({ data, error }) => {
+      if (data) offer.dbId = data.id; // store DB id for later updates
+      if (error) console.error('Offer save error:', error);
+    });
+  }
 
   // Show notification if currency was changed
   if (currencyChanged) {
