@@ -2396,11 +2396,9 @@ async function loadListings() {
     likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || '',
     isNew: l.created_at ? (now - new Date(l.created_at).getTime()) < 86400000 : false
   }));
-  // Only add DB listings at top - demo items already in PRODS from window load
-  // Remove any previous DB items first (identified by non-numeric IDs)
-  const demoOnly = PRODS.filter(p => typeof p.id === 'number');
+  // Logged in: show DB listings only (no demo data mixed in)
   PRODS.length = 0;
-  PRODS.push(...mapped, ...demoOnly);
+  PRODS.push(...mapped);
 }
 
 async function loadOrders() {
