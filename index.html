@@ -2648,13 +2648,17 @@ async function loadUserProfile(user) {
   currentUser = user;
   const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
   if (profile && profile.username) {
-    // Existing user with a username — go straight in
     currentProfile = profile;
     SB = profile.sb_balance || 125;
     updateAllSBDisplays();
-    completeLogin();
+    // If they haven't completed account setup yet, show it
+    if (!profile.payment_verified) {
+      showAccountCompletion();
+    } else {
+      completeLogin();
+    }
   } else {
-    // New user (OAuth or email without profile) — show setup screen
+    // New user — show profile setup first (username, name, location)
     currentProfile = profile || null;
     showProfileSetup(user);
   }
@@ -5690,6 +5694,11 @@ async function deleteAuction(id, title, btn) {
 }
 
 function showAccountCompletion() {
+  // Hide all auth screens
+  document.getElementById('s-onboarding').style.display = 'none';
+  document.getElementById('s-login').style.display = 'none';
+  document.getElementById('s-signup').style.display = 'none';
+  document.getElementById('s-profile-setup').style.display = 'none';
   const nameEl = document.getElementById('ac-cardholder');
   if (nameEl && currentProfile?.full_name) nameEl.value = currentProfile.full_name;
   const loc = currentProfile?.location || '';
