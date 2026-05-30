@@ -3509,7 +3509,7 @@ async function submitReview() {
       review_text: text,
       item_title: o.item
     });
-    if (error) console.error('Review save error:', error);
+    if (error) { console.error('Review save error:', error); showToast('Review error: ' + error.message); } else { showToast('✅ Review saved!'); }
   }
 
   document.getElementById('modal-review').style.display = 'none';
