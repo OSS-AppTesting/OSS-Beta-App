@@ -2547,7 +2547,7 @@ async function loadReviews() {
           name: myUsername,
           initials: myUsername.substring(0,2).toUpperCase(),
           color: '#FF3B30',
-          rating: r.stars,
+          rating: r.rating,
           item: r.listing_title,
           text: r.review_text,
           date: new Date(r.created_at).toLocaleDateString()
@@ -2564,10 +2564,10 @@ async function loadReviews() {
     sellerData.forEach(r => {
       const exists = sr.reviews.find(x => x.text === r.review_text);
       if (!exists) {
-        sr.reviews.unshift({ name: r.reviewer_username, initials: (r.reviewer_username||'').substring(0,2).toUpperCase(), color: '#FF3B30', rating: r.stars, item: r.listing_title, text: r.review_text, date: new Date(r.created_at).toLocaleDateString() });
+        sr.reviews.unshift({ name: r.reviewer_username, initials: (r.reviewer_username||'').substring(0,2).toUpperCase(), color: '#FF3B30', rating: r.rating, item: r.listing_title, text: r.review_text, date: new Date(r.created_at).toLocaleDateString() });
       }
     });
-    const total = sellerData.reduce((sum, r) => sum + r.stars, 0);
+    const total = sellerData.reduce((sum, r) => sum + r.rating, 0);
     sr.count = sellerData.length;
     sr.avg = Math.round((total / sr.count) * 10) / 10;
   }
@@ -3664,7 +3664,7 @@ async function submitReview() {
       reviewer_username: reviewer,
       seller_id: sellerName,
       listing_title: itemName,
-      stars: selectedStars,
+      rating: selectedStars,
       review_text: text
     });
     if (btn) { btn.textContent = 'Post Review ⭐'; btn.disabled = false; }
@@ -4911,7 +4911,7 @@ function renderOrders(filter) {
           ${reviewed ? `
             <div style="background:rgba(255,179,71,.06);border:1px solid rgba(255,179,71,.15);border-radius:12px;padding:10px 14px;">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                <span style="color:#FFB347;font-size:14px;">${'⭐'.repeat(reviewed.stars)}</span>
+                <span style="color:#FFB347;font-size:14px;">${'⭐'.repeat(reviewed.rating||reviewed.stars||0)}</span>
                 <span style="color:rgba(255,255,255,.4);font-size:11px;font-weight:600;">Your review</span>
               </div>
               <div style="color:rgba(255,255,255,.7);font-size:13px;line-height:1.5;">"${reviewed.text}"</div>
