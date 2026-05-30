@@ -2963,21 +2963,29 @@ let currentChatColor = null;
 let currentChatAccent = null;
 let chatHistory = {}; // per-seller message history for AI context
 
-function openChat(seller, color, accent, initials) {
+async function openChat(seller, color, accent, initials) {
   currentChatSeller = seller;
   currentChatColor = color;
   currentChatAccent = accent;
 
-  // Seed history from CHAT_DATA if not already started
-  if (!chatHistory[seller]) {
-    const seed = CHAT_DATA[seller] || [{f:'them',t:"Hey! Happy to answer any questions 😊",ts:"Just now"}];
-    chatHistory[seller] = seed.map(m => ({
-      role: m.f === 'me' ? 'user' : 'assistant',
-      content: m.t
-    }));
+  // Load message history from Supabase if logged in
+  let msgs = CHAT_DATA[seller] || [{f:'them',t:"Hey! Happy to answer any questions 😊",ts:"Just now"}];
+  if (currentUser && !chatHistory[seller]) {
+    const { data } = await sb.from('messages')
+      .select('*')
+      .or(`and(sender_username.eq.${currentProfile?.username || ''},receiver_username.eq.${seller}),and(sender_username.eq.${seller},receiver_username.eq.${currentProfile?.username || ''})`)
+      .order('created_at', { ascending: true })
+      .limit(50);
+    if (data && data.length) {
+      msgs = data.map(m => ({ f: m.is_ai_response ? 'them' : 'me', t: m.message, ts: new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) }));
+      chatHistory[seller] = data.map(m => ({ role: m.is_ai_response ? 'assistant' : 'user', content: m.message }));
+    }
   }
 
-  const msgs = CHAT_DATA[seller] || [{f:'them',t:"Hey! Happy to answer any questions 😊",ts:"Just now"}];
+  if (!chatHistory[seller]) {
+    const seed = CHAT_DATA[seller] || [{f:'them',t:"Hey! Happy to answer any questions 😊",ts:"Just now"}];
+    chatHistory[seller] = seed.map(m => ({ role: m.f === 'me' ? 'user' : 'assistant', content: m.t }));
+  }
 
   document.getElementById('chat-body').innerHTML = `
     <div style="position:sticky;top:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
@@ -3134,6 +3142,14 @@ Rules:
 
     // Add to history
     chatHistory[currentChatSeller].push({ role: 'assistant', content: reply });
+
+    // Save both messages to Supabase
+    if (currentUser) {
+      sb.from('messages').insert([
+        { sender_id: currentUser.id, sender_username: currentProfile?.username || 'user', receiver_username: currentChatSeller, message: text, is_ai_response: false },
+        { sender_id: currentUser.id, sender_username: currentChatSeller, receiver_username: currentProfile?.username || 'user', message: reply, is_ai_response: true }
+      ]).then(({error}) => { if(error) console.error('Message save error:', error); });
+    }
 
   } catch (err) {
     setTypingIndicator(false);
