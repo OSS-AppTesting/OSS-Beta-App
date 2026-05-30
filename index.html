@@ -4727,15 +4727,15 @@ window.addEventListener('load', () => {
 
     sb.auth.onAuthStateChange(async (event, session) => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !authResolved) {
-        authResolved = true;
         currentUser = null; currentProfile = null;
-        await loadUserProfile(session.user);
+        await loadUserProfile(session.user); // wait for profile to load
+        authResolved = true; // only set true AFTER profile loaded
       } else if (event === 'SIGNED_OUT') {
-        authResolved = true;
         currentUser = null; currentProfile = null;
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('nav').style.display = 'none';
         showScreen('login');
+        authResolved = true;
       }
     });
   }
