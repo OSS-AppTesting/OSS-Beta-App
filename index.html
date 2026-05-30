@@ -3428,6 +3428,9 @@ async function loadAuctionsFromDb() {
 
   console.log('loadAuctions:', data, error);
 
+  // DEBUG toast
+  showToast('Auctions: ' + (data ? data.length + ' found' : 'null') + (error ? ' ERR:' + error.message : ''));
+
   if (error) {
     console.error('loadAuctions error:', error);
     const el = document.getElementById('auction-list');
