@@ -3672,21 +3672,15 @@ async function submitReview() {
     };
     console.log('Review payload:', JSON.stringify(payload));
 
-    const { data: insertData, error } = await sb.from('reviews').insert(payload).select();
-    console.log('Review insert result:', insertData, error);
+    const { error } = await sb.from('reviews').insert(payload);
+    console.log('Review insert error:', error);
 
     if (btn) { btn.textContent = 'Post Review ⭐'; btn.disabled = false; }
     if (error) {
-      console.error('Review save error:', error);
-      showToast('❌ ' + (error.message || error.code || JSON.stringify(error)));
-      return;
-    }
-    if (!insertData || insertData.length === 0) {
-      showToast('❌ RLS blocked — row not saved. Check Supabase policy.');
+      showToast('❌ ' + (error.message || JSON.stringify(error)));
       return;
     }
     showToast('⭐ Review saved! Thanks for your feedback.');
-    // Reload reviews so UI reflects the save
     await loadReviews();
     if (document.getElementById('s-my-reviews')?.classList.contains('active')) renderReviews();
   } else {
