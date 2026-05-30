@@ -1920,7 +1920,10 @@ function showDetail(id) {
           <button class="rbtn" onclick="swapItem('${p.id}')" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);color:#fff;cursor:pointer;">⚡ Swap for ${p.price} SB</button>
           <button onclick="openMakeOffer('${p.id}')" style="flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:15px 18px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer</button>
         </div>`
-      : `<button class="rbtn" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.3);cursor:not-allowed;">🔒 Need ${p.price} SwapBucks to Swap</button>`;
+      : `<div style="display:flex;gap:10px;">
+          <button class="rbtn" onclick="showSBShortfall(${p.price}, () => swapItem('${p.id}'))" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);color:#fff;cursor:pointer;">💰 Get SB to Swap</button>
+          <button onclick="openMakeOffer('${p.id}')" style="flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:15px 18px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer</button>
+        </div>`;
   const similar = PRODS.filter(x=>x.category===p.category && x.id!==p.id).slice(0,4);
   document.getElementById('detail-body').innerHTML = `
     <div style="position:relative;height:360px;overflow:hidden;background:#111;flex-shrink:0;">
@@ -2149,8 +2152,8 @@ async function openAuction(id) {
         <div style="background:rgba(255,255,255,.06);border-radius:16px;padding:16px;text-align:center;color:rgba(255,255,255,.4);font-weight:700;">Auction Ended</div>
       ` : `
         <div style="display:flex;gap:10px;margin-bottom:10px;">
-          <button onclick="placeBid('${a.id}', ${nextBid})" id="bid-btn-${a.id}" style="flex:1;background:${canBid?'linear-gradient(135deg,#FF3B30,#C0392B)':'rgba(255,255,255,.08)'};border:none;border-radius:16px;padding:14px;color:${canBid?'#fff':'rgba(255,255,255,.3)'};font-weight:800;font-size:16px;cursor:${canBid?'pointer':'not-allowed'};font-family:'DM Sans',sans-serif;transition:transform .1s;" ${canBid?'':'disabled'}>
-            ${canBid ? '⚡ Bid ' + nextBid + ' SB' : '🔒 Need ' + nextBid + ' SB'}
+          <button onclick="${canBid ? `placeBid('${a.id}', ${nextBid})` : `showSBShortfall(${nextBid}, () => placeBid('${a.id}', ${nextBid}))`}" id="bid-btn-${a.id}" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:transform .1s;">
+            ${canBid ? '⚡ Bid ' + nextBid + ' SB' : '💰 Get SB to Bid'}
           </button>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -2209,11 +2212,13 @@ async function placeBid(auctionId, amount) {
   const canBid = SB >= nextBid;
   const btnEl = document.getElementById('bid-btn-' + auctionId);
   if (btnEl) {
-    btnEl.textContent = canBid ? '⚡ Bid ' + nextBid + ' SB' : '🔒 Need ' + nextBid + ' SB';
-    btnEl.style.background = canBid ? 'linear-gradient(135deg,#FF3B30,#C0392B)' : 'rgba(255,255,255,.08)';
-    btnEl.style.color = canBid ? '#fff' : 'rgba(255,255,255,.3)';
-    btnEl.disabled = !canBid;
-    btnEl.onclick = canBid ? () => placeBid(auctionId, nextBid) : null;
+    btnEl.textContent = canBid ? '⚡ Bid ' + nextBid + ' SB' : '💰 Get SB to Bid';
+    btnEl.style.background = 'linear-gradient(135deg,#FF3B30,#C0392B)';
+    btnEl.style.color = '#fff';
+    btnEl.disabled = false;
+    btnEl.onclick = canBid
+      ? () => placeBid(auctionId, nextBid)
+      : () => showSBShortfall(nextBid, () => placeBid(auctionId, nextBid));
   }
 
   // Update live-sb display
@@ -2270,11 +2275,13 @@ async function placeBid(auctionId, amount) {
       const canBid2 = SB >= nextBid2;
       const btnEl2 = document.getElementById('bid-btn-' + auctionId);
       if (btnEl2) {
-        btnEl2.textContent = canBid2 ? '⚡ Bid ' + nextBid2 + ' SB' : '🔒 Need ' + nextBid2 + ' SB';
-        btnEl2.style.background = canBid2 ? 'linear-gradient(135deg,#FF3B30,#C0392B)' : 'rgba(255,255,255,.08)';
-        btnEl2.style.color = canBid2 ? '#fff' : 'rgba(255,255,255,.3)';
-        btnEl2.disabled = !canBid2;
-        btnEl2.onclick = canBid2 ? () => placeBid(auctionId, nextBid2) : null;
+        btnEl2.textContent = canBid2 ? '⚡ Bid ' + nextBid2 + ' SB' : '💰 Get SB to Bid';
+        btnEl2.style.background = 'linear-gradient(135deg,#FF3B30,#C0392B)';
+        btnEl2.style.color = '#fff';
+        btnEl2.disabled = false;
+        btnEl2.onclick = canBid2
+          ? () => placeBid(auctionId, nextBid2)
+          : () => showSBShortfall(nextBid2, () => placeBid(auctionId, nextBid2));
       }
 
       showToast('🔥 @' + comp.user + ' outbid you! ' + compBid + ' SB');
