@@ -359,6 +359,73 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 
+<!-- ACCOUNT COMPLETION (address + payment after first signup) -->
+<div id="s-acct-completion" style="display:none;position:fixed;inset:0;background:#0A0A0A;z-index:8000;overflow-y:auto;">
+  <div style="min-height:100vh;display:flex;flex-direction:column;padding:60px 24px 48px;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:48px;margin-bottom:12px;">📦</div>
+      <h2 style="color:#fff;font-weight:900;font-size:26px;margin-bottom:6px;">Almost there!</h2>
+      <p style="color:rgba(255,255,255,.4);font-size:14px;line-height:1.6;">Add your shipping address and payment info so you can buy and sell instantly.</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Shipping Address -->
+      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">Shipping Address</div>
+
+      <input id="ac-address" type="text" placeholder="Street address" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
+        <input id="ac-city" type="text" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="ac-state" type="text" placeholder="State" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      </div>
+
+      <input id="ac-zip" type="text" placeholder="ZIP code" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+
+      <!-- Payment -->
+      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:8px;">Payment Method</div>
+
+      <!-- Demo badge -->
+      <div style="background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:16px;">🔒</span>
+        <div style="color:#FFB347;font-size:12px;font-weight:600;">Demo Mode — Enter any test card details. No real charges.</div>
+      </div>
+
+      <!-- Card number -->
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Card Number</div>
+        <div style="position:relative;">
+          <input id="ac-card" type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCardNumber(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;letter-spacing:1px;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <div id="ac-card-type" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:20px;"></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Expiry</div>
+          <input id="ac-expiry" type="text" placeholder="MM/YY" maxlength="5" oninput="formatExpiry(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        </div>
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">CVV</div>
+          <input id="ac-cvv" type="text" placeholder="123" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        </div>
+      </div>
+
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Name on Card</div>
+        <input id="ac-cardholder" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      </div>
+
+      <div id="ac-error" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:12px 16px;color:#FF3B30;font-size:13px;font-weight:600;"></div>
+
+      <button onclick="completeAccountSetup()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">Complete Setup 🚀</button>
+
+      <button onclick="skipAccountSetup()" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;padding:8px;">Skip for now →</button>
+
+    </div>
+  </div>
+</div>
+
 <!-- SEARCH OVERLAY -->
 <div id="srch">
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
@@ -2653,11 +2720,11 @@ async function completeProfileSetup() {
   if (btn) { btn.textContent = "Let's Go! 🚀"; btn.disabled = false; }
   if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
 
-  // Load the new profile and go in
+  // Load the new profile and go to account completion
   const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
   if (profile) { currentProfile = profile; SB = profile.sb_balance || 125; updateAllSBDisplays(); }
   document.getElementById('s-profile-setup').style.display = 'none';
-  completeLogin();
+  showAccountCompletion();
 }
 
 async function completeLogin() {
@@ -5622,6 +5689,101 @@ async function deleteAuction(id, title, btn) {
   setTimeout(() => { if (btn.dataset.confirming) { btn.dataset.confirming = ''; btn.textContent = 'End'; btn.style.background = 'rgba(255,59,48,.1)'; } }, 3000);
 }
 
+function showAccountCompletion() {
+  const nameEl = document.getElementById('ac-cardholder');
+  if (nameEl && currentProfile?.full_name) nameEl.value = currentProfile.full_name;
+  const loc = currentProfile?.location || '';
+  if (loc.includes(',')) {
+    const parts = loc.split(',');
+    const cityEl = document.getElementById('ac-city');
+    const stateEl = document.getElementById('ac-state');
+    if (cityEl) cityEl.value = parts[0].trim();
+    if (stateEl) stateEl.value = parts[1].trim();
+  }
+  document.getElementById('s-acct-completion').style.display = 'block';
+}
+
+function formatCardNumber(input) {
+  let val = input.value.replace(/\D/g, '').substring(0, 16);
+  input.value = val.match(/.{1,4}/g)?.join(' ') || val;
+  const typeEl = document.getElementById('ac-card-type');
+  if (!typeEl) return;
+  if (/^4/.test(val)) typeEl.textContent = '💳';
+  else if (/^5[1-5]/.test(val)) typeEl.textContent = '💳';
+  else if (/^3[47]/.test(val)) typeEl.textContent = '💳';
+  else typeEl.textContent = '';
+}
+
+function formatExpiry(input) {
+  let val = input.value.replace(/\D/g, '').substring(0, 4);
+  if (val.length >= 2) val = val.substring(0,2) + '/' + val.substring(2);
+  input.value = val;
+}
+
+function getCardType(num) {
+  if (/^4/.test(num)) return 'Visa';
+  if (/^5[1-5]/.test(num)) return 'Mastercard';
+  if (/^3[47]/.test(num)) return 'Amex';
+  if (/^6/.test(num)) return 'Discover';
+  return 'Card';
+}
+
+async function completeAccountSetup() {
+  const errEl = document.getElementById('ac-error');
+  errEl.style.display = 'none';
+
+  const address = document.getElementById('ac-address').value.trim();
+  const city = document.getElementById('ac-city').value.trim();
+  const state = document.getElementById('ac-state').value.trim();
+  const zip = document.getElementById('ac-zip').value.trim();
+  const cardRaw = document.getElementById('ac-card').value.replace(/\s/g, '');
+  const expiry = document.getElementById('ac-expiry').value.trim();
+  const cvv = document.getElementById('ac-cvv').value.trim();
+  const cardholder = document.getElementById('ac-cardholder').value.trim();
+
+  if (!address) { errEl.textContent = 'Please enter your street address'; errEl.style.display = 'block'; return; }
+  if (!city || !state) { errEl.textContent = 'Please enter your city and state'; errEl.style.display = 'block'; return; }
+  if (cardRaw.length < 15) { errEl.textContent = 'Please enter a valid card number'; errEl.style.display = 'block'; return; }
+  if (!expiry.match(/^\d{2}\/\d{2}$/)) { errEl.textContent = 'Please enter expiry as MM/YY'; errEl.style.display = 'block'; return; }
+  if (cvv.length < 3) { errEl.textContent = 'Please enter a valid CVV'; errEl.style.display = 'block'; return; }
+  if (!cardholder) { errEl.textContent = 'Please enter the name on your card'; errEl.style.display = 'block'; return; }
+
+  // Check expiry not in past
+  const [mm, yy] = expiry.split('/');
+  if (new Date(2000 + parseInt(yy), parseInt(mm) - 1) < new Date()) {
+    errEl.textContent = 'Card has expired'; errEl.style.display = 'block'; return;
+  }
+
+  const btn = document.querySelector('#s-acct-completion button[onclick="completeAccountSetup()"]');
+  if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+
+  // Store ONLY last 4 digits + type — never full card number
+  const last4 = cardRaw.slice(-4);
+  const cardType = getCardType(cardRaw);
+  const location = city + ', ' + state;
+
+  const { error } = await sb.from('profiles').update({
+    address, city, state, zip, location,
+    card_last4: last4, card_type: cardType,
+    card_expiry: expiry, cardholder_name: cardholder,
+    payment_verified: true
+  }).eq('id', currentUser.id);
+
+  if (btn) { btn.textContent = 'Complete Setup 🚀'; btn.disabled = false; }
+  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+
+  Object.assign(currentProfile, { address, city, state, zip, location, card_last4: last4, card_type: cardType, payment_verified: true });
+  document.getElementById('s-acct-completion').style.display = 'none';
+  showToast('🎉 Account fully set up! Welcome to OneStopSwap!');
+  completeLogin();
+}
+
+function skipAccountSetup() {
+  document.getElementById('s-acct-completion').style.display = 'none';
+  showToast('You can add payment info anytime in Account Settings');
+  completeLogin();
+}
+
 function loadProfileSettings() {
   if (!currentProfile) return;
   const p = currentProfile;
@@ -5768,6 +5930,13 @@ function go(name) {
   if (name === 'my-reviews') renderReviews();
   if (name === 'acct-settings') loadProfileSettings();
   if (name === 'support') renderFaq();
+  if (name === 'new-listing') {
+    const userLocation = currentProfile?.location || '';
+    const locEl = document.getElementById('f-location');
+    const aucLocEl = document.getElementById('f-auction-location');
+    if (locEl && !locEl.value && userLocation) locEl.value = userLocation;
+    if (aucLocEl && !aucLocEl.value && userLocation) aucLocEl.value = userLocation;
+  }
   if (name === 'live') { loadAuctionsFromDb().then(() => { renderAuctionList(); const liveEl = document.getElementById('live-sb-display'); if(liveEl) liveEl.textContent = '💰 ' + SB + ' SB'; }); }
 }
 
