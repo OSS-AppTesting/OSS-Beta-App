@@ -394,7 +394,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 
   <!-- MOST WANTED BANNER -->
   <div style="padding:16px 16px 0;">
-    <div onclick="showDetail(14)" style="background:linear-gradient(135deg,#1A0000,#3D0000,#1A0000);border-radius:20px;padding:18px;position:relative;overflow:hidden;cursor:pointer;border:1px solid rgba(255,59,48,.2);">
+    <div onclick="const mw=PRODS.reduce((a,b)=>b.views>a.views?b:a,PRODS[0]);if(mw)showDetail(mw.id);" style="background:linear-gradient(135deg,#1A0000,#3D0000,#1A0000);border-radius:20px;padding:18px;position:relative;overflow:hidden;cursor:pointer;border:1px solid rgba(255,59,48,.2);">
       <div style="position:absolute;top:0;right:0;width:160px;height:100%;background:radial-gradient(circle at 80% 50%,rgba(255,59,48,.2),transparent 70%);pointer-events:none;"></div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <span style="font-size:16px;">👑</span>
@@ -4729,6 +4729,7 @@ window.addEventListener('load', () => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !authResolved) {
         currentUser = null; currentProfile = null;
         try { await loadUserProfile(session.user); } catch(e) { console.error('Profile load error:', e); }
+        sessionStorage.removeItem('reloadCount'); // clear retry counter on success
         authResolved = true;
       } else if (event === 'SIGNED_OUT') {
         currentUser = null; currentProfile = null;
@@ -4753,9 +4754,19 @@ window.addEventListener('load', () => {
       document.getElementById('splash').classList.add('hide');
       setTimeout(() => { document.getElementById('splash').style.display = 'none'; }, 800);
     } else if (splashWait >= 3000) {
-      // Timed out — auto reload and try again
+      // Timed out — reload up to 3 times then give up and show onboarding
       clearInterval(splashInterval);
-      location.reload();
+      const reloadCount = parseInt(sessionStorage.getItem('reloadCount') || '0');
+      if (reloadCount < 3) {
+        sessionStorage.setItem('reloadCount', reloadCount + 1);
+        location.reload();
+      } else {
+        // Give up — clear counter and show onboarding
+        sessionStorage.removeItem('reloadCount');
+        document.getElementById('splash').classList.add('hide');
+        setTimeout(() => { document.getElementById('splash').style.display = 'none'; }, 800);
+        showScreen('onboarding');
+      }
     }
   }, 100);
 });
