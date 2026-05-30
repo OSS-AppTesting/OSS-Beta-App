@@ -4742,22 +4742,32 @@ window.addEventListener('load', () => {
 
   initAuth();
 
-  setTimeout(async () => {
-    document.getElementById('splash').classList.add('hide');
-    setTimeout(async () => {
-      document.getElementById('splash').style.display = 'none';
+  // Wait for auth to resolve before hiding splash
+  // Check every 100ms, max 4 seconds total
+  let splashWait = 0;
+  const splashInterval = setInterval(async () => {
+    splashWait += 100;
+    const ready = authResolved || splashWait >= 4000;
+    if (ready) {
+      clearInterval(splashInterval);
+      // If auth still not resolved after 4s, check manually
       if (!authResolved) {
         const { data: { session } } = await sb.auth.getSession();
-        if (session && !authResolved) {
+        if (session) {
           authResolved = true;
           await loadUserProfile(session.user);
-        } else if (!authResolved) {
+        } else {
           authResolved = true;
           showScreen('onboarding');
         }
       }
-    }, 800);
-  }, 2000);
+      // Now hide splash
+      document.getElementById('splash').classList.add('hide');
+      setTimeout(() => {
+        document.getElementById('splash').style.display = 'none';
+      }, 800);
+    }
+  }, 100);
 });
 </script>
 </body>
