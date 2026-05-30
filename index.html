@@ -3424,7 +3424,6 @@ async function loadAuctionsFromDb() {
   const { data, error } = await sb.from('auctions')
     .select('*')
     .eq('status', 'live')
-    .gt('ends_at', new Date().toISOString())
     .order('created_at', { ascending: false });
 
   console.log('loadAuctions:', data, error);
