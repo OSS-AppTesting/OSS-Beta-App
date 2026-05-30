@@ -3499,9 +3499,11 @@ async function submitReview() {
   REVIEWS_DATA.unshift(reviewObj);
 
   // Save to Supabase - recover session if needed
+  showToast('Debug: currentUser=' + (currentUser ? currentUser.id.substring(0,6) : 'NULL'));
   if (!currentUser) {
     const { data: { session } } = await sb.auth.getSession();
     if (session) currentUser = session.user;
+    showToast('Debug after recovery: ' + (currentUser ? currentUser.id.substring(0,6) : 'still NULL'));
   }
   if (currentUser) {
     const { error } = await sb.from('reviews').insert({
