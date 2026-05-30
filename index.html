@@ -3659,19 +3659,30 @@ async function submitReview() {
     // Show saving state
     const btn = document.querySelector('#modal-review button[onclick="submitReview()"]');
     if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
-    const { error } = await sb.from('reviews').insert({
+
+    // DEBUG: show exactly what we're sending
+    const payload = {
       reviewer_id: currentUser.id,
       reviewer_username: reviewer,
       seller_username: sellerName,
       item_title: itemName,
       rating: selectedStars,
       review_text: text
-    });
+    };
+    console.log('Review payload:', JSON.stringify(payload));
+
+    const { data: insertData, error } = await sb.from('reviews').insert(payload).select();
+    console.log('Review insert result:', insertData, error);
+
     if (btn) { btn.textContent = 'Post Review ⭐'; btn.disabled = false; }
     if (error) {
       console.error('Review save error:', error);
-      showToast('❌ Review error: ' + error.message);
+      showToast('❌ ' + (error.message || error.code || JSON.stringify(error)));
       return; // Don't close modal on error
+    }
+    if (!insertData || insertData.length === 0) {
+      showToast('❌ RLS blocked — row not saved. Check Supabase policy.');
+      return;
     }
     showToast('⭐ Review saved! Thanks for your feedback.');
   } else {
