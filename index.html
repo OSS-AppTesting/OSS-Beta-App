@@ -1548,6 +1548,7 @@ function showDetail(id) {
           <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:800;font-size:16px;">${p.seller[0].toUpperCase()}</span></div>
           <div><div style="color:#fff;font-weight:700;font-size:15px;">@${p.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${getSellerRating(p.seller).avg} · ${getSellerRating(p.seller).count} sales</div></div>
           <button onclick="event.stopPropagation();openChat('${p.seller}','#1a0000','#FF3B30','${p.seller.substring(0,2).toUpperCase()}')" style="margin-left:auto;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
+          <button onclick="event.stopPropagation();openReviewFromProfile('${p.seller}','${p.title}')" style="background:rgba(255,200,0,.12);border:1px solid rgba(255,200,0,.25);border-radius:10px;padding:6px 14px;color:#FFD700;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">⭐ Review</button>
         </div>
         <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:12px;display:flex;gap:20px;">
           <div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Ships from</div><div style="color:#fff;font-weight:600;font-size:13px;">${p.location}</div></div>
@@ -3256,16 +3257,25 @@ const SELLER_SAMPLE_REVIEWS = {
   ],
 };
 
-function openReviewFromProfile(seller) {
-  // Open review modal pre-filled for this seller (no order required)
-  currentReviewOrderId = 'direct_' + seller + '_' + Date.now();
+function openReviewFromProfile(seller, itemTitle) {
+  if (!currentUser) { showToast('Please log in to leave a review'); return; }
+  const fakeId = 'direct_' + seller + '_' + Date.now();
+  currentReviewOrderId = fakeId;
   selectedStars = 0;
-  // Create a fake order object so submitReview works
-  if (!ORDERS.find(x => x.id === currentReviewOrderId)) {
-    ORDERS.push({ id: currentReviewOrderId, seller, item: 'Purchase from @' + seller });
+  // Create a temp order so submitReview can find it
+  ORDERS.push({ id: fakeId, seller, item: itemTitle || 'Purchase from @' + seller });
+  // Reset stars
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('star-' + i);
+    if (el) el.style.filter = 'grayscale(1)';
   }
-  document.getElementById('review-stars').querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('star-label').textContent = 'Tap to rate';
   document.getElementById('review-text').value = '';
+  document.getElementById('review-order-summary').innerHTML = `
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px;">
+      <div style="color:#fff;font-weight:700;font-size:15px;">@${seller}</div>
+      <div style="color:rgba(255,255,255,.4);font-size:13px;">${itemTitle || 'Seller review'}</div>
+    </div>`;
   document.getElementById('modal-review').style.display = 'flex';
 }
 
