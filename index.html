@@ -1017,6 +1017,86 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 
+<!-- SB SHORTFALL MODAL -->
+<div id="modal-sb-shortfall" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:flex-end;justify-content:center;z-index:800;" onclick="if(event.target===this)closeSBShortfall()">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px;"></div>
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+      <div style="font-size:28px;">💰</div>
+      <div>
+        <div style="color:#fff;font-weight:900;font-size:20px;">Not enough SB</div>
+        <div id="shortfall-subtitle" style="color:rgba(255,255,255,.45);font-size:13px;margin-top:2px;">You need a little more to complete this</div>
+      </div>
+    </div>
+
+    <!-- Shortfall info bar -->
+    <div id="shortfall-info" style="background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:14px;padding:12px 16px;margin:16px 0;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">You have</div>
+        <div id="shortfall-have" style="color:#fff;font-weight:800;font-size:18px;margin-top:2px;">0 SB</div>
+      </div>
+      <div style="color:rgba(255,255,255,.2);font-size:20px;">→</div>
+      <div style="text-align:right;">
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">You need</div>
+        <div id="shortfall-need" style="color:#FF3B30;font-weight:800;font-size:18px;margin-top:2px;">0 SB</div>
+      </div>
+      <div style="color:rgba(255,255,255,.2);font-size:20px;">→</div>
+      <div style="text-align:right;">
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Short</div>
+        <div id="shortfall-diff" style="color:#FF3B30;font-weight:800;font-size:18px;margin-top:2px;">0 SB</div>
+      </div>
+    </div>
+
+    <!-- Pack selection -->
+    <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Pick a pack — we'll top you up instantly</div>
+    <div id="shortfall-packs" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
+
+    <!-- Payment form (hidden until pack selected) -->
+    <div id="shortfall-payment" style="display:none;">
+      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Payment</div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;">
+        <div style="position:relative;">
+          <input id="shortfall-card" type="text" placeholder="1234 5678 9012 3456" maxlength="19"
+            oninput="formatShortfallCard(this)"
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 50px 12px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;letter-spacing:2px;">
+          <div id="shortfall-card-type" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:18px;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <input id="shortfall-expiry" type="text" placeholder="MM/YY" maxlength="5"
+            oninput="formatShortfallExpiry(this)"
+            style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;color:#fff;font-size:15px;font-family:'Space Grotesk',sans-serif;outline:none;">
+          <input id="shortfall-cvv" type="text" placeholder="CVV" maxlength="4"
+            style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;color:#fff;font-size:15px;font-family:'Space Grotesk',sans-serif;outline:none;">
+        </div>
+        <input id="shortfall-name" type="text" placeholder="Name on card"
+          style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      </div>
+      <button onclick="processShortfallPayment()" id="shortfall-pay-btn"
+        style="width:100%;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:12px;">
+        Pay & Complete Purchase
+      </button>
+    </div>
+
+    <!-- Processing state -->
+    <div id="shortfall-processing" style="display:none;text-align:center;padding:24px 0;">
+      <div style="font-size:36px;margin-bottom:12px;">⏳</div>
+      <div style="color:#fff;font-weight:700;font-size:16px;">Processing payment...</div>
+      <div style="color:rgba(255,255,255,.4);font-size:13px;margin-top:6px;">Hang tight, topping up your SB</div>
+    </div>
+
+    <!-- Success state -->
+    <div id="shortfall-success" style="display:none;text-align:center;padding:24px 0;">
+      <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+      <div style="color:#fff;font-weight:900;font-size:20px;">SB Added!</div>
+      <div id="shortfall-success-msg" style="color:rgba(255,255,255,.5);font-size:14px;margin-top:6px;">Completing your purchase...</div>
+    </div>
+
+    <button onclick="closeSBShortfall()" style="width:100%;background:none;border:none;color:rgba(255,255,255,.3);font-size:14px;cursor:pointer;margin-top:8px;padding:8px;">Cancel</button>
+  </div>
+</div>
+
 <!-- REPORT ISSUE MODAL -->
 <div id="modal-report-issue" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:700;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
@@ -1772,6 +1852,10 @@ async function confirmSBCheckout() {
   if (offerId) {
     const offer = OFFERS.find(o => o.id === offerId);
     if (offer) {
+      if (SB < offer.offerAmount) {
+        showSBShortfall(offer.offerAmount, () => confirmSBCheckout());
+        return;
+      }
       SB -= offer.offerAmount;
       updateAllSBDisplays();
       addTransaction('spent', '🏷️', 'Offer: ' + offer.title, '@' + offer.seller, -offer.offerAmount);
@@ -1789,7 +1873,11 @@ async function confirmSBCheckout() {
   }
 
   const p = PRODS.find(x=>String(x.id)===String(currentSBCheckoutId));
-  if (!p || SB < p.price) return;
+  if (!p) return;
+  if (SB < p.price) {
+    showSBShortfall(p.price, () => confirmSBCheckout());
+    return;
+  }
   const fee = Math.round(p.price * 0.06);
   SB -= p.price;
   updateAllSBDisplays();
@@ -2077,8 +2165,12 @@ async function openAuction(id) {
 async function placeBid(auctionId, amount) {
   if (!requirePayment('place a bid')) return;
   const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
-  if (!a || SB < amount) return;
+  if (!a) return;
   if (!currentUser) { showToast('Sign in to place bids!'); return; }
+  if (SB < amount) {
+    showSBShortfall(amount, () => placeBid(auctionId, amount));
+    return;
+  }
 
   const myUsername = currentProfile?.username || 'user';
 
@@ -4564,6 +4656,157 @@ function openMakeOffer(productId) {
   document.getElementById('modal-make-offer').style.display = 'flex';
 }
 
+
+// ── SB SHORTFALL SYSTEM ───────────────────────────────────────────────────────
+let _shortfallCallback = null;
+let _shortfallSelectedPack = null;
+
+function showSBShortfall(needed, onSuccess) {
+  _shortfallCallback = onSuccess;
+  _shortfallSelectedPack = null;
+
+  const have = SB;
+  const diff = needed - have;
+
+  // Populate info bar
+  document.getElementById('shortfall-have').textContent = have + ' SB';
+  document.getElementById('shortfall-need').textContent = needed + ' SB';
+  document.getElementById('shortfall-diff').textContent = diff + ' SB';
+  document.getElementById('shortfall-subtitle').textContent =
+    `You're ${diff} SB short — top up to complete this`;
+
+  // Render packs — highlight the smartest one (smallest that covers the gap)
+  const packs = SB_PACKS;
+  const smartIdx = packs.findIndex(p => p.sb >= diff);
+  document.getElementById('shortfall-packs').innerHTML = packs.map((p, i) => {
+    const isSmart = i === smartIdx;
+    const covers = p.sb >= diff;
+    return `
+      <div onclick="selectShortfallPack(${i})" id="shortfall-pack-${i}"
+        style="display:flex;align-items:center;justify-content:space-between;
+          background:${isSmart ? 'rgba(255,59,48,.12)' : 'rgba(255,255,255,.04)'};
+          border:2px solid ${isSmart ? 'rgba(255,59,48,.5)' : 'rgba(255,255,255,.08)'};
+          border-radius:14px;padding:12px 16px;cursor:pointer;position:relative;transition:all .2s;">
+        ${isSmart ? '<div style="position:absolute;top:-8px;right:12px;background:#FF3B30;color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:.5px;">RECOMMENDED</div>' : ''}
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:22px;">💰</div>
+          <div>
+            <div style="color:#fff;font-weight:800;font-size:16px;">${p.sb} SB</div>
+            <div style="color:rgba(255,255,255,.4);font-size:12px;">${covers ? '+' + (p.sb - diff) + ' SB leftover' : diff - p.sb + ' SB still short'}</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="color:#fff;font-weight:800;font-size:16px;">${p.price}</div>
+          <div style="color:rgba(255,255,255,.35);font-size:11px;">${(parseFloat(p.price.replace('$','')) / p.sb * 100).toFixed(1)}¢/SB</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Reset states
+  document.getElementById('shortfall-payment').style.display = 'none';
+  document.getElementById('shortfall-processing').style.display = 'none';
+  document.getElementById('shortfall-success').style.display = 'none';
+  document.getElementById('shortfall-packs').style.display = 'flex';
+  document.getElementById('shortfall-packs').style.flexDirection = 'column';
+
+  // Clear card fields
+  ['shortfall-card','shortfall-expiry','shortfall-cvv','shortfall-name'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('shortfall-card-type').textContent = '';
+
+  // Show modal
+  document.getElementById('modal-sb-shortfall').style.display = 'flex';
+}
+
+function selectShortfallPack(idx) {
+  _shortfallSelectedPack = SB_PACKS[idx];
+  // Highlight selected
+  SB_PACKS.forEach((_, i) => {
+    const el = document.getElementById('shortfall-pack-' + i);
+    if (!el) return;
+    el.style.borderColor = i === idx ? '#FF3B30' : 'rgba(255,255,255,.08)';
+    el.style.background = i === idx ? 'rgba(255,59,48,.15)' : 'rgba(255,255,255,.04)';
+  });
+  // Show payment form
+  document.getElementById('shortfall-payment').style.display = 'block';
+  document.getElementById('shortfall-pay-btn').textContent =
+    `Pay ${_shortfallSelectedPack.price} → Get ${_shortfallSelectedPack.sb} SB`;
+  // Scroll to payment
+  setTimeout(() => {
+    document.getElementById('shortfall-payment').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 100);
+}
+
+function formatShortfallCard(input) {
+  let val = input.value.replace(/\D/g, '').substring(0, 16);
+  input.value = val.match(/.{1,4}/g)?.join(' ') || val;
+  const types = { '4': '💳 Visa', '5': '💳 MC', '3': '💳 Amex', '6': '💳 Discover' };
+  const first = val[0];
+  document.getElementById('shortfall-card-type').textContent = types[first] ? types[first].split(' ')[0] : '';
+}
+
+function formatShortfallExpiry(input) {
+  let val = input.value.replace(/\D/g, '').substring(0, 4);
+  if (val.length >= 2) val = val.substring(0, 2) + '/' + val.substring(2);
+  input.value = val;
+}
+
+async function processShortfallPayment() {
+  if (!_shortfallSelectedPack) { showToast('Please select a pack first!'); return; }
+  const card = document.getElementById('shortfall-card').value.replace(/\s/g,'');
+  const expiry = document.getElementById('shortfall-expiry').value;
+  const cvv = document.getElementById('shortfall-cvv').value;
+  const name = document.getElementById('shortfall-name').value.trim();
+
+  if (card.length < 15) { showToast('Please enter a valid card number'); return; }
+  if (expiry.length < 5) { showToast('Please enter expiry date'); return; }
+  if (cvv.length < 3) { showToast('Please enter CVV'); return; }
+  if (!name) { showToast('Please enter name on card'); return; }
+
+  // Show processing
+  document.getElementById('shortfall-packs').style.display = 'none';
+  document.getElementById('shortfall-payment').style.display = 'none';
+  document.getElementById('shortfall-processing').style.display = 'block';
+
+  // Simulate payment processing
+  await new Promise(r => setTimeout(r, 2000));
+
+  // Credit SB
+  const pack = _shortfallSelectedPack;
+  SB += pack.sb;
+  updateAllSBDisplays();
+  addTransaction('earned', '💳', 'Purchased ' + pack.sb + ' SB', 'Card ending ' + card.slice(-4), pack.sb);
+
+  // Update profile in DB
+  if (currentUser) {
+    sb.from('profiles').update({ sb_balance: SB }).eq('id', currentUser.id).then(() => {});
+  }
+
+  // Show success
+  document.getElementById('shortfall-processing').style.display = 'none';
+  document.getElementById('shortfall-success').style.display = 'block';
+  document.getElementById('shortfall-success-msg').textContent =
+    pack.sb + ' SB added! Completing your purchase...';
+
+  // Wait then fire callback
+  await new Promise(r => setTimeout(r, 1500));
+
+  document.getElementById('modal-sb-shortfall').style.display = 'none';
+
+  if (_shortfallCallback) {
+    _shortfallCallback();
+    _shortfallCallback = null;
+  }
+}
+
+function closeSBShortfall() {
+  document.getElementById('modal-sb-shortfall').style.display = 'none';
+  _shortfallCallback = null;
+  _shortfallSelectedPack = null;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function submitOffer() {
   if (!requirePayment('make an offer')) return;
   const p = PRODS.find(x => x.id === currentOfferProductId);
@@ -4574,8 +4817,13 @@ function submitOffer() {
   if (!amount || amount <= 0) { showToast('Please enter an offer amount!'); return; }
   if (amount >= p.price) { showToast('Your offer is at or above the listed price — just buy it!'); return; }
 
-  // Use chosen currency (may differ from listing currency)
+  // Check SB balance for SB offers
   const chosenCurrency = offerChosenCurrency || p.currency;
+  if (chosenCurrency === 'SB' && SB < amount) {
+    showSBShortfall(amount, () => submitOffer());
+    return;
+  }
+
   const currencyChanged = chosenCurrency !== p.currency;
 
   // Create offer
