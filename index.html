@@ -3686,6 +3686,9 @@ async function submitReview() {
       return;
     }
     showToast('⭐ Review saved! Thanks for your feedback.');
+    // Reload reviews so UI reflects the save
+    await loadReviews();
+    if (document.getElementById('s-my-reviews')?.classList.contains('active')) renderReviews();
   } else {
     showToast('⭐ Review posted! (Login to save permanently)');
   }
