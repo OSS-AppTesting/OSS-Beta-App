@@ -3498,7 +3498,11 @@ async function submitReview() {
   SELLER_RATINGS[o.seller].reviews.unshift(reviewObj);
   REVIEWS_DATA.unshift(reviewObj);
 
-  // Save to Supabase
+  // Save to Supabase - recover session if needed
+  if (!currentUser) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) currentUser = session.user;
+  }
   if (currentUser) {
     const { error } = await sb.from('reviews').insert({
       reviewer_id: currentUser.id,
@@ -3510,6 +3514,8 @@ async function submitReview() {
       item_title: o.item
     });
     if (error) { console.error('Review save error:', error); showToast('Review error: ' + error.message); } else { showToast('✅ Review saved!'); }
+  } else {
+    showToast('⚠️ Not logged in — review not saved');
   }
 
   document.getElementById('modal-review').style.display = 'none';
