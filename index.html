@@ -394,25 +394,25 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 
   <!-- MOST WANTED BANNER -->
   <div style="padding:16px 16px 0;">
-    <div onclick="const mw=PRODS.reduce((a,b)=>b.views>a.views?b:a,PRODS[0]);if(mw)showDetail(mw.id);" style="background:linear-gradient(135deg,#1A0000,#3D0000,#1A0000);border-radius:20px;padding:18px;position:relative;overflow:hidden;cursor:pointer;border:1px solid rgba(255,59,48,.2);">
+    <div id="most-wanted-card" onclick="const mw=PRODS.reduce((a,b)=>b.views>a.views?b:a,PRODS[0]);if(mw)showDetail(mw.id);" style="background:linear-gradient(135deg,#1A0000,#3D0000,#1A0000);border-radius:20px;padding:18px;position:relative;overflow:hidden;cursor:pointer;border:1px solid rgba(255,59,48,.2);">
       <div style="position:absolute;top:0;right:0;width:160px;height:100%;background:radial-gradient(circle at 80% 50%,rgba(255,59,48,.2),transparent 70%);pointer-events:none;"></div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <span style="font-size:16px;">👑</span>
         <span style="color:#FF3B30;font-weight:800;font-size:12px;letter-spacing:2px;text-transform:uppercase;">Most Wanted</span>
         <div style="margin-left:auto;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:3px 10px;">
-          <span style="color:#FF3B30;font-size:11px;font-weight:700;">👁 634 views</span>
+          <span id="mw-views" style="color:#FF3B30;font-size:11px;font-weight:700;">👁 634 views</span>
         </div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;">
         <div style="flex:1;">
           <div style="color:rgba(255,255,255,.5);font-size:11px;margin-bottom:4px;">This Week's #1 Item</div>
-          <div style="color:#fff;font-weight:800;font-size:17px;line-height:1.2;margin-bottom:10px;">Y2K Betsey Johnson<br>Bee Summer Dress</div>
+          <div id="mw-title" style="color:#fff;font-weight:800;font-size:17px;line-height:1.2;margin-bottom:10px;">Y2K Betsey Johnson<br>Bee Summer Dress</div>
           <div style="display:flex;align-items:center;gap:10px;">
             <div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:10px;padding:4px 12px;display:inline-flex;align-items:center;gap:4px;">
-              <span style="color:#fff;font-weight:900;font-size:15px;">125</span>
-              <span style="color:rgba(255,255,255,.75);font-weight:700;font-size:11px;">SB</span>
+              <span id="mw-price" style="color:#fff;font-weight:900;font-size:15px;">125</span>
+              <span id="mw-currency" style="color:rgba(255,255,255,.75);font-weight:700;font-size:11px;">SB</span>
             </div>
-            <span style="color:rgba(255,255,255,.4);font-size:12px;">♥ 98 saves</span>
+            <span id="mw-likes" style="color:rgba(255,255,255,.4);font-size:12px;">♥ 98 saves</span>
           </div>
         </div>
         <div id="mw-thumb" style="width:88px;height:88px;border-radius:14px;overflow:hidden;border:2px solid rgba(255,59,48,.4);flex-shrink:0;background:#111;"></div>
@@ -1389,9 +1389,22 @@ const CATS = [
 ];
 
 function renderAll() {
-  // Most wanted thumb
-  const mwt = document.getElementById('mw-thumb');
-  if (mwt) { const mi = new Image(); mi.src = I.betsey_dress; mi.style.cssText='width:100%;height:100%;object-fit:cover;'; mwt.appendChild(mi); }
+  // Most Wanted - find highest viewed item
+  const mwItem = PRODS.length > 0 ? PRODS.reduce((a,b)=>b.views>a.views?b:a,PRODS[0]) : null;
+  if (mwItem) {
+    const mwt = document.getElementById('mw-thumb');
+    if (mwt) { mwt.innerHTML = ''; const mi = new Image(); mi.src = mwItem.img; mi.style.cssText='width:100%;height:100%;object-fit:cover;'; mwt.appendChild(mi); }
+    const mwTitle = document.getElementById('mw-title');
+    if (mwTitle) mwTitle.innerHTML = mwItem.title;
+    const mwViews = document.getElementById('mw-views');
+    if (mwViews) mwViews.textContent = '👁 ' + mwItem.views + ' views';
+    const mwPrice = document.getElementById('mw-price');
+    if (mwPrice) mwPrice.textContent = mwItem.currency === 'USD' ? '$' + mwItem.price : mwItem.price;
+    const mwCurr = document.getElementById('mw-currency');
+    if (mwCurr) mwCurr.textContent = mwItem.currency === 'USD' ? 'USD' : 'SB';
+    const mwLikes = document.getElementById('mw-likes');
+    if (mwLikes) mwLikes.textContent = '♥ ' + mwItem.likes + ' saves';
+  }
 
   // Hot strip
   const hotPs = PRODS.filter(p=>p.hot);
