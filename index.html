@@ -2348,7 +2348,7 @@ async function completeLogin() {
   if (el_u) el_u.textContent = '@' + uname + ' · Store Open 🟢';
   const firstName = fname.split(' ')[0] || uname;
   showToast('Welcome back, ' + firstName + '! 👋');
-  await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb()]);
+  await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb(), loadReviews()]);
   renderAll(); // render once after all data loaded
   go('home');
 }
@@ -2428,6 +2428,44 @@ function buildTimeline(status) {
     {status:'Out for Delivery',  done:['Out for Delivery','Delivered'].includes(status), icon:'🏃', date:'Pending'},
     {status:'Delivered',         done:status==='Delivered', icon:'🎉', date:'Pending'},
   ];
+}
+
+async function loadReviews() {
+  if (!currentUser) return;
+  const myUsername = currentProfile?.username || '';
+  const { data, error } = await sb.from('reviews').select('*').eq('reviewer_username', myUsername).order('created_at', { ascending: false });
+  if (error || !data || !data.length) return;
+  // Add to REVIEWS_DATA (reviews I've written)
+  data.forEach(r => {
+    const exists = REVIEWS_DATA.find(x => x.text === r.review_text && x.name === r.reviewer_username);
+    if (!exists) {
+      REVIEWS_DATA.unshift({
+        name: r.reviewer_username,
+        initials: r.reviewer_username.substring(0,2).toUpperCase(),
+        color: '#FF3B30',
+        rating: r.rating,
+        item: r.item_title,
+        text: r.review_text,
+        date: new Date(r.created_at).toLocaleDateString()
+      });
+    }
+  });
+
+  // Also load reviews written about my listings (as seller)
+  const { data: sellerData } = await sb.from('reviews').select('*').eq('seller_username', myUsername).order('created_at', { ascending: false });
+  if (sellerData && sellerData.length) {
+    if (!SELLER_RATINGS[myUsername]) SELLER_RATINGS[myUsername] = { avg: 0, count: 0, reviews: [] };
+    const sr = SELLER_RATINGS[myUsername];
+    sellerData.forEach(r => {
+      const exists = sr.reviews.find(x => x.text === r.review_text);
+      if (!exists) {
+        sr.reviews.unshift({ name: r.reviewer_username, initials: r.reviewer_username.substring(0,2).toUpperCase(), color: '#FF3B30', rating: r.rating, item: r.item_title, text: r.review_text, date: new Date(r.created_at).toLocaleDateString() });
+      }
+    });
+    const total = sellerData.reduce((sum, r) => sum + r.rating, 0);
+    sr.count = sellerData.length;
+    sr.avg = Math.round((total / sr.count) * 10) / 10;
+  }
 }
 
 async function saveListingToDb(listing) {
@@ -3404,7 +3442,7 @@ function selectStar(n) {
   document.getElementById('star-label').style.color = n >= 4 ? '#FFB347' : n >= 3 ? '#fff' : '#FF3B30';
 }
 
-function submitReview() {
+async function submitReview() {
   if (!selectedStars) { showToast('Please select a star rating!'); return; }
   const text = document.getElementById('review-text').value.trim();
   if (!text) { showToast('Please write a short review!'); return; }
@@ -3412,10 +3450,13 @@ function submitReview() {
   const o = ORDERS.find(x=>x.id===currentReviewOrderId);
   if (!o) return;
 
+  const reviewer = currentProfile?.username || 'user';
+  const initials = reviewer.substring(0,2).toUpperCase();
+
   // Save reviewed state
   reviewedOrders[currentReviewOrderId] = { stars: selectedStars, text };
 
-  // Add to seller's rating
+  // Add to seller's rating in memory
   if (!SELLER_RATINGS[o.seller]) {
     SELLER_RATINGS[o.seller] = { avg: selectedStars, count: 1, reviews: [] };
   } else {
@@ -3425,27 +3466,27 @@ function submitReview() {
     sr.avg = Math.round((total / sr.count) * 10) / 10;
   }
 
-  // Prepend review to seller's list
-  SELLER_RATINGS[o.seller].reviews.unshift({
-    name: 'dinobravo',
-    initials: 'DB',
-    color: '#FF3B30',
-    rating: selectedStars,
-    item: o.item,
-    text: text,
-    date: 'Just now'
-  });
+  const reviewObj = {
+    name: reviewer, initials, color: '#FF3B30',
+    rating: selectedStars, item: o.item, text, date: 'Just now'
+  };
 
-  // Add to REVIEWS_DATA for own profile page
-  REVIEWS_DATA.unshift({
-    name: 'dinobravo',
-    initials: 'DB',
-    color: '#FF3B30',
-    rating: selectedStars,
-    item: o.item,
-    text: text,
-    date: 'Just now'
-  });
+  SELLER_RATINGS[o.seller].reviews.unshift(reviewObj);
+  REVIEWS_DATA.unshift(reviewObj);
+
+  // Save to Supabase
+  if (currentUser) {
+    const { error } = await sb.from('reviews').insert({
+      reviewer_id: currentUser.id,
+      reviewer_username: reviewer,
+      seller_username: o.seller,
+      order_id: String(currentReviewOrderId),
+      rating: selectedStars,
+      review_text: text,
+      item_title: o.item
+    });
+    if (error) console.error('Review save error:', error);
+  }
 
   document.getElementById('modal-review').style.display = 'none';
   renderOrders(document.querySelector('.order-tab.active-tab span')?.textContent?.toLowerCase() || 'all');
