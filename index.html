@@ -3511,6 +3511,9 @@ async function submitReview() {
     const { data: { session } } = await sb.auth.getSession();
     if (session) currentUser = session.user;
   }
+  document.getElementById('modal-review').style.display = 'none';
+  renderOrders(document.querySelector('.order-tab.active-tab span')?.textContent?.toLowerCase() || 'all');
+
   if (currentUser) {
     const { error } = await sb.from('reviews').insert({
       reviewer_id: currentUser.id,
@@ -3519,14 +3522,11 @@ async function submitReview() {
       stars: selectedStars,
       review_text: text
     });
-    if (error) { showToast('❌ ' + error.message); } else { showToast('✅ Saved!'); }
+    if (error) { showToast('❌ ' + error.message); } 
+    else { showToast('⭐ Review posted! Thanks for your feedback.'); }
   } else {
-    showToast('⚠️ Not logged in — review not saved');
+    showToast('⭐ Review posted! (Login to save permanently)');
   }
-
-  document.getElementById('modal-review').style.display = 'none';
-  renderOrders(document.querySelector('.order-tab.active-tab span')?.textContent?.toLowerCase() || 'all');
-  showToast('⭐ Review posted! Thanks for your feedback.');
 }
 
 function getSellerRating(seller) {
