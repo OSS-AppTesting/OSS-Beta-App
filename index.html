@@ -1056,11 +1056,23 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     <!-- Payment form (hidden until pack selected) -->
     <div id="shortfall-payment" style="display:none;">
       <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Payment</div>
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;">
+
+      <!-- Card on file (shown if saved) -->
+      <div id="shortfall-card-on-file" style="display:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;display:none;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="font-size:28px;">💳</div>
+        <div style="flex:1;">
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Card on file</div>
+          <div id="shortfall-card-on-file-label" style="color:#fff;font-weight:700;font-size:15px;margin-top:2px;"></div>
+        </div>
+        <button onclick="document.getElementById('shortfall-card-on-file').style.display='none';document.getElementById('shortfall-card-fields').style.display='flex';" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;">Change</button>
+      </div>
+
+      <!-- Manual card fields (shown if no card on file) -->
+      <div id="shortfall-card-fields" style="display:flex;flex-direction:column;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;margin-bottom:12px;">
         <div style="position:relative;">
           <input id="shortfall-card" type="text" placeholder="1234 5678 9012 3456" maxlength="19"
             oninput="formatShortfallCard(this)"
-            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 50px 12px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;letter-spacing:2px;">
+            style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 50px 12px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;letter-spacing:2px;box-sizing:border-box;">
           <div id="shortfall-card-type" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:18px;"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -1073,9 +1085,10 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <input id="shortfall-name" type="text" placeholder="Name on card"
           style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
       </div>
+
       <button onclick="processShortfallPayment()" id="shortfall-pay-btn"
-        style="width:100%;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:12px;">
-        Pay & Complete Purchase
+        style="width:100%;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        Confirm Purchase
       </button>
     </div>
 
@@ -4693,17 +4706,17 @@ function showSBShortfall(needed, onSuccess) {
         style="display:flex;align-items:center;justify-content:space-between;
           background:${isSmart ? 'rgba(255,59,48,.12)' : 'rgba(255,255,255,.04)'};
           border:2px solid ${isSmart ? 'rgba(255,59,48,.5)' : 'rgba(255,255,255,.08)'};
-          border-radius:14px;padding:12px 16px;cursor:pointer;position:relative;transition:all .2s;">
+          border-radius:14px;padding:12px 14px;cursor:pointer;position:relative;transition:all .2s;box-sizing:border-box;width:100%;">
         ${isSmart ? '<div style="position:absolute;top:-8px;right:12px;background:#FF3B30;color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:.5px;">RECOMMENDED</div>' : ''}
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="font-size:22px;">💰</div>
-          <div>
-            <div style="color:#fff;font-weight:800;font-size:16px;">${p.sb} SB</div>
-            <div style="color:rgba(255,255,255,.4);font-size:12px;">${covers ? '+' + (p.sb - diff) + ' SB leftover' : diff - p.sb + ' SB still short'}</div>
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+          <div style="font-size:20px;flex-shrink:0;">💰</div>
+          <div style="min-width:0;">
+            <div style="color:#fff;font-weight:800;font-size:15px;">${p.sb} SB</div>
+            <div style="color:rgba(255,255,255,.4);font-size:11px;white-space:nowrap;">${covers ? '+' + (p.sb - diff) + ' SB leftover' : diff - p.sb + ' SB still short'}</div>
           </div>
         </div>
-        <div style="text-align:right;">
-          <div style="color:#fff;font-weight:800;font-size:16px;">${p.price}</div>
+        <div style="text-align:right;flex-shrink:0;margin-left:8px;">
+          <div style="color:#fff;font-weight:800;font-size:15px;">${p.price}</div>
           <div style="color:rgba(255,255,255,.35);font-size:11px;">${(parseFloat(p.price.replace('$','')) / p.sb * 100).toFixed(1)}¢/SB</div>
         </div>
       </div>`;
@@ -4716,11 +4729,29 @@ function showSBShortfall(needed, onSuccess) {
   document.getElementById('shortfall-packs').style.display = 'flex';
   document.getElementById('shortfall-packs').style.flexDirection = 'column';
 
-  // Clear card fields
-  ['shortfall-card','shortfall-expiry','shortfall-cvv','shortfall-name'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('shortfall-card-type').textContent = '';
+  // Pre-fill card if on file
+  const savedCard = currentProfile?.card_last4;
+  const savedType = currentProfile?.card_type || 'Card';
+  const savedExpiry = currentProfile?.card_expiry || '';
+  const savedName = currentProfile?.cardholder_name || '';
+  if (savedCard) {
+    document.getElementById('shortfall-card').value = '•••• •••• •••• ' + savedCard;
+    document.getElementById('shortfall-expiry').value = savedExpiry;
+    document.getElementById('shortfall-cvv').value = '•••';
+    document.getElementById('shortfall-name').value = savedName;
+    document.getElementById('shortfall-card-type').textContent = savedType === 'Amex' ? '💳' : '💳';
+    // Show a "card on file" indicator and hide individual fields
+    document.getElementById('shortfall-card-on-file').style.display = 'block';
+    document.getElementById('shortfall-card-fields').style.display = 'none';
+  } else {
+    document.getElementById('shortfall-card').value = '';
+    document.getElementById('shortfall-expiry').value = '';
+    document.getElementById('shortfall-cvv').value = '';
+    document.getElementById('shortfall-name').value = '';
+    document.getElementById('shortfall-card-type').textContent = '';
+    document.getElementById('shortfall-card-on-file').style.display = 'none';
+    document.getElementById('shortfall-card-fields').style.display = 'flex';
+  }
 
   // Show modal
   document.getElementById('modal-sb-shortfall').style.display = 'flex';
@@ -4735,10 +4766,20 @@ function selectShortfallPack(idx) {
     el.style.borderColor = i === idx ? '#FF3B30' : 'rgba(255,255,255,.08)';
     el.style.background = i === idx ? 'rgba(255,59,48,.15)' : 'rgba(255,255,255,.04)';
   });
-  // Show payment form
+  // Show payment section
   document.getElementById('shortfall-payment').style.display = 'block';
+  // Update card-on-file label if applicable
+  const savedCard = currentProfile?.card_last4;
+  const savedType = currentProfile?.card_type || 'Card';
+  const savedExpiry = currentProfile?.card_expiry || '';
+  if (savedCard) {
+    const label = document.getElementById('shortfall-card-on-file-label');
+    if (label) label.textContent = savedType + ' ending in ' + savedCard + (savedExpiry ? ' · Expires ' + savedExpiry : '');
+    document.getElementById('shortfall-card-on-file').style.display = 'flex';
+    document.getElementById('shortfall-card-fields').style.display = 'none';
+  }
   document.getElementById('shortfall-pay-btn').textContent =
-    `Pay ${_shortfallSelectedPack.price} → Get ${_shortfallSelectedPack.sb} SB`;
+    `Confirm — Pay ${_shortfallSelectedPack.price} → Get ${_shortfallSelectedPack.sb} SB`;
   // Scroll to payment
   setTimeout(() => {
     document.getElementById('shortfall-payment').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -4761,15 +4802,21 @@ function formatShortfallExpiry(input) {
 
 async function processShortfallPayment() {
   if (!_shortfallSelectedPack) { showToast('Please select a pack first!'); return; }
-  const card = document.getElementById('shortfall-card').value.replace(/\s/g,'');
-  const expiry = document.getElementById('shortfall-expiry').value;
-  const cvv = document.getElementById('shortfall-cvv').value;
-  const name = document.getElementById('shortfall-name').value.trim();
 
-  if (card.length < 15) { showToast('Please enter a valid card number'); return; }
-  if (expiry.length < 5) { showToast('Please enter expiry date'); return; }
-  if (cvv.length < 3) { showToast('Please enter CVV'); return; }
-  if (!name) { showToast('Please enter name on card'); return; }
+  const cardOnFile = currentProfile?.card_last4 &&
+    document.getElementById('shortfall-card-on-file').style.display !== 'none';
+
+  if (!cardOnFile) {
+    // Validate manual card entry
+    const card = document.getElementById('shortfall-card').value.replace(/\s/g,'');
+    const expiry = document.getElementById('shortfall-expiry').value;
+    const cvv = document.getElementById('shortfall-cvv').value;
+    const name = document.getElementById('shortfall-name').value.trim();
+    if (card.length < 15) { showToast('Please enter a valid card number'); return; }
+    if (expiry.length < 5) { showToast('Please enter expiry date'); return; }
+    if (cvv.length < 3) { showToast('Please enter CVV'); return; }
+    if (!name) { showToast('Please enter name on card'); return; }
+  }
 
   // Show processing
   document.getElementById('shortfall-packs').style.display = 'none';
@@ -4783,7 +4830,8 @@ async function processShortfallPayment() {
   const pack = _shortfallSelectedPack;
   SB += pack.sb;
   updateAllSBDisplays();
-  addTransaction('earned', '💳', 'Purchased ' + pack.sb + ' SB', 'Card ending ' + card.slice(-4), pack.sb);
+  const last4 = cardOnFile ? currentProfile.card_last4 : document.getElementById('shortfall-card').value.replace(/\s/g,'').slice(-4);
+  addTransaction('earned', '💳', 'Purchased ' + pack.sb + ' SB', 'Card ending ' + last4, pack.sb);
 
   // Update profile in DB
   if (currentUser) {
