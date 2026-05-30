@@ -5398,8 +5398,7 @@ async function renderMyListings() {
   const auctions = auctionsRes.data || [];
   const error = listingsRes.error || auctionsRes.error;
 
-
-  console.log('My listings query - user id:', currentUser.id, 'data:', data, 'error:', error);
+  console.log('My listings:', listings.length, 'auctions:', auctions.length, 'error:', error?.message);
 
   if (error) { 
     el.innerHTML = '<div style="color:#FF3B30;padding:20px;">Error: ' + error.message + '</div>'; 
