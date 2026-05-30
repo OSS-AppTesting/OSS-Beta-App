@@ -408,7 +408,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
           <div style="color:rgba(255,255,255,.5);font-size:11px;margin-bottom:4px;">This Week's #1 Item</div>
           <div id="mw-title" style="color:#fff;font-weight:800;font-size:17px;line-height:1.2;margin-bottom:10px;">Y2K Betsey Johnson<br>Bee Summer Dress</div>
           <div style="display:flex;align-items:center;gap:10px;">
-            <div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:10px;padding:4px 12px;display:inline-flex;align-items:center;gap:4px;">
+            <div id="mw-badge" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:10px;padding:4px 12px;display:inline-flex;align-items:center;gap:4px;">
               <span id="mw-price" style="color:#fff;font-weight:900;font-size:15px;">125</span>
               <span id="mw-currency" style="color:rgba(255,255,255,.75);font-weight:700;font-size:11px;">SB</span>
             </div>
@@ -1402,6 +1402,8 @@ function renderAll() {
     if (mwPrice) mwPrice.textContent = mwItem.currency === 'USD' ? '$' + mwItem.price : mwItem.price;
     const mwCurr = document.getElementById('mw-currency');
     if (mwCurr) mwCurr.textContent = mwItem.currency === 'USD' ? 'USD' : 'SB';
+    const mwBadge = document.getElementById('mw-badge');
+    if (mwBadge) mwBadge.style.background = mwItem.currency === 'USD' ? 'linear-gradient(135deg,#00A550,#007A3D)' : 'linear-gradient(135deg,#FF3B30,#C0392B)';
     const mwLikes = document.getElementById('mw-likes');
     if (mwLikes) mwLikes.textContent = '♥ ' + mwItem.likes + ' saves';
   }
