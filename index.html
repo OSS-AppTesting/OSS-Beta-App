@@ -617,7 +617,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       </div>
       <span style="color:#FF3B30;font-size:20px;">›</span>
     </div>
-    <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Active · 3 listings</div>
+    <div id="my-listings-count" style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Your Listings</div>
     <div id="my-listings-list" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
 </div>
@@ -753,7 +753,11 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <div>
           <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Auction Duration</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            ${['1h','3h','6h','12h','24h'].map((d,i) => `<div class="dur-btn" onclick="selectDuration('${d}',this)" style="background:${i===0?'rgba(255,59,48,.2)':'rgba(255,255,255,.06)'};border:${i===0?'2px solid rgba(255,59,48,.5)':'1px solid rgba(255,255,255,.1)'};border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:${i===0?'#FF3B30':'rgba(255,255,255,.5)'};font-weight:700;font-size:13px;">${d}</span></div>`).join('')}
+            <div class="dur-btn" onclick="selectDuration('1h',this)" style="background:rgba(255,59,48,.2);border:2px solid rgba(255,59,48,.5);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:#FF3B30;font-weight:700;font-size:13px;">1h</span></div>
+            <div class="dur-btn" onclick="selectDuration('3h',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">3h</span></div>
+            <div class="dur-btn" onclick="selectDuration('6h',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">6h</span></div>
+            <div class="dur-btn" onclick="selectDuration('12h',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">12h</span></div>
+            <div class="dur-btn" onclick="selectDuration('24h',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">24h</span></div>
           </div>
         </div>
         <div>
@@ -5194,17 +5198,77 @@ function filterOrders(type, el) {
   renderOrders(type);
 }
 
-function renderMyListings() {
-  const ids = [11, 12, 15];
-  document.querySelectorAll('.listing-row').forEach((row, i) => {
-    const p = PRODS.find(x => x.id === ids[i]);
-    if (!p) return;
-    const imgWrap = row.querySelector('.listing-img-wrap');
-    imgWrap.innerHTML = `<img src="${p.img}" style="width:100%;height:100%;object-fit:cover;">`;
-    row.querySelector('.listing-title').textContent = p.title;
-    const badge = row.querySelector('.listing-price-badge');
-    badge.innerHTML = `<div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:10px;padding:4px 10px;display:inline-flex;align-items:center;gap:3px;"><span style="color:#fff;font-weight:900;font-size:13px;">${p.price}</span><span style="color:rgba(255,255,255,.7);font-size:10px;">SB</span></div>`;
-  });
+async function renderMyListings() {
+  const el = document.getElementById('my-listings-list');
+  if (!el) return;
+
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,.3);">Loading...</div>';
+
+  if (!currentUser) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,.3);">Sign in to see your listings</div>';
+    return;
+  }
+
+  const { data, error } = await sb.from('listings')
+    .select('*')
+    .eq('seller_id', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  if (error) { el.innerHTML = '<div style="color:#FF3B30;padding:20px;">Error loading listings</div>'; return; }
+
+  if (!data || !data.length) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="font-size:48px;margin-bottom:16px;">🏪</div>
+        <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:8px;">No listings yet</div>
+        <div style="color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;">Post your first item and start selling!</div>
+        <button onclick="go('new-listing')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px 28px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ Post a Listing</button>
+      </div>`;
+    return;
+  }
+
+  const countEl = document.getElementById('my-listings-count');
+  if (countEl) countEl.textContent = 'Active · ' + data.length + ' listing' + (data.length !== 1 ? 's' : '');
+
+  el.innerHTML = data.map(l => `
+    <div style="background:#1A1A1A;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.08);display:flex;align-items:stretch;">
+      <div style="width:90px;flex-shrink:0;background:#111;position:relative;">
+        <img src="${l.image_url || ''}" style="width:100%;height:100%;object-fit:cover;display:block;">
+        ${l.image_url ? '' : '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;">🏷️</div>'}
+      </div>
+      <div style="flex:1;padding:12px 14px;min-width:0;">
+        <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.title}</div>
+        <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:8px;">${l.category} · ${l.condition || ''}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="background:linear-gradient(135deg,${l.currency==='USD'?'#00A550,#007A3D':'#FF3B30,#C0392B'});border-radius:8px;padding:3px 10px;">
+            <span style="color:#fff;font-weight:800;font-size:13px;">${l.currency==='USD'?'$':''}${l.price}${l.currency==='SB'?' SB':''}</span>
+          </div>
+          <div style="background:rgba(0,200,100,.1);border:1px solid rgba(0,200,100,.2);border-radius:8px;padding:3px 8px;">
+            <span style="color:#00C864;font-size:11px;font-weight:700;">● Active</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:12px;justify-content:center;flex-shrink:0;">
+        <button onclick="showDetail('${l.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View</button>
+        <button onclick="deleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+async function deleteListing(id, title, btn) {
+  if (!confirm('Remove "' + title + '" from your listings?')) return;
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  const { error } = await sb.from('listings').update({ is_active: false }).eq('id', id).eq('seller_id', currentUser.id);
+  if (error) { showToast('❌ ' + error.message); btn.textContent = 'Remove'; btn.disabled = false; return; }
+
+  // Remove from local PRODS array too
+  const idx = PRODS.findIndex(x => String(x.id) === String(id));
+  if (idx > -1) PRODS.splice(idx, 1);
+  renderAll();
+  showToast('🗑️ Listing removed');
+  renderMyListings(); // refresh the list
 }
 
 function toggleFaq(i) {
