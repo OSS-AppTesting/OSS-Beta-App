@@ -2302,9 +2302,10 @@ function skipOnboarding() {
 }
 
 async function socialLogin(provider) {
+  const redirectTo = 'https://oss-apptesting.github.io/OSS-Beta-App';
   const { error } = await sb.auth.signInWithOAuth({
     provider: provider.toLowerCase(),
-    options: { redirectTo: window.location.href }
+    options: { redirectTo }
   });
   if (error) showToast('Error: ' + error.message);
 }
