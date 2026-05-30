@@ -740,9 +740,23 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <div style="background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:12px;padding:12px 14px;">
           <div style="color:#FFB347;font-size:12px;font-weight:600;">⚡ Auction goes live immediately — bidders compete in real time!</div>
         </div>
+        <!-- Auction currency toggle -->
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Bid Currency</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div id="auc-curr-sb" onclick="setAuctionCurrency('SB')" style="background:rgba(255,59,48,.2);border:2px solid rgba(255,59,48,.6);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
+              <div style="font-size:18px;margin-bottom:2px;">💰</div>
+              <div style="color:#FF3B30;font-weight:800;font-size:13px;">SwapBucks</div>
+            </div>
+            <div id="auc-curr-usd" onclick="setAuctionCurrency('USD')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
+              <div style="font-size:18px;margin-bottom:2px;">💵</div>
+              <div style="color:rgba(255,255,255,.6);font-weight:800;font-size:13px;">Cash (USD)</div>
+            </div>
+          </div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
-            <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Starting Bid (SB)</div>
+            <div id="start-bid-label" style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Starting Bid (SB)</div>
             <input id="f-start-bid" type="number" placeholder="e.g. 20" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
           </div>
           <div>
@@ -2168,6 +2182,27 @@ function selectDuration(dur, el) {
   el.querySelector('span').style.color = '#FF3B30';
 }
 
+let auctionCurrency = 'SB';
+function setAuctionCurrency(type) {
+  auctionCurrency = type;
+  const sbEl = document.getElementById('auc-curr-sb');
+  const usdEl = document.getElementById('auc-curr-usd');
+  const label = document.getElementById('start-bid-label');
+  if (type === 'SB') {
+    sbEl.style.background = 'rgba(255,59,48,.2)'; sbEl.style.border = '2px solid rgba(255,59,48,.6)';
+    sbEl.querySelector('div:last-child').style.color = '#FF3B30';
+    usdEl.style.background = 'rgba(255,255,255,.04)'; usdEl.style.border = '2px solid rgba(255,255,255,.1)';
+    usdEl.querySelector('div:last-child').style.color = 'rgba(255,255,255,.6)';
+    if (label) label.textContent = 'Starting Bid (SB)';
+  } else {
+    usdEl.style.background = 'rgba(0,165,80,.15)'; usdEl.style.border = '2px solid rgba(0,165,80,.5)';
+    usdEl.querySelector('div:last-child').style.color = '#00A550';
+    sbEl.style.background = 'rgba(255,255,255,.04)'; sbEl.style.border = '2px solid rgba(255,255,255,.1)';
+    sbEl.querySelector('div:last-child').style.color = 'rgba(255,255,255,.6)';
+    if (label) label.textContent = 'Starting Bid (USD $)';
+  }
+}
+
 let currentCheckoutId = null;
 let payFilter = 'all';
 
@@ -3228,7 +3263,7 @@ async function postAuction(title, desc, category, condition) {
       start_price: startBid,
       current_bid: startBid,
       reserve_price: reserve || null,
-      currency: 'SB',
+      currency: auctionCurrency,
       ends_at: endsAt.toISOString(),
       status: 'live'
     }).select().single();
@@ -3262,6 +3297,7 @@ async function postAuction(title, desc, category, condition) {
     document.getElementById('f-reserve').value = '';
     document.getElementById('f-auction-location').value = '';
     document.getElementById('f-category').value = '';
+    auctionCurrency = 'SB'; setAuctionCurrency('SB');
     sellMode = 'fixed'; setSellMode('fixed');
     go('live'); // go straight to auctions tab to see it live
   }, 1200);
@@ -5256,19 +5292,24 @@ async function renderMyListings() {
 }
 
 async function deleteListing(id, title, btn) {
-  if (!confirm('Remove "' + title + '" from your listings?')) return;
-  btn.textContent = '...';
-  btn.disabled = true;
-
-  const { error } = await sb.from('listings').update({ is_active: false }).eq('id', id).eq('seller_id', currentUser.id);
-  if (error) { showToast('❌ ' + error.message); btn.textContent = 'Remove'; btn.disabled = false; return; }
-
-  // Remove from local PRODS array too
-  const idx = PRODS.findIndex(x => String(x.id) === String(id));
-  if (idx > -1) PRODS.splice(idx, 1);
-  renderAll();
-  showToast('🗑️ Listing removed');
-  renderMyListings(); // refresh the list
+  // Custom confirm since confirm() is blocked on some mobile browsers
+  showToast('Tap Remove again to confirm deletion');
+  if (btn.dataset.confirming === 'true') {
+    btn.textContent = '...';
+    btn.disabled = true;
+    const { error } = await sb.from('listings').update({ is_active: false }).eq('id', id).eq('seller_id', currentUser.id);
+    if (error) { showToast('❌ ' + error.message); btn.textContent = 'Remove'; btn.disabled = false; return; }
+    const idx = PRODS.findIndex(x => String(x.id) === String(id));
+    if (idx > -1) PRODS.splice(idx, 1);
+    renderAll();
+    showToast('🗑️ Listing removed');
+    renderMyListings();
+    return;
+  }
+  btn.dataset.confirming = 'true';
+  btn.textContent = 'Confirm?';
+  btn.style.background = 'rgba(255,59,48,.3)';
+  setTimeout(() => { if (btn.dataset.confirming) { btn.dataset.confirming = ''; btn.textContent = 'Remove'; btn.style.background = 'rgba(255,59,48,.1)'; } }, 3000);
 }
 
 function toggleFaq(i) {
