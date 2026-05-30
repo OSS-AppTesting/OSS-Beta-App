@@ -4728,8 +4728,8 @@ window.addEventListener('load', () => {
     sb.auth.onAuthStateChange(async (event, session) => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !authResolved) {
         currentUser = null; currentProfile = null;
-        await loadUserProfile(session.user); // wait for profile to load
-        authResolved = true; // only set true AFTER profile loaded
+        try { await loadUserProfile(session.user); } catch(e) { console.error('Profile load error:', e); }
+        authResolved = true;
       } else if (event === 'SIGNED_OUT') {
         currentUser = null; currentProfile = null;
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -4747,25 +4747,15 @@ window.addEventListener('load', () => {
   let splashWait = 0;
   const splashInterval = setInterval(async () => {
     splashWait += 100;
-    const ready = authResolved || splashWait >= 4000;
-    if (ready) {
+    if (authResolved) {
+      // Auth loaded successfully — hide splash
       clearInterval(splashInterval);
-      // If auth still not resolved after 4s, check manually
-      if (!authResolved) {
-        const { data: { session } } = await sb.auth.getSession();
-        if (session) {
-          authResolved = true;
-          await loadUserProfile(session.user);
-        } else {
-          authResolved = true;
-          showScreen('onboarding');
-        }
-      }
-      // Now hide splash
       document.getElementById('splash').classList.add('hide');
-      setTimeout(() => {
-        document.getElementById('splash').style.display = 'none';
-      }, 800);
+      setTimeout(() => { document.getElementById('splash').style.display = 'none'; }, 800);
+    } else if (splashWait >= 3000) {
+      // Timed out — auto reload and try again
+      clearInterval(splashInterval);
+      location.reload();
     }
   }, 100);
 });
