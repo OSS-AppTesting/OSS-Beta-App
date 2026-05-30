@@ -1780,9 +1780,12 @@ function startAuctionTimers() {
   });
 }
 
+let _auctionOpening = false;
 async function openAuction(id) {
+  if (_auctionOpening) return;
+  _auctionOpening = true;
   const a = AUCTIONS.find(x => x.id === id || x.dbId === id);
-  if (!a) return;
+  if (!a) { _auctionOpening = false; return; }
   currentAuctionId = id;
 
   // Load real bids from DB if this is a DB auction
@@ -1792,6 +1795,7 @@ async function openAuction(id) {
     if (realBids.length) a.bids = realBids;
     subscribeToAuction(dbId);
   }
+  _auctionOpening = false;
 
   const cd = formatCountdown(a.endTime - Date.now());
   const canBid = SB >= a.currentBid + 5;
@@ -3483,7 +3487,11 @@ async function loadAuctionBids(auctionId) {
   }));
 }
 
+const _subscribedAuctions = new Set();
+
 function subscribeToAuction(auctionId) {
+  if (_subscribedAuctions.has(auctionId)) return; // already subscribed
+  _subscribedAuctions.add(auctionId);
   const ch = sb.channel('auction-' + auctionId)
     .on('postgres_changes', {
       event: 'INSERT', schema: 'public', table: 'auction_bids',
