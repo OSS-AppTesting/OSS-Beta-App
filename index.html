@@ -362,69 +362,66 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 <!-- ACCOUNT COMPLETION (address + payment after first signup) -->
 <div id="s-acct-completion" style="display:none;position:fixed;inset:0;background:#0A0A0A;z-index:8000;overflow-y:auto;">
   <div style="min-height:100vh;display:flex;flex-direction:column;padding:60px 24px 48px;">
-    <div style="text-align:center;margin-bottom:28px;">
+    <div style="text-align:center;margin-bottom:32px;">
       <div style="font-size:48px;margin-bottom:12px;">📦</div>
       <h2 style="color:#fff;font-weight:900;font-size:26px;margin-bottom:6px;">Almost there!</h2>
       <p style="color:rgba(255,255,255,.4);font-size:14px;line-height:1.6;">Add your shipping address and payment info so you can buy and sell instantly.</p>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:14px;">
+    <div style="display:flex;flex-direction:column;gap:24px;">
+
+      <!-- Contact -->
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="color:rgba(255,255,255,.35);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.06);">Contact</div>
+        <input id="ac-phone" type="tel" placeholder="Phone number" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      </div>
 
       <!-- Shipping Address -->
-      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">Contact</div>
-
-      <input id="ac-phone" type="tel" placeholder="Phone number" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
-
-      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">Shipping Address</div>
-
-      <input id="ac-address" type="text" placeholder="Street address" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
-
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
-        <input id="ac-city" type="text" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
-        <input id="ac-state" type="text" placeholder="State" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="color:rgba(255,255,255,.35);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.06);">Shipping Address</div>
+        <input id="ac-address" type="text" placeholder="Street address" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
+          <input id="ac-city" type="text" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <input id="ac-state" type="text" placeholder="State" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        </div>
+        <input id="ac-zip" type="text" placeholder="ZIP code" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
       </div>
-
-      <input id="ac-zip" type="text" placeholder="ZIP code" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
 
       <!-- Payment -->
-      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:8px;">Payment Method</div>
-
-      <!-- Demo badge -->
-      <div style="background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;">
-        <span style="font-size:16px;">🔒</span>
-        <div style="color:#FFB347;font-size:12px;font-weight:600;">Demo Mode — Enter any test card details. No real charges.</div>
-      </div>
-
-      <!-- Card number -->
-      <div>
-        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Card Number</div>
-        <div style="position:relative;">
-          <input id="ac-card" type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCardNumber(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;letter-spacing:1px;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
-          <div id="ac-card-type" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:20px;"></div>
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div>
-          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Expiry</div>
-          <input id="ac-expiry" type="text" placeholder="MM/YY" maxlength="5" oninput="formatExpiry(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="color:rgba(255,255,255,.35);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.06);">Payment Method</div>
+        <div style="background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🔒</span>
+          <div style="color:#FFB347;font-size:12px;font-weight:600;">Demo Mode — Enter any test card details. No real charges.</div>
         </div>
         <div>
-          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">CVV</div>
-          <input id="ac-cvv" type="text" placeholder="123" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Card Number</div>
+          <div style="position:relative;">
+            <input id="ac-card" type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCardNumber(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;letter-spacing:1px;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+            <div id="ac-card-type" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:20px;"></div>
+          </div>
         </div>
-      </div>
-
-      <div>
-        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Name on Card</div>
-        <input id="ac-cardholder" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Expiry</div>
+            <input id="ac-expiry" type="text" placeholder="MM/YY" maxlength="5" oninput="formatExpiry(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          </div>
+          <div>
+            <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">CVV</div>
+            <input id="ac-cvv" type="text" placeholder="123" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          </div>
+        </div>
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Name on Card</div>
+          <input id="ac-cardholder" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        </div>
       </div>
 
       <div id="ac-error" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:12px 16px;color:#FF3B30;font-size:13px;font-weight:600;"></div>
 
-      <button onclick="completeAccountSetup()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">Complete Setup 🚀</button>
+      <button onclick="completeAccountSetup()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">Complete Setup 🚀</button>
 
-      <button onclick="skipAccountSetup()" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;padding:8px;">Skip for now →</button>
+      <button onclick="skipAccountSetup()" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;padding:8px;text-align:center;">Skip for now →</button>
 
     </div>
   </div>
@@ -942,12 +939,11 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 
 <!-- MAKE OFFER MODAL -->
 <div id="modal-make-offer" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:700;" onclick="if(event.target===this)this.style.display='none'">
-  <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;max-height:90vh;overflow-y:auto;">
     <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px;"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <button onclick="document.getElementById('modal-make-offer').style.display='none'" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
-      <h3 style="color:#fff;font-weight:900;font-size:22px;">Make an Offer</h3>
-      <button onclick="document.getElementById('modal-make-offer').style.display='none'" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <button onclick="document.getElementById('modal-make-offer').style.display='none'" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">←</button>
+      <h3 style="color:#fff;font-weight:900;font-size:22px;flex:1;">Make an Offer</h3>
     </div>
     <div id="offer-item-summary" style="margin-bottom:20px;"></div>
     <div style="display:flex;flex-direction:column;gap:14px;">
