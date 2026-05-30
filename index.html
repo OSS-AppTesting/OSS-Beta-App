@@ -2434,36 +2434,39 @@ function buildTimeline(status) {
 async function loadReviews() {
   if (!currentUser) return;
   const myUsername = currentProfile?.username || '';
-  const { data, error } = await sb.from('reviews').select('*').eq('reviewer_username', myUsername).order('created_at', { ascending: false });
-  if (error || !data || !data.length) return;
-  // Add to REVIEWS_DATA (reviews I've written)
-  data.forEach(r => {
-    const exists = REVIEWS_DATA.find(x => x.text === r.review_text && x.name === r.reviewer_username);
-    if (!exists) {
-      REVIEWS_DATA.unshift({
-        name: r.reviewer_username,
-        initials: r.reviewer_username.substring(0,2).toUpperCase(),
-        color: '#FF3B30',
-        rating: r.rating,
-        item: r.item_title,
-        text: r.review_text,
-        date: new Date(r.created_at).toLocaleDateString()
-      });
-    }
-  });
+  // Load reviews about sellers I've messaged (as reviewer)
+  // Load reviews I've written
+  const { data, error } = await sb.from('reviews').select('*').eq('reviewer_id', currentUser.id).order('created_at', { ascending: false });
+  if (error) { console.error('loadReviews error:', error); return; }
+  if (data && data.length) {
+    data.forEach(r => {
+      const exists = REVIEWS_DATA.find(x => x.text === r.review_text);
+      if (!exists) {
+        REVIEWS_DATA.unshift({
+          name: myUsername,
+          initials: myUsername.substring(0,2).toUpperCase(),
+          color: '#FF3B30',
+          rating: r.stars,
+          item: r.listing_title,
+          text: r.review_text,
+          date: new Date(r.created_at).toLocaleDateString()
+        });
+      }
+    });
+  }
 
-  // Also load reviews written about my listings (as seller)
-  const { data: sellerData } = await sb.from('reviews').select('*').eq('seller_username', myUsername).order('created_at', { ascending: false });
+  // Load reviews written about me as a seller
+  const { data: sellerData } = await sb.from('reviews').select('*').eq('seller_id', myUsername).order('created_at', { ascending: false });
   if (sellerData && sellerData.length) {
     if (!SELLER_RATINGS[myUsername]) SELLER_RATINGS[myUsername] = { avg: 0, count: 0, reviews: [] };
     const sr = SELLER_RATINGS[myUsername];
     sellerData.forEach(r => {
       const exists = sr.reviews.find(x => x.text === r.review_text);
       if (!exists) {
-        sr.reviews.unshift({ name: r.reviewer_username, initials: r.reviewer_username.substring(0,2).toUpperCase(), color: '#FF3B30', rating: r.rating, item: r.item_title, text: r.review_text, date: new Date(r.created_at).toLocaleDateString() });
+        sr.reviews.unshift({ name: r.reviewer_username, initials: (r.reviewer_username||'').substring(0,2).toUpperCase(), color: '#FF3B30', rating: r.stars, item: r.listing_title, text: r.review_text, date: new Date(r.created_at).toLocaleDateString() });
       }
     });
-    const total = sellerData.reduce((sum, r) => sum + r.rating, 0);
+    const total = sellerData.reduce((sum, r) => sum + r.stars, 0);
     sr.count = sellerData.length;
     sr.avg = Math.round((total / sr.count) * 10) / 10;
   }
@@ -3511,14 +3514,12 @@ async function submitReview() {
   if (currentUser) {
     const { error } = await sb.from('reviews').insert({
       reviewer_id: currentUser.id,
-      reviewer_username: reviewer,
-      seller_username: sellerName,
-      order_id: String(currentReviewOrderId),
-      rating: selectedStars,
-      review_text: text,
-      item_title: itemName
+      seller_id: sellerName,
+      listing_title: itemName,
+      stars: selectedStars,
+      review_text: text
     });
-    if (error) { console.error('Review save error:', error); showToast('Review error: ' + error.message); } else { showToast('✅ Review saved!'); }
+    if (error) { showToast('❌ ' + error.message); } else { showToast('✅ Saved!'); }
   } else {
     showToast('⚠️ Not logged in — review not saved');
   }
