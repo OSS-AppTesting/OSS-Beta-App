@@ -1553,7 +1553,7 @@ function showDetail(id) {
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:20px;cursor:pointer;" onclick="openSellerProfile('${p.seller}')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
           <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:800;font-size:16px;">${p.seller[0].toUpperCase()}</span></div>
-          <div><div style="color:#fff;font-weight:700;font-size:15px;">@${p.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${getSellerRating(p.seller).avg} · ${getSellerRating(p.seller).count} sales</div></div>
+          <div><div style="color:#fff;font-weight:700;font-size:15px;">@${p.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">${getSellerRating(p.seller).count > 0 ? '⭐ ' + getSellerRating(p.seller).avg + ' · ' + getSellerRating(p.seller).count + ' reviews' : 'No reviews yet'}</div></div>
           <button onclick="event.stopPropagation();openChat('${p.seller}','#1a0000','#FF3B30','${p.seller.substring(0,2).toUpperCase()}')" style="margin-left:auto;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
           <button onclick="event.stopPropagation();openReviewFromProfile('${p.seller}','${p.title}')" style="background:rgba(255,200,0,.12);border:1px solid rgba(255,200,0,.25);border-radius:10px;padding:6px 14px;color:#FFD700;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">⭐ Review</button>
         </div>
@@ -2535,11 +2535,23 @@ function buildTimeline(status) {
 async function loadReviews() {
   if (!currentUser) return;
   const myUsername = currentProfile?.username || '';
-  // Load reviews about sellers I've messaged (as reviewer)
   // Load reviews I've written
   const { data, error } = await sb.from('reviews').select('*').eq('reviewer_id', currentUser.id).order('created_at', { ascending: false });
   if (error) { console.error('loadReviews error:', error); return; }
   if (data && data.length) {
+    // Also update SELLER_RATINGS for sellers I've reviewed
+    data.forEach(r => {
+      const sName = r.seller_username || '';
+      if (!sName) return;
+      if (!SELLER_RATINGS[sName]) SELLER_RATINGS[sName] = { avg: 0, count: 0, reviews: [] };
+      const sr = SELLER_RATINGS[sName];
+      if (!sr.reviews.find(x => x.text === r.review_text)) {
+        sr.reviews.push({ name: myUsername, initials: myUsername.substring(0,2).toUpperCase(), color: '#FF3B30', rating: r.rating || r.stars || 0, item: r.item_title || r.listing_title || '', text: r.review_text, date: new Date(r.created_at).toLocaleDateString() });
+        const total = sr.reviews.reduce((s, x) => s + (x.rating || 0), 0);
+        sr.count = sr.reviews.length;
+        sr.avg = Math.round((total / sr.count) * 10) / 10;
+      }
+    });
     data.forEach(r => {
       const exists = REVIEWS_DATA.find(x => x.text === r.review_text);
       if (!exists) {
@@ -3692,7 +3704,7 @@ async function submitReview() {
 }
 
 function getSellerRating(seller) {
-  return SELLER_RATINGS[seller] || { avg: 4.8, count: 12, reviews: [] };
+  return SELLER_RATINGS[seller] || { avg: 0, count: 0, reviews: [] };
 }
 
 function confirmDelivery(orderId) {
@@ -4335,13 +4347,8 @@ const TXNS = [
   {icon:'⏳',label:'Pending: Raincoat Sale',sub:'@kidsboutique',amt:'+12',date:'Pending',clr:'#FFB347'},
 ];
 
-const REVIEWS_DATA = [
-  {name:'sneakerhead_99',initials:'SH',color:'#1a1a2e',rating:5,item:'Vans Daisy High Tops',text:'Super fast shipping, item exactly as described. Would definitely buy from again! 🙌',date:'2 days ago'},
-  {name:'catfoshee',initials:'CF',color:'#3d1a00',rating:5,item:'Vintage Baseball Glove',text:'Packaged perfectly, great condition. Seller communicated great throughout.',date:'1 week ago'},
-  {name:'goldenthread',initials:'GT',color:'#2d1b00',rating:5,item:'Metallic Gold Shirt',text:'Obsessed with this piece!! Ships so fast and very well packaged 🔥',date:'2 weeks ago'},
-  {name:'kidswear22',initials:'KW',color:'#3d0035',rating:4,item:'Pink Winter Boots',text:'Arrived quickly, good condition. Color slightly different than photo but still love them.',date:'3 weeks ago'},
-  {name:'retrofinds',initials:'RF',color:'#1a0000',rating:5,item:'80s Sequin Vest',text:'Amazing seller! Already planning my next purchase from @dinobravo 💯',date:'1 month ago'},
-];
+const REVIEWS_DATA = [];
+
 
 const FAQS = [
   {q:'How do SwapBucks work?',a:'SwapBucks (SB) are the in-app currency. 1 SB = $1 USD value. Buy them in the app and use them to purchase any item. You also earn SB when you sell items.'},
