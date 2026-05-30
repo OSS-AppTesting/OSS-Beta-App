@@ -3261,9 +3261,9 @@ function openReviewFromProfile(seller, itemTitle) {
   if (!currentUser) { showToast('Please log in to leave a review'); return; }
   const fakeId = 'direct_' + seller + '_' + Date.now();
   currentReviewOrderId = fakeId;
+  currentReviewSeller = seller;
+  currentReviewItem = itemTitle || 'Purchase from @' + seller;
   selectedStars = 0;
-  // Create a temp order so submitReview can find it
-  ORDERS.push({ id: fakeId, seller, item: itemTitle || 'Purchase from @' + seller });
   // Reset stars
   for (let i = 1; i <= 5; i++) {
     const el = document.getElementById('star-' + i);
@@ -3396,6 +3396,8 @@ function openSellerProfile(seller) {
 
 const reviewedOrders = {}; // tracks which orders have been reviewed
 let currentReviewOrderId = null;
+let currentReviewSeller = null;
+let currentReviewItem = null;
 let selectedStars = 0;
 
 // Seller ratings store — starts with existing data, updates live
@@ -3472,7 +3474,10 @@ async function submitReview() {
   if (!text) { showToast('Please write a short review!'); return; }
 
   const o = ORDERS.find(x=>x.id===currentReviewOrderId);
-  if (!o) return;
+  // For direct seller reviews, o may not exist — use currentReviewSeller fallback
+  const sellerName = o?.seller || currentReviewSeller || '';
+  const itemName = o?.item || currentReviewItem || 'Item purchase';
+  if (!sellerName) { showToast('Something went wrong — try again'); return; }
 
   const reviewer = currentProfile?.username || 'user';
   const initials = reviewer.substring(0,2).toUpperCase();
@@ -3481,10 +3486,10 @@ async function submitReview() {
   reviewedOrders[currentReviewOrderId] = { stars: selectedStars, text };
 
   // Add to seller's rating in memory
-  if (!SELLER_RATINGS[o.seller]) {
-    SELLER_RATINGS[o.seller] = { avg: selectedStars, count: 1, reviews: [] };
+  if (!SELLER_RATINGS[sellerName]) {
+    SELLER_RATINGS[sellerName] = { avg: selectedStars, count: 1, reviews: [] };
   } else {
-    const sr = SELLER_RATINGS[o.seller];
+    const sr = SELLER_RATINGS[sellerName];
     const total = sr.avg * sr.count + selectedStars;
     sr.count += 1;
     sr.avg = Math.round((total / sr.count) * 10) / 10;
@@ -3492,28 +3497,26 @@ async function submitReview() {
 
   const reviewObj = {
     name: reviewer, initials, color: '#FF3B30',
-    rating: selectedStars, item: o.item, text, date: 'Just now'
+    rating: selectedStars, item: itemName, text, date: 'Just now'
   };
 
-  SELLER_RATINGS[o.seller].reviews.unshift(reviewObj);
+  SELLER_RATINGS[sellerName].reviews.unshift(reviewObj);
   REVIEWS_DATA.unshift(reviewObj);
 
   // Save to Supabase - recover session if needed
-  showToast('Debug: currentUser=' + (currentUser ? currentUser.id.substring(0,6) : 'NULL'));
   if (!currentUser) {
     const { data: { session } } = await sb.auth.getSession();
     if (session) currentUser = session.user;
-    showToast('Debug after recovery: ' + (currentUser ? currentUser.id.substring(0,6) : 'still NULL'));
   }
   if (currentUser) {
     const { error } = await sb.from('reviews').insert({
       reviewer_id: currentUser.id,
       reviewer_username: reviewer,
-      seller_username: o.seller,
+      seller_username: sellerName,
       order_id: String(currentReviewOrderId),
       rating: selectedStars,
       review_text: text,
-      item_title: o.item
+      item_title: itemName
     });
     if (error) { console.error('Review save error:', error); showToast('Review error: ' + error.message); } else { showToast('✅ Review saved!'); }
   } else {
