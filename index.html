@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v30</title>
+<title>OneStopSwap v29</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -617,7 +617,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       </div>
       <span style="color:#FF3B30;font-size:20px;">›</span>
     </div>
-    <div id="my-listings-count" style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Your Listings</div>
+    <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Active · 3 listings</div>
     <div id="my-listings-list" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
 </div>
@@ -691,27 +691,9 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Description</div>
         <textarea id="f-desc" rows="3" placeholder="Describe your item..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;"></textarea>
       </div>
-      <!-- SELL MODE TOGGLE -->
       <div>
-        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Sell Mode</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div id="mode-fixed" onclick="setSellMode('fixed')" style="background:rgba(255,59,48,.2);border:2px solid rgba(255,59,48,.6);border-radius:14px;padding:12px;text-align:center;cursor:pointer;">
-            <div style="font-size:20px;margin-bottom:4px;">🏷️</div>
-            <div style="color:#FF3B30;font-weight:800;font-size:13px;">Fixed Price</div>
-            <div style="color:rgba(255,255,255,.4);font-size:11px;">Buy Now / Offer</div>
-          </div>
-          <div id="mode-auction" onclick="setSellMode('auction')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;text-align:center;cursor:pointer;">
-            <div style="font-size:20px;margin-bottom:4px;">⚡</div>
-            <div style="color:rgba(255,255,255,.6);font-weight:800;font-size:13px;">Live Auction</div>
-            <div style="color:rgba(255,255,255,.4);font-size:11px;">Real-time bidding</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FIXED PRICE FIELDS -->
-      <div id="fixed-price-fields">
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Payment Type</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0;">
           <div id="curr-sb" onclick="selectCurrency('SB')" style="background:rgba(255,59,48,.2);border:2px solid rgba(255,59,48,.6);border-radius:14px;padding:12px;text-align:center;cursor:pointer;">
             <div style="font-size:20px;margin-bottom:4px;">💰</div>
             <div style="color:#FF3B30;font-weight:800;font-size:14px;">SwapBucks</div>
@@ -723,60 +705,15 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
             <div style="color:rgba(255,255,255,.4);font-size:11px;">Real money</div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div>
-            <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Price (SB)</div>
-            <input id="f-price" type="number" placeholder="e.g. 45" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
-          </div>
-          <div>
-            <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From</div>
-            <input id="f-location" placeholder="City, ST" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
-          </div>
-        </div>
       </div>
-
-      <!-- AUCTION FIELDS -->
-      <div id="auction-fields" style="display:none;flex-direction:column;gap:14px;">
-        <div style="background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:12px;padding:12px 14px;">
-          <div style="color:#FFB347;font-size:12px;font-weight:600;">⚡ Auction goes live immediately — bidders compete in real time!</div>
-        </div>
-        <!-- Auction currency toggle -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
-          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Bid Currency</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div id="auc-curr-sb" onclick="setAuctionCurrency('SB')" style="background:rgba(255,59,48,.2);border:2px solid rgba(255,59,48,.6);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
-              <div style="font-size:18px;margin-bottom:2px;">💰</div>
-              <div style="color:#FF3B30;font-weight:800;font-size:13px;">SwapBucks</div>
-            </div>
-            <div id="auc-curr-usd" onclick="setAuctionCurrency('USD')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
-              <div style="font-size:18px;margin-bottom:2px;">💵</div>
-              <div style="color:rgba(255,255,255,.6);font-weight:800;font-size:13px;">Cash (USD)</div>
-            </div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div>
-            <div id="start-bid-label" style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Starting Bid (SB)</div>
-            <input id="f-start-bid" type="number" placeholder="e.g. 20" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
-          </div>
-          <div>
-            <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Reserve (optional)</div>
-            <input id="f-reserve" type="number" placeholder="Min to sell" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
-          </div>
-        </div>
-        <div>
-          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Auction Duration</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <div class="dur-btn" onclick="selectDuration('1h',this)" style="background:rgba(255,59,48,.2);border:2px solid rgba(255,59,48,.5);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:#FF3B30;font-weight:700;font-size:13px;">1h</span></div>
-            <div class="dur-btn" onclick="selectDuration('3h',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">3h</span></div>
-            <div class="dur-btn" onclick="selectDuration('6h',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">6h</span></div>
-            <div class="dur-btn" onclick="selectDuration('12h',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">12h</span></div>
-            <div class="dur-btn" onclick="selectDuration('24h',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">24h</span></div>
-          </div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Price (SB)</div>
+          <input id="f-price" type="number" placeholder="e.g. 45" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
         </div>
         <div>
           <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From</div>
-          <input id="f-auction-location" placeholder="City, ST" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+          <input id="f-location" placeholder="City, ST" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
         </div>
       </div>
 
@@ -789,7 +726,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         </div>
       </div>
 
-      <button id="post-listing-btn" onclick="postListing()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">🚀 Post Listing</button>
+      <button onclick="postListing()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">🚀 Post Listing</button>
     </div>
   </div>
 </div>
@@ -1651,8 +1588,89 @@ function showDetail(id) {
 // ── LIVE AUCTIONS ─────────────────────────────────────────────────────────────
 
 const now = Date.now();
-// Auctions loaded from Supabase — no hardcoded data
-const AUCTIONS = [];
+const AUCTIONS = [
+  {
+    id: 'a1',
+    title: 'Adidas x Ivy Park Stan Smith',
+    img: I['adidas_ivy_park'],
+    seller: 'ivyparklover',
+    sellerInitials: 'IL',
+    sellerColor: '#1a1a2e',
+    category: 'Sneakers',
+    condition: 'Like New',
+    description: 'Rare collab pair, worn once. Size 8. Original box included. Beyoncé collection — these are impossible to find.',
+    startPrice: 80,
+    currentBid: 118,
+    bidCount: 7,
+    endTime: now + 4 * 60 * 1000,       // 4 min — urgent
+    watchers: 23,
+    bids: [
+      {user:'sneakerhead_99',initials:'SH',color:'#1a1a2e',amt:118,ts:'Just now'},
+      {user:'nikefan',initials:'NF',color:'#003322',amt:110,ts:'1 min ago'},
+      {user:'styledrops',initials:'SD',color:'#3d0035',amt:100,ts:'3 min ago'},
+    ]
+  },
+  {
+    id: 'a2',
+    title: 'Y2K Betsey Johnson Bee Dress',
+    img: I['betsey_dress'],
+    seller: 'vintagequeen',
+    sellerInitials: 'VQ',
+    sellerColor: '#2d1b00',
+    category: 'Vintage',
+    condition: 'Good',
+    description: 'Iconic Y2K era piece, original Betsey Johnson label intact. Size M. Some light wear consistent with age.',
+    startPrice: 60,
+    currentBid: 142,
+    bidCount: 12,
+    endTime: now + 22 * 60 * 1000,      // 22 min
+    watchers: 41,
+    bids: [
+      {user:'retrofinds',initials:'RF',color:'#1a0000',amt:142,ts:'2 min ago'},
+      {user:'catfoshee',initials:'CF',color:'#3d1a00',amt:130,ts:'5 min ago'},
+      {user:'goldenthread',initials:'GT',color:'#2d1b00',amt:115,ts:'9 min ago'},
+    ]
+  },
+  {
+    id: 'a3',
+    title: 'Metallic Gold Long-Sleeve',
+    img: I['gold_shirt'],
+    seller: 'goldenthread',
+    sellerInitials: 'GT',
+    sellerColor: '#2d1b00',
+    category: 'Vintage',
+    condition: 'Like New',
+    description: 'Stunning metallic gold top, perfect for going out. Size S/M. Never worn, tags still on.',
+    startPrice: 15,
+    currentBid: 38,
+    bidCount: 5,
+    endTime: now + 2 * 60 * 60 * 1000, // 2 hrs
+    watchers: 18,
+    bids: [
+      {user:'fashion_finds',initials:'FF',color:'#003322',amt:38,ts:'8 min ago'},
+      {user:'silverstyle',initials:'SS',color:'#1a1a2e',amt:30,ts:'22 min ago'},
+    ]
+  },
+  {
+    id: 'a4',
+    title: 'Pink London Fog Winter Boots',
+    img: I['pink_boots'],
+    seller: 'kidswear22',
+    sellerInitials: 'KW',
+    sellerColor: '#3d0035',
+    category: 'Kids & Baby',
+    condition: 'Good',
+    description: 'Super cute pink boots, size 6T. Great condition, worn one season. Perfect for winter.',
+    startPrice: 20,
+    currentBid: 28,
+    bidCount: 3,
+    endTime: now + 5 * 60 * 60 * 1000, // 5 hrs
+    watchers: 9,
+    bids: [
+      {user:'kidsclothing',initials:'KC',color:'#1a0000',amt:28,ts:'30 min ago'},
+    ]
+  },
+];
 
 let auctionTimers = {};
 let currentAuctionId = null;
@@ -1673,10 +1691,6 @@ function formatCountdown(ms) {
 function renderAuctionList() {
   const el = document.getElementById('auction-list');
   if (!el) return;
-  if (!AUCTIONS.length) {
-    el.innerHTML = '<div style="text-align:center;padding:60px 20px;"><div style="font-size:56px;margin-bottom:16px;">⚡</div><div style="color:#fff;font-weight:800;font-size:20px;margin-bottom:8px;">No Live Auctions</div><div style="color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;">Be the first to list something for auction!</div><button onclick=\'go(\'new-listing\');setTimeout(()=>setSellMode(\'auction\'),300)\' style=\"background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px 28px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;\">⚡ Start an Auction</button></div>';
-    return;
-  }
   el.innerHTML = AUCTIONS.map(a => {
     const cd = formatCountdown(a.endTime - Date.now());
     return `<div onclick="openAuction('${a.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;overflow:hidden;cursor:pointer;transition:transform .15s;" onmousedown="this.style.transform='scale(.98)'" onmouseup="this.style.transform=''">
@@ -1741,19 +1755,10 @@ function startAuctionTimers() {
   });
 }
 
-async function openAuction(id) {
-  const a = AUCTIONS.find(x => x.id === id || x.dbId === id);
+function openAuction(id) {
+  const a = AUCTIONS.find(x => x.id === id);
   if (!a) return;
   currentAuctionId = id;
-
-  // Load real bids from DB if this is a DB auction
-  const dbId = a.dbId || a.id;
-  if (!String(dbId).startsWith('local-') && !String(dbId).startsWith('a')) {
-    const realBids = await loadAuctionBids(dbId);
-    if (realBids.length) a.bids = realBids;
-    subscribeToAuction(dbId);
-  }
-
   const cd = formatCountdown(a.endTime - Date.now());
   const canBid = SB >= a.currentBid + 5;
   const nextBid = a.currentBid + 5;
@@ -1836,23 +1841,19 @@ async function openAuction(id) {
   go('auction');
 }
 
-async function placeBid(auctionId, amount) {
-  const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
+function placeBid(auctionId, amount) {
+  const a = AUCTIONS.find(x => x.id === auctionId);
   if (!a || SB < amount) return;
-  if (!currentUser) { showToast('Sign in to place bids!'); return; }
-
-  const myUsername = currentProfile?.username || 'user';
 
   // Deduct SB (hold)
   SB -= amount;
   updateAllSBDisplays();
   addTransaction('pending', '⚡', 'Bid on: ' + a.title, '@' + a.seller + ' auction', -amount);
 
-  // Update local auction immediately
+  // Update auction
   a.currentBid = amount;
   a.bidCount += 1;
-  a.bids.unshift({user: myUsername, initials: myUsername.substring(0,2).toUpperCase(), color:'#FF3B30', amt:amount, ts:'Just now'});
-
+  a.bids.unshift({user:'dinobravo', initials:'DB', color:'#FF3B30', amt:amount, ts:'Just now'});
 
   // Update UI
   const bidEl = document.getElementById('auction-current-bid');
@@ -1890,21 +1891,6 @@ async function placeBid(auctionId, amount) {
   if (liveEl) liveEl.textContent = '💰 ' + SB + ' SB';
 
   showToast('🏆 You\'re the highest bidder! ' + amount + ' SB placed.');
-
-  // Save bid to Supabase
-  const dbId = a.dbId || a.id;
-  if (currentUser && !String(dbId).startsWith('local-')) {
-    const { error: bidError } = await sb.from('auction_bids').insert({
-      auction_id: dbId,
-      bidder_id: currentUser.id,
-      bidder_username: myUsername,
-      amount
-    });
-    if (bidError) console.error('Bid save error:', bidError);
-
-    // Update auction current_bid in DB
-    await sb.from('auctions').update({ current_bid: amount, bid_count: a.bidCount }).eq('id', dbId);
-  }
 
   // Simulate a competing bid after 8-15 seconds on close auctions
   if (a.id === 'a1' || a.id === 'a2') {
@@ -2136,73 +2122,6 @@ function clearSearch() {
 // ── CURRENCY & PAYMENT SYSTEM ────────────────────────────────────────────────
 
 let selectedCurrency = 'SB';
-let sellMode = 'fixed'; // 'fixed' or 'auction'
-let selectedDuration = '1h';
-
-function setSellMode(mode) {
-  sellMode = mode;
-  const fixedEl = document.getElementById('mode-fixed');
-  const auctionEl = document.getElementById('mode-auction');
-  const fixedFields = document.getElementById('fixed-price-fields');
-  const auctionFields = document.getElementById('auction-fields');
-  const btn = document.getElementById('post-listing-btn');
-
-  if (mode === 'fixed') {
-    fixedEl.style.background = 'rgba(255,59,48,.2)';
-    fixedEl.style.border = '2px solid rgba(255,59,48,.6)';
-    fixedEl.querySelector('div:nth-child(2)').style.color = '#FF3B30';
-    auctionEl.style.background = 'rgba(255,255,255,.04)';
-    auctionEl.style.border = '2px solid rgba(255,255,255,.1)';
-    auctionEl.querySelector('div:nth-child(2)').style.color = 'rgba(255,255,255,.6)';
-    fixedFields.style.display = 'block';
-    auctionFields.style.display = 'none';
-    btn.textContent = '🚀 Post Listing';
-  } else {
-    auctionEl.style.background = 'rgba(255,179,71,.15)';
-    auctionEl.style.border = '2px solid rgba(255,179,71,.5)';
-    auctionEl.querySelector('div:nth-child(2)').style.color = '#FFB347';
-    fixedEl.style.background = 'rgba(255,255,255,.04)';
-    fixedEl.style.border = '2px solid rgba(255,255,255,.1)';
-    fixedEl.querySelector('div:nth-child(2)').style.color = 'rgba(255,255,255,.6)';
-    fixedFields.style.display = 'none';
-    auctionFields.style.display = 'flex';
-    btn.textContent = '⚡ Start Auction';
-  }
-}
-
-function selectDuration(dur, el) {
-  selectedDuration = dur;
-  document.querySelectorAll('.dur-btn').forEach(b => {
-    b.style.background = 'rgba(255,255,255,.06)';
-    b.style.border = '1px solid rgba(255,255,255,.1)';
-    b.querySelector('span').style.color = 'rgba(255,255,255,.5)';
-  });
-  el.style.background = 'rgba(255,59,48,.2)';
-  el.style.border = '2px solid rgba(255,59,48,.5)';
-  el.querySelector('span').style.color = '#FF3B30';
-}
-
-let auctionCurrency = 'SB';
-function setAuctionCurrency(type) {
-  auctionCurrency = type;
-  const sbEl = document.getElementById('auc-curr-sb');
-  const usdEl = document.getElementById('auc-curr-usd');
-  const label = document.getElementById('start-bid-label');
-  if (type === 'SB') {
-    sbEl.style.background = 'rgba(255,59,48,.2)'; sbEl.style.border = '2px solid rgba(255,59,48,.6)';
-    sbEl.querySelector('div:last-child').style.color = '#FF3B30';
-    usdEl.style.background = 'rgba(255,255,255,.04)'; usdEl.style.border = '2px solid rgba(255,255,255,.1)';
-    usdEl.querySelector('div:last-child').style.color = 'rgba(255,255,255,.6)';
-    if (label) label.textContent = 'Starting Bid (SB)';
-  } else {
-    usdEl.style.background = 'rgba(0,165,80,.15)'; usdEl.style.border = '2px solid rgba(0,165,80,.5)';
-    usdEl.querySelector('div:last-child').style.color = '#00A550';
-    sbEl.style.background = 'rgba(255,255,255,.04)'; sbEl.style.border = '2px solid rgba(255,255,255,.1)';
-    sbEl.querySelector('div:last-child').style.color = 'rgba(255,255,255,.6)';
-    if (label) label.textContent = 'Starting Bid (USD $)';
-  }
-}
-
 let currentCheckoutId = null;
 let payFilter = 'all';
 
@@ -2462,7 +2381,7 @@ async function completeLogin() {
   } else {
     showToast('Welcome back, ' + firstName + '! 👋');
   }
-  await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb(), loadReviews(), loadOffersFromDb(), loadAuctionsFromDb()]);
+  await Promise.all([loadListings(), loadOrders(), loadTransactions(), loadNotificationsFromDb(), loadReviews(), loadOffersFromDb()]);
   renderAll(); // render once after all data loaded
   setupRealtimeSubscriptions(uname);
   go('home');
@@ -3132,19 +3051,13 @@ async function uploadToCloudinary(base64Data, mimeType) {
 async function postListing() {
   const title = document.getElementById('f-title').value.trim();
   const desc = document.getElementById('f-desc').value.trim();
-  const category = document.getElementById('f-category').value || 'Streetwear';
-  const condition = document.getElementById('f-condition').value || 'Good';
-  if (!title) { showToast('Please add a title first!'); return; }
-
-  // Route to auction or fixed price
-  if (sellMode === 'auction') {
-    await postAuction(title, desc, category, condition);
-    return;
-  }
-
   const price = parseInt(document.getElementById('f-price').value) || 25;
+  const category = document.getElementById('f-category').value || 'Streetwear';
   const location = document.getElementById('f-location').value.trim() || 'Nashville, TN';
   const currency = selectedCurrency || 'SB';
+
+  if (!title) { showToast('Please add a title first!'); return; }
+
   const sellerName = currentProfile?.username || 'dinobravo';
 
   // Build new product object
@@ -3209,195 +3122,8 @@ async function postListing() {
     document.getElementById('f-price').value = '';
     document.getElementById('f-category').value = '';
     document.getElementById('f-location').value = '';
-    // Reset sell mode
-    sellMode = 'fixed';
-    setSellMode('fixed');
     go('home');
   }, 1200);
-}
-
-async function postAuction(title, desc, category, condition) {
-  const startBid = parseInt(document.getElementById('f-start-bid').value) || 10;
-  const reserve = parseInt(document.getElementById('f-reserve').value) || 0;
-  const location = document.getElementById('f-auction-location').value.trim() || currentProfile?.location || 'USA';
-  const sellerName = currentProfile?.username || 'user';
-
-  // Calculate end time from duration
-  const durationMap = {'1h':1,'3h':3,'6h':6,'12h':12,'24h':24};
-  const hrs = durationMap[selectedDuration] || 1;
-  const endsAt = new Date(Date.now() + hrs * 60 * 60 * 1000);
-
-  let imgUrl = '';
-  if (aiPhotoBase64 && aiPhotoMime) {
-    showToast('📤 Uploading photo...');
-    imgUrl = await uploadToCloudinary(aiPhotoBase64, aiPhotoMime) || '';
-  }
-
-  // Build local auction object
-  const localAuction = {
-    id: 'local-' + Date.now(),
-    title, description: desc, category, condition,
-    img: imgUrl || aiPreviewDataUrl || '',
-    seller: sellerName,
-    sellerInitials: sellerName.substring(0,2).toUpperCase(),
-    sellerColor: '#FF3B30',
-    startPrice: startBid,
-    currentBid: startBid,
-    reservePrice: reserve,
-    bidCount: 0,
-    watchers: 0,
-    endTime: endsAt.getTime(),
-    bids: [],
-    status: 'live'
-  };
-  AUCTIONS.unshift(localAuction);
-  startAuctionTimers();
-
-  // Save to Supabase
-  if (currentUser) {
-    const { data, error } = await sb.from('auctions').insert({
-      seller_id: currentUser.id,
-      seller_username: sellerName,
-      title, description: desc, category, condition,
-      image_url: imgUrl,
-      start_price: startBid,
-      current_bid: startBid,
-      reserve_price: reserve || null,
-      currency: auctionCurrency,
-      ends_at: endsAt.toISOString(),
-      status: 'live'
-    }).select().single();
-
-    if (error) { console.error('Auction save error:', error); showToast('❌ ' + error.message); }
-    else if (data) {
-      localAuction.id = data.id; // update to real DB id
-      localAuction.dbId = data.id;
-      showToast('⚡ Auction is live! ' + hrs + 'h countdown started.');
-      // Subscribe to realtime bids for this auction
-      subscribeToAuction(data.id);
-    }
-  } else {
-    showToast('⚡ Auction posted locally!');
-  }
-
-  // Reset form
-  setTimeout(() => {
-    aiPhotoBase64 = null; aiPhotoMime = null; aiPreviewDataUrl = null;
-    document.getElementById('ai-photo-input').value = '';
-    document.getElementById('ai-preview-img').src = '';
-    document.getElementById('ai-photo-preview').style.display = 'none';
-    document.getElementById('ai-photo-placeholder').style.display = 'block';
-    document.getElementById('ai-photo-area').style.height = '';
-    document.getElementById('ai-generate-btn').style.display = 'none';
-    document.getElementById('ai-loading').style.display = 'none';
-    document.getElementById('ai-confidence').style.display = 'none';
-    document.getElementById('f-title').value = '';
-    document.getElementById('f-desc').value = '';
-    document.getElementById('f-start-bid').value = '';
-    document.getElementById('f-reserve').value = '';
-    document.getElementById('f-auction-location').value = '';
-    document.getElementById('f-category').value = '';
-    auctionCurrency = 'SB'; setAuctionCurrency('SB');
-    sellMode = 'fixed'; setSellMode('fixed');
-    go('live'); // go straight to auctions tab to see it live
-  }, 1200);
-}
-
-async function loadAuctionsFromDb() {
-  const { data, error } = await sb.from('auctions')
-    .select('*')
-    .eq('status', 'live')
-    .gt('ends_at', new Date().toISOString())
-    .order('created_at', { ascending: false });
-
-  if (error) { console.error('loadAuctions error:', error); return; }
-  if (!data || !data.length) return;
-
-  // Map DB rows to local auction format
-  AUCTIONS.length = 0;
-  data.forEach(a => {
-    AUCTIONS.push({
-      id: a.id, dbId: a.id,
-      title: a.title, description: a.description,
-      img: a.image_url || '',
-      seller: a.seller_username,
-      sellerInitials: (a.seller_username||'').substring(0,2).toUpperCase(),
-      sellerColor: '#FF3B30',
-      category: a.category, condition: a.condition,
-      startPrice: a.start_price,
-      currentBid: a.current_bid || a.start_price,
-      reservePrice: a.reserve_price,
-      bidCount: a.bid_count || 0,
-      watchers: a.watchers || 0,
-      endTime: new Date(a.ends_at).getTime(),
-      status: a.status,
-      bids: [] // load separately when auction opened
-    });
-  });
-
-  startAuctionTimers();
-  if (document.getElementById('s-live')?.classList.contains('active')) renderAuctionList();
-}
-
-async function loadAuctionBids(auctionId) {
-  const { data } = await sb.from('auction_bids')
-    .select('*')
-    .eq('auction_id', auctionId)
-    .order('created_at', { ascending: false })
-    .limit(20);
-
-  if (!data) return [];
-  return data.map(b => ({
-    user: b.bidder_username,
-    initials: (b.bidder_username||'').substring(0,2).toUpperCase(),
-    color: '#1a0000',
-    amt: b.amount,
-    ts: new Date(b.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
-  }));
-}
-
-function subscribeToAuction(auctionId) {
-  const ch = sb.channel('auction-' + auctionId)
-    .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'auction_bids',
-      filter: `auction_id=eq.${auctionId}`
-    }, payload => {
-      const b = payload.new;
-      const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
-      if (!a) return;
-      a.currentBid = b.amount;
-      a.bidCount += 1;
-      a.bids.unshift({ user: b.bidder_username, initials: (b.bidder_username||'').substring(0,2).toUpperCase(), color: '#1a0000', amt: b.amount, ts: 'Just now' });
-
-      // Update UI if auction detail is open
-      if (currentAuctionId === auctionId) {
-        const bidEl = document.getElementById('auction-current-bid');
-        if (bidEl) { bidEl.innerHTML = b.amount + ' <span style="font-size:16px;color:rgba(255,59,48,.7);">SB</span>'; bidEl.classList.add('bid-pop'); setTimeout(() => bidEl.classList.remove('bid-pop'), 300); }
-        const histEl = document.getElementById('bid-history');
-        if (histEl) renderBidHistory(a);
-      }
-
-      // Notify if outbid
-      if (currentUser && b.bidder_id !== currentUser.id) {
-        addNotification('auction','⚡','rgba(255,179,71,.15)','rgba(255,179,71,.3)',
-          "You've been outbid!",
-          '@' + b.bidder_username + ' bid ' + b.amount + ' SB on ' + a.title,
-          'Bid Again', () => openAuction(auctionId));
-      }
-    })
-    .subscribe();
-  _realtimeChannels.push(ch);
-}
-
-function renderBidHistory(a) {
-  const histEl = document.getElementById('bid-history');
-  if (!histEl) return;
-  histEl.innerHTML = a.bids.map((b,i) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${i===0?'rgba(255,59,48,.08)':'rgba(255,255,255,.03)'};border:1px solid ${i===0?'rgba(255,59,48,.2)':'rgba(255,255,255,.06)'};border-radius:12px;">
-      <div style="width:30px;height:30px;border-radius:8px;background:${b.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;color:#fff;flex-shrink:0;">${b.initials}</div>
-      <div style="flex:1;"><div style="color:#fff;font-weight:600;font-size:13px;">@${b.user}</div><div style="color:rgba(255,255,255,.35);font-size:11px;">${b.ts}</div></div>
-      <div style="color:${i===0?'#FF3B30':'rgba(255,255,255,.6)'};font-weight:800;font-size:14px;">${b.amt} SB${i===0?' 🏆':''}</div>
-    </div>`).join('');
 }
 
 // ── AI CHAT ───────────────────────────────────────────────────────────────────
@@ -5234,82 +4960,17 @@ function filterOrders(type, el) {
   renderOrders(type);
 }
 
-async function renderMyListings() {
-  const el = document.getElementById('my-listings-list');
-  if (!el) return;
-
-  el.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,.3);">Loading...</div>';
-
-  if (!currentUser) {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,.3);">Sign in to see your listings</div>';
-    return;
-  }
-
-  const { data, error } = await sb.from('listings')
-    .select('*')
-    .eq('seller_id', currentUser.id)
-    .order('created_at', { ascending: false });
-
-  if (error) { el.innerHTML = '<div style="color:#FF3B30;padding:20px;">Error loading listings</div>'; return; }
-
-  if (!data || !data.length) {
-    el.innerHTML = `
-      <div style="text-align:center;padding:60px 20px;">
-        <div style="font-size:48px;margin-bottom:16px;">🏪</div>
-        <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:8px;">No listings yet</div>
-        <div style="color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;">Post your first item and start selling!</div>
-        <button onclick="go('new-listing')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px 28px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ Post a Listing</button>
-      </div>`;
-    return;
-  }
-
-  const countEl = document.getElementById('my-listings-count');
-  if (countEl) countEl.textContent = 'Active · ' + data.length + ' listing' + (data.length !== 1 ? 's' : '');
-
-  el.innerHTML = data.map(l => `
-    <div style="background:#1A1A1A;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.08);display:flex;align-items:stretch;">
-      <div style="width:90px;flex-shrink:0;background:#111;position:relative;">
-        <img src="${l.image_url || ''}" style="width:100%;height:100%;object-fit:cover;display:block;">
-        ${l.image_url ? '' : '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;">🏷️</div>'}
-      </div>
-      <div style="flex:1;padding:12px 14px;min-width:0;">
-        <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.title}</div>
-        <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:8px;">${l.category} · ${l.condition || ''}</div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="background:linear-gradient(135deg,${l.currency==='USD'?'#00A550,#007A3D':'#FF3B30,#C0392B'});border-radius:8px;padding:3px 10px;">
-            <span style="color:#fff;font-weight:800;font-size:13px;">${l.currency==='USD'?'$':''}${l.price}${l.currency==='SB'?' SB':''}</span>
-          </div>
-          <div style="background:rgba(0,200,100,.1);border:1px solid rgba(0,200,100,.2);border-radius:8px;padding:3px 8px;">
-            <span style="color:#00C864;font-size:11px;font-weight:700;">● Active</span>
-          </div>
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px;padding:12px;justify-content:center;flex-shrink:0;">
-        <button onclick="showDetail('${l.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View</button>
-        <button onclick="deleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>
-      </div>
-    </div>`).join('');
-}
-
-async function deleteListing(id, title, btn) {
-  // Custom confirm since confirm() is blocked on some mobile browsers
-  showToast('Tap Remove again to confirm deletion');
-  if (btn.dataset.confirming === 'true') {
-    btn.textContent = '...';
-    btn.disabled = true;
-    const { error } = await sb.from('listings').update({ is_active: false }).eq('id', id).eq('seller_id', currentUser.id);
-    if (error) { showToast('❌ ' + error.message); btn.textContent = 'Remove'; btn.disabled = false; return; }
-    const idx = PRODS.findIndex(x => String(x.id) === String(id));
-    if (idx > -1) PRODS.splice(idx, 1);
-    renderAll();
-    showToast('🗑️ Listing removed');
-    renderMyListings();
-    return;
-  }
-  btn.dataset.confirming = 'true';
-  btn.textContent = 'Confirm?';
-  btn.style.background = 'rgba(255,59,48,.3)';
-  setTimeout(() => { if (btn.dataset.confirming) { btn.dataset.confirming = ''; btn.textContent = 'Remove'; btn.style.background = 'rgba(255,59,48,.1)'; } }, 3000);
+function renderMyListings() {
+  const ids = [11, 12, 15];
+  document.querySelectorAll('.listing-row').forEach((row, i) => {
+    const p = PRODS.find(x => x.id === ids[i]);
+    if (!p) return;
+    const imgWrap = row.querySelector('.listing-img-wrap');
+    imgWrap.innerHTML = `<img src="${p.img}" style="width:100%;height:100%;object-fit:cover;">`;
+    row.querySelector('.listing-title').textContent = p.title;
+    const badge = row.querySelector('.listing-price-badge');
+    badge.innerHTML = `<div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:10px;padding:4px 10px;display:inline-flex;align-items:center;gap:3px;"><span style="color:#fff;font-weight:900;font-size:13px;">${p.price}</span><span style="color:rgba(255,255,255,.7);font-size:10px;">SB</span></div>`;
+  });
 }
 
 function toggleFaq(i) {
@@ -5357,7 +5018,7 @@ function go(name) {
   if (name === 'sb-wallet') renderWallet();
   if (name === 'my-reviews') renderReviews();
   if (name === 'support') renderFaq();
-  if (name === 'live') { loadAuctionsFromDb().then(() => { renderAuctionList(); const liveEl = document.getElementById('live-sb-display'); if(liveEl) liveEl.textContent = '💰 ' + SB + ' SB'; }); }
+  if (name === 'live') { renderAuctionList(); const liveEl = document.getElementById('live-sb-display'); if(liveEl) liveEl.textContent = '💰 ' + SB + ' SB'; }
 }
 
 // ── SEARCH ────────────────────────────────────────────────────────────────────
@@ -5388,8 +5049,6 @@ window.addEventListener('load', () => {
   renderAll();
   startAuctionTimers();
   updateNotifBadge();
-  // Load live auctions from DB immediately (public — no auth needed)
-  loadAuctionsFromDb();
 
   let authResolved = false;
 
