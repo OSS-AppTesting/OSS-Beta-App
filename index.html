@@ -1032,45 +1032,116 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 
 <!-- ACCOUNT SETTINGS -->
 <div id="s-acct-settings" class="screen">
-  <div style="padding:52px 20px 20px;">
+  <div style="padding:52px 20px 40px;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
       <button onclick="go('profile')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
-      <h2 style="color:#fff;font-weight:900;font-size:24px;">Account Settings</h2>
+      <h2 style="color:#fff;font-weight:900;font-size:24px;flex:1;">My Profile</h2>
+      <button onclick="saveProfileSettings()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:12px;padding:8px 18px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Save</button>
     </div>
+
     <!-- Avatar -->
     <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:28px;">
       <div style="position:relative;margin-bottom:12px;">
-        <div class="pav" style="width:80px;height:80px;font-size:32px;"><span style="color:#fff;font-weight:900;position:relative;z-index:1;">DB</span><div class="pav-badge">✓</div></div>
+        <div id="settings-avatar" style="width:84px;height:84px;border-radius:26px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #0A0A0A,0 0 0 6px #FF3B30;font-size:32px;font-weight:900;color:#fff;">DB</div>
         <button onclick="showToast('Photo upload coming soon!')" style="position:absolute;bottom:-4px;right:-4px;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:10px;width:28px;height:28px;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✏️</button>
       </div>
-      <span style="color:rgba(255,255,255,.4);font-size:12px;">Tap to change photo</span>
+      <div id="settings-member-since" style="color:rgba(255,255,255,.3);font-size:12px;"></div>
     </div>
-    <!-- Form -->
+
+    <!-- Profile Fields -->
     <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Section: Identity -->
+      <div style="color:rgba(255,255,255,.3);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:-4px;">Identity</div>
+
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Full Name</div>
-        <input value="Dino Bravo" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+        <input id="settings-name" type="text" placeholder="Your full name" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
       </div>
+
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Username</div>
-        <input value="dinobravo" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+        <div style="position:relative;">
+          <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:15px;">@</span>
+          <input id="settings-username" type="text" placeholder="username" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px 14px 32px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" oninput="checkSettingsUsername(this.value)">
+        </div>
+        <div id="settings-username-check" style="font-size:12px;margin-top:4px;padding-left:4px;"></div>
       </div>
+
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Bio</div>
-        <textarea rows="3" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;">Vintage hunter 🕵️ Sneaker collector. Ships same day!</textarea>
+        <textarea id="settings-bio" rows="3" placeholder="Tell buyers about yourself..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"></textarea>
       </div>
+
+      <!-- Section: Contact -->
+      <div style="color:rgba(255,255,255,.3);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;margin-bottom:-4px;">Contact</div>
+
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Email</div>
-        <input value="dino@onestopswap.com" type="email" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+        <input id="settings-email" type="email" placeholder="your@email.com" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:rgba(255,255,255,.5);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" readonly>
+        <div style="color:rgba(255,255,255,.3);font-size:11px;margin-top:4px;padding-left:4px;">Contact support to change your email</div>
       </div>
+
       <div>
-        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ship From</div>
-        <input value="Nashville, TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Phone (optional)</div>
+        <input id="settings-phone" type="tel" placeholder="+1 (555) 000-0000" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
       </div>
-      <button onclick="showToast('Settings saved! ✓')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">Save Changes</button>
+
+      <!-- Section: Shipping -->
+      <div style="color:rgba(255,255,255,.3);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;margin-bottom:-4px;">Shipping</div>
+
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From (City, State)</div>
+        <input id="settings-location" type="text" placeholder="Nashville, TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      </div>
+
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Street Address (optional)</div>
+        <input id="settings-address" type="text" placeholder="123 Main St" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">City</div>
+          <input id="settings-city" type="text" placeholder="Nashville" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        </div>
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">State</div>
+          <input id="settings-state" type="text" placeholder="TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        </div>
+      </div>
+
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">ZIP Code (optional)</div>
+        <input id="settings-zip" type="text" placeholder="37201" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      </div>
+
+      <!-- Section: Security -->
+      <div style="color:rgba(255,255,255,.3);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;margin-bottom:-4px;">Security</div>
+
+      <button onclick="changePassword()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-weight:600;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;justify-content:space-between;align-items:center;">
+        <span>🔒 Change Password</span>
+        <span style="color:rgba(255,255,255,.3);">›</span>
+      </button>
+
+      <!-- Error/Success -->
+      <div id="settings-error" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:12px 16px;color:#FF3B30;font-size:13px;font-weight:600;"></div>
+      <div id="settings-success" style="display:none;background:rgba(0,200,100,.1);border:1px solid rgba(0,200,100,.3);border-radius:12px;padding:12px 16px;color:#00C864;font-size:13px;font-weight:600;"></div>
+
+      <!-- Save button -->
+      <button onclick="saveProfileSettings()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">Save Changes ✓</button>
+
+      <!-- Danger zone -->
+      <div style="margin-top:12px;background:rgba(255,59,48,.05);border:1px solid rgba(255,59,48,.15);border-radius:16px;padding:16px;">
+        <div style="color:rgba(255,255,255,.5);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Danger Zone</div>
+        <button onclick="signOut()" style="width:100%;background:none;border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:12px;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px;">Sign Out</button>
+        <button onclick="showToast('Contact support to delete your account')" style="width:100%;background:none;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;color:rgba(255,255,255,.3);font-weight:600;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">Delete Account</button>
+      </div>
+
     </div>
   </div>
 </div>
+
 
 <!-- SWAPBUCKS WALLET -->
 <div id="s-sb-wallet" class="screen">
@@ -5551,6 +5622,106 @@ async function deleteAuction(id, title, btn) {
   setTimeout(() => { if (btn.dataset.confirming) { btn.dataset.confirming = ''; btn.textContent = 'End'; btn.style.background = 'rgba(255,59,48,.1)'; } }, 3000);
 }
 
+function loadProfileSettings() {
+  if (!currentProfile) return;
+  const p = currentProfile;
+  const u = currentUser;
+
+  // Avatar initials
+  const uname = p.username || '';
+  const el = document.getElementById('settings-avatar');
+  if (el) el.textContent = uname.substring(0,2).toUpperCase();
+
+  // Member since
+  const msEl = document.getElementById('settings-member-since');
+  if (msEl && p.created_at) msEl.textContent = 'Member since ' + new Date(p.created_at).toLocaleDateString('en-US', {month:'long', year:'numeric'});
+
+  // Fill fields
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  set('settings-name', p.full_name);
+  set('settings-username', p.username);
+  set('settings-bio', p.bio);
+  set('settings-email', u?.email);
+  set('settings-phone', p.phone);
+  set('settings-location', p.location);
+  set('settings-address', p.address);
+  set('settings-city', p.city);
+  set('settings-state', p.state);
+  set('settings-zip', p.zip);
+
+  // Clear messages
+  const errEl = document.getElementById('settings-error');
+  const sucEl = document.getElementById('settings-success');
+  if (errEl) errEl.style.display = 'none';
+  if (sucEl) sucEl.style.display = 'none';
+}
+
+async function checkSettingsUsername(val) {
+  const el = document.getElementById('settings-username-check');
+  if (!el) return;
+  if (!val || val.length < 3) { el.innerHTML = ''; return; }
+  if (val === currentProfile?.username) { el.innerHTML = '<span style="color:rgba(255,255,255,.3);">Current username</span>'; return; }
+  const { data } = await sb.from('profiles').select('username').eq('username', val.toLowerCase()).single();
+  el.innerHTML = data
+    ? '<span style="color:#FF3B30;">❌ @' + val + ' is taken</span>'
+    : '<span style="color:#00C864;">✓ @' + val + ' is available</span>';
+}
+
+async function saveProfileSettings() {
+  const errEl = document.getElementById('settings-error');
+  const sucEl = document.getElementById('settings-success');
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+
+  const name = document.getElementById('settings-name').value.trim();
+  const username = document.getElementById('settings-username').value.trim().toLowerCase();
+  const bio = document.getElementById('settings-bio').value.trim();
+  const phone = document.getElementById('settings-phone').value.trim();
+  const location = document.getElementById('settings-location').value.trim();
+  const address = document.getElementById('settings-address').value.trim();
+  const city = document.getElementById('settings-city').value.trim();
+  const state = document.getElementById('settings-state').value.trim();
+  const zip = document.getElementById('settings-zip').value.trim();
+
+  if (!name) { errEl.textContent = 'Full name is required'; errEl.style.display = 'block'; return; }
+  if (!username || username.length < 3) { errEl.textContent = 'Username must be at least 3 characters'; errEl.style.display = 'block'; return; }
+
+  // Check username if changed
+  if (username !== currentProfile?.username) {
+    const { data: existing } = await sb.from('profiles').select('username').eq('username', username).single();
+    if (existing) { errEl.textContent = '@' + username + ' is already taken'; errEl.style.display = 'block'; return; }
+  }
+
+  const updates = { full_name: name, username, bio, phone, location, address, city, state, zip };
+  const { error } = await sb.from('profiles').update(updates).eq('id', currentUser.id);
+
+  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+
+  // Update local profile
+  Object.assign(currentProfile, updates);
+
+  // Update profile screen display
+  const el_i = document.getElementById('prof-initials');
+  const el_n = document.getElementById('prof-name');
+  const el_u = document.getElementById('prof-username');
+  if (el_i) el_i.textContent = username.substring(0,2).toUpperCase();
+  if (el_n) el_n.textContent = name;
+  if (el_u) el_u.textContent = '@' + username + ' · Store Open 🟢';
+
+  sucEl.textContent = '✓ Profile updated successfully!';
+  sucEl.style.display = 'block';
+  showToast('Profile saved! ✓');
+}
+
+async function changePassword() {
+  if (!currentUser?.email) { showToast('No email on this account'); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(currentUser.email, {
+    redirectTo: 'https://oss-apptesting.github.io/OSS-Beta-App'
+  });
+  if (error) { showToast('❌ ' + error.message); return; }
+  showToast('📧 Password reset email sent!');
+}
+
 function toggleFaq(i) {
   const ans = document.getElementById('faq-ans-' + i);
   const arrow = document.getElementById('faq-arrow-' + i);
@@ -5595,6 +5766,7 @@ function go(name) {
   if (name === 'my-listings') renderMyListings();
   if (name === 'sb-wallet') renderWallet();
   if (name === 'my-reviews') renderReviews();
+  if (name === 'acct-settings') loadProfileSettings();
   if (name === 'support') renderFaq();
   if (name === 'live') { loadAuctionsFromDb().then(() => { renderAuctionList(); const liveEl = document.getElementById('live-sb-display'); if(liveEl) liveEl.textContent = '💰 ' + SB + ' SB'; }); }
 }
