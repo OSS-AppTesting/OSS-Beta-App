@@ -560,44 +560,8 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 <div id="s-messages" class="screen">
   <div style="padding:52px 16px 20px;">
     <h2 style="color:#fff;font-weight:900;font-size:28px;margin-bottom:20px;">Messages</h2>
-    <div style="background:rgba(255,255,255,.03);border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.06);">
-      <div class="mt" onclick="openChat('sneakerhead_99','#1a1a2e','#4FC3F7','SH')">
-        <div class="mav" style="background:linear-gradient(135deg,#1a1a2e,#0f3460);">SH</div>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#fff;font-weight:700;font-size:15px;">sneakerhead_99</span><span style="color:rgba(255,255,255,.3);font-size:11px;">2m ago</span></div>
-          <div style="color:rgba(255,255,255,.5);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Hey! Does this ship to Texas? 👟</div>
-        </div>
-        <div class="unread"></div>
-      </div>
-      <div class="mt" onclick="openChat('catfoshee','#3d1a00','#FFB347','CF')">
-        <div class="mav" style="background:linear-gradient(135deg,#3d1a00,#5c2800);">CF</div>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#fff;font-weight:700;font-size:15px;">catfoshee</span><span style="color:rgba(255,255,255,.3);font-size:11px;">1h ago</span></div>
-          <div style="color:rgba(255,255,255,.5);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Shipped! Tracking # sent to your email 📦</div>
-        </div>
-      </div>
-      <div class="mt" onclick="openChat('goldenthread','#2d1b00','#FF6B35','GT')">
-        <div class="mav" style="background:linear-gradient(135deg,#2d1b00,#6b3a00);">GT</div>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#fff;font-weight:700;font-size:15px;">goldenthread</span><span style="color:rgba(255,255,255,.3);font-size:11px;">3h ago</span></div>
-          <div style="color:rgba(255,255,255,.5);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">I can ship same day if you swap before 2pm!</div>
-        </div>
-        <div class="unread"></div>
-      </div>
-      <div class="mt" onclick="openChat('kidswear22','#3d0035','#FF69B4','KW')">
-        <div class="mav" style="background:linear-gradient(135deg,#3d0035,#5c0050);">KW</div>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#fff;font-weight:700;font-size:15px;">kidswear22</span><span style="color:rgba(255,255,255,.3);font-size:11px;">Yesterday</span></div>
-          <div style="color:rgba(255,255,255,.5);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Do you combine shipping on multiple items?</div>
-        </div>
-      </div>
-      <div class="mt" onclick="openChat('retrofinds','#1a0000','#FF3B30','RF')">
-        <div class="mav" style="background:linear-gradient(135deg,#1a0000,#3d0000);">RF</div>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#fff;font-weight:700;font-size:15px;">retrofinds</span><span style="color:rgba(255,255,255,.3);font-size:11px;">2 days ago</span></div>
-          <div style="color:rgba(255,255,255,.5);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Your package was delivered! Hope you love it 🙌</div>
-        </div>
-      </div>
+    <div id="messages-list" style="background:rgba(255,255,255,.03);border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.06);">
+      <div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,.3);font-size:14px;">Loading conversations...</div>
     </div>
   </div>
 </div>
@@ -2963,6 +2927,64 @@ let currentChatColor = null;
 let currentChatAccent = null;
 let chatHistory = {}; // per-seller message history for AI context
 
+async function renderMessages() {
+  const list = document.getElementById('messages-list');
+  if (!list) return;
+
+  if (!currentUser) {
+    // Show demo conversations when not logged in
+    list.innerHTML = `
+      <div class="mt" onclick="openChat('sneakerhead_99','#1a1a2e','#4FC3F7','SH')">
+        <div class="mav" style="background:linear-gradient(135deg,#1a1a2e,#0f3460);">SH</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#fff;font-weight:700;font-size:15px;">sneakerhead_99</span><span style="color:rgba(255,255,255,.3);font-size:11px;">2m ago</span></div>
+          <div style="color:rgba(255,255,255,.5);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Hey! Does this ship to Texas? 👟</div>
+        </div>
+      </div>
+      <div class="mt" onclick="openChat('goldenthread','#2d1b00','#FF6B35','GT')">
+        <div class="mav" style="background:linear-gradient(135deg,#2d1b00,#6b3a00);">GT</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#fff;font-weight:700;font-size:15px;">goldenthread</span><span style="color:rgba(255,255,255,.3);font-size:11px;">3h ago</span></div>
+          <div style="color:rgba(255,255,255,.5);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">I can ship same day if you swap before 2pm!</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const myUsername = currentProfile?.username || '';
+  const { data, error } = await sb.from('messages')
+    .select('*')
+    .or(`sender_username.eq.${myUsername},receiver_username.eq.${myUsername}`)
+    .order('created_at', { ascending: false });
+
+  if (error || !data || !data.length) {
+    list.innerHTML = '<div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,.3);font-size:14px;">No conversations yet — start chatting with a seller!</div>';
+    return;
+  }
+
+  // Group by conversation partner, keep latest message
+  const convos = {};
+  data.forEach(m => {
+    const partner = m.sender_username === myUsername ? m.receiver_username : m.sender_username;
+    if (!convos[partner]) convos[partner] = m;
+  });
+
+  list.innerHTML = Object.entries(convos).map(([partner, lastMsg]) => {
+    const initials = partner.substring(0,2).toUpperCase();
+    const color = '#' + [...partner].reduce((h,c) => ((h<<5)-h+c.charCodeAt(0))|0, 0).toString(16).slice(-6).padStart(6,'0');
+    const time = new Date(lastMsg.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const preview = lastMsg.message.length > 40 ? lastMsg.message.substring(0,40) + '...' : lastMsg.message;
+    const isMe = lastMsg.sender_username === myUsername;
+    return `<div class="mt" onclick="openChat('${partner}','${color}','#FF3B30','${initials}')">
+      <div class="mav" style="background:linear-gradient(135deg,${color},#1a0000);">${initials}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#fff;font-weight:700;font-size:15px;">@${partner}</span><span style="color:rgba(255,255,255,.3);font-size:11px;">${time}</span></div>
+        <div style="color:rgba(255,255,255,.5);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${isMe ? 'You: ' : ''}${preview}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 async function openChat(seller, color, accent, initials) {
   currentChatSeller = seller;
   currentChatColor = color;
@@ -4713,6 +4735,7 @@ function go(name) {
   window.scrollTo(0,0);
   // Sub-screen data rendering
   if (name === 'my-orders') renderOrders('all');
+  if (name === 'messages') renderMessages();
   if (name === 'my-offers') renderOffers('all');
   if (name === 'notifications') renderNotifications(notifFilter);
   if (name === 'my-listings') renderMyListings();
