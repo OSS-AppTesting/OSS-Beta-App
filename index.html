@@ -1167,6 +1167,18 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
           <input id="ae-reserve" type="number" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
         </div>
       </div>
+      <div id="ae-duration-fields" style="display:none;">
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Auction Duration <span style="text-transform:none;font-weight:500;color:rgba(255,255,255,.3);">· resets the clock from now</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <button class="ae-dur" onclick="aeSelectDur(1,this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">1h</button>
+          <button class="ae-dur" onclick="aeSelectDur(6,this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">6h</button>
+          <button class="ae-dur" onclick="aeSelectDur(12,this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">12h</button>
+          <button class="ae-dur" onclick="aeSelectDur(24,this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">24h</button>
+          <button class="ae-dur" onclick="aeSelectDur(72,this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">3d</button>
+        </div>
+        <div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:6px;">Or set an exact end time</div>
+        <input id="ae-dur-custom" type="datetime-local" onchange="aeCustomDur()" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;color-scheme:dark;">
+      </div>
       <div id="ae-prebid-note" style="display:none;background:rgba(0,200,100,.08);border:1px solid rgba(0,200,100,.2);border-radius:12px;padding:10px 14px;color:rgba(0,200,100,.9);font-size:12px;">✓ No bids yet — you can still adjust the starting bid &amp; reserve.</div>
       <div id="ae-lock-note" style="display:none;background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:12px;padding:10px 14px;color:rgba(255,179,71,.9);font-size:12px;">🔒 Bidding has started — starting bid, reserve &amp; timing are locked to keep it fair to bidders. You can still refine the title, description &amp; photo.</div>
       <button id="ae-save-btn" onclick="saveAuctionEdits()" style="width:100%;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">💾 Save Changes</button>
@@ -6537,6 +6549,23 @@ async function removeListingFromDetail(id) {
 
 // ── OWNER AUCTION CONTROLS (edit / end) ───────────────────────────────────────
 let editingAuctionId = null;
+let aeDurHours = null, aeDurCustom = null;
+
+function aeSelectDur(h, el) {
+  aeDurHours = h; aeDurCustom = null;
+  const c = document.getElementById('ae-dur-custom'); if (c) c.value = '';
+  document.querySelectorAll('.ae-dur').forEach(b => { b.style.background = 'rgba(255,255,255,.06)'; b.style.border = '1px solid rgba(255,255,255,.12)'; b.style.color = 'rgba(255,255,255,.7)'; });
+  if (el) { el.style.background = 'rgba(255,59,48,.2)'; el.style.border = '1px solid rgba(255,59,48,.6)'; el.style.color = '#FF3B30'; }
+}
+
+function aeCustomDur() {
+  const c = document.getElementById('ae-dur-custom');
+  aeDurCustom = c && c.value ? c.value : null;
+  if (aeDurCustom) {
+    aeDurHours = null;
+    document.querySelectorAll('.ae-dur').forEach(b => { b.style.background = 'rgba(255,255,255,.06)'; b.style.border = '1px solid rgba(255,255,255,.12)'; b.style.color = 'rgba(255,255,255,.7)'; });
+  }
+}
 
 function openEditAuction(id) {
   const a = AUCTIONS.find(x => x.id === id || x.dbId === id);
@@ -6550,16 +6579,23 @@ function openEditAuction(id) {
   // Bid-aware: price/reserve editable only before the first bid (fair to bidders)
   const hasBids = (a.bidCount || 0) > 0;
   const priceFields = document.getElementById('ae-price-fields');
+  const durFields = document.getElementById('ae-duration-fields');
   const preNote = document.getElementById('ae-prebid-note');
   const lockNote = document.getElementById('ae-lock-note');
+  // reset duration selection each open
+  aeDurHours = null; aeDurCustom = null;
+  document.querySelectorAll('.ae-dur').forEach(b => { b.style.background = 'rgba(255,255,255,.06)'; b.style.border = '1px solid rgba(255,255,255,.12)'; b.style.color = 'rgba(255,255,255,.7)'; });
+  const durCustomEl = document.getElementById('ae-dur-custom'); if (durCustomEl) durCustomEl.value = '';
   if (hasBids) {
     if (priceFields) priceFields.style.display = 'none';
+    if (durFields) durFields.style.display = 'none';
     if (preNote) preNote.style.display = 'none';
     if (lockNote) lockNote.style.display = 'block';
   } else {
     document.getElementById('ae-start').value = (a.startPrice ?? '');
     document.getElementById('ae-reserve').value = (a.reservePrice ?? 0);
     if (priceFields) priceFields.style.display = 'grid';
+    if (durFields) durFields.style.display = 'block';
     if (preNote) preNote.style.display = 'block';
     if (lockNote) lockNote.style.display = 'none';
   }
@@ -6611,6 +6647,18 @@ async function saveAuctionEdits() {
       update.current_bid = sp; // no bids yet, so current bid tracks the new start
     }
     if (resEl && resEl.value !== '') update.reserve_price = parseInt(resEl.value) || 0;
+    // Duration (pre-bid only): preset resets from now, or exact custom end time
+    let newEndsAt = null;
+    if (aeDurCustom) newEndsAt = new Date(aeDurCustom);
+    else if (aeDurHours) newEndsAt = new Date(Date.now() + aeDurHours * 3600 * 1000);
+    if (newEndsAt) {
+      if (isNaN(newEndsAt.getTime()) || newEndsAt.getTime() <= Date.now()) {
+        showToast('⚠️ End time must be in the future');
+        const b = document.getElementById('ae-save-btn'); if (b) { b.disabled = false; b.textContent = '💾 Save Changes'; }
+        return;
+      }
+      update.ends_at = newEndsAt.toISOString();
+    }
   }
 
   const { error } = await sb.from('auctions').update(update).eq('id', id).eq('seller_id', currentUser.id);
@@ -6623,6 +6671,7 @@ async function saveAuctionEdits() {
     if (newImgUrl) la.img = newImgUrl;
     if (update.start_price != null) { la.startPrice = update.start_price; la.currentBid = update.current_bid; }
     if (update.reserve_price != null) la.reservePrice = update.reserve_price;
+    if (update.ends_at) { la.endTime = new Date(update.ends_at).getTime(); if (typeof startAuctionTimers === 'function') startAuctionTimers(); }
   }
   document.getElementById('modal-edit-auction').style.display = 'none';
   editingAuctionId = null; aiPhotoBase64 = null; aiPhotoMime = null;
