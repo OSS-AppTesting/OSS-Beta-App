@@ -678,7 +678,13 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 <div id="s-profile" class="screen">
   <div style="padding:52px 20px 20px;">
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
-      <div class="pav"><span id="prof-initials" style="color:#fff;font-weight:900;font-size:26px;position:relative;z-index:1;">DB</span><div class="pav-badge">✓</div></div>
+      <div class="pav" onclick="changeAvatar()" style="cursor:pointer;" title="Tap to change photo">
+        <img id="prof-avatar-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:22px;display:none;z-index:1;">
+        <span id="prof-initials" style="color:#fff;font-weight:900;font-size:26px;position:relative;z-index:1;">DB</span>
+        <div style="position:absolute;bottom:-4px;left:-4px;width:22px;height:22px;background:#1A1A1A;border:2px solid #0A0A0A;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;z-index:2;">📷</div>
+        <div class="pav-badge">✓</div>
+      </div>
+      <input id="avatar-input" type="file" accept="image/*" style="display:none;" onchange="handleAvatarPhoto(this)">
       <div><div id="prof-name" style="color:#fff;font-weight:800;font-size:20px;">Dino Bravo</div><div id="prof-username" style="color:rgba(255,255,255,.4);font-size:13px;">@dinobravo · Store Open 🟢</div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
@@ -1098,11 +1104,14 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">
     <div id="pe-frame" style="position:relative;touch-action:none;user-select:none;-webkit-user-select:none;">
       <canvas id="pe-canvas" style="display:block;border-radius:8px;background:#111;"></canvas>
-      <div style="position:absolute;inset:0;pointer-events:none;border:2px solid rgba(255,255,255,.85);border-radius:8px;"></div>
-      <div style="position:absolute;left:33.33%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.25);pointer-events:none;"></div>
-      <div style="position:absolute;left:66.66%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.25);pointer-events:none;"></div>
-      <div style="position:absolute;top:33.33%;left:0;right:0;height:1px;background:rgba(255,255,255,.25);pointer-events:none;"></div>
-      <div style="position:absolute;top:66.66%;left:0;right:0;height:1px;background:rgba(255,255,255,.25);pointer-events:none;"></div>
+      <div id="pe-grid">
+        <div style="position:absolute;inset:0;pointer-events:none;border:2px solid rgba(255,255,255,.85);border-radius:8px;"></div>
+        <div style="position:absolute;left:33.33%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.25);pointer-events:none;"></div>
+        <div style="position:absolute;left:66.66%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.25);pointer-events:none;"></div>
+        <div style="position:absolute;top:33.33%;left:0;right:0;height:1px;background:rgba(255,255,255,.25);pointer-events:none;"></div>
+        <div style="position:absolute;top:66.66%;left:0;right:0;height:1px;background:rgba(255,255,255,.25);pointer-events:none;"></div>
+      </div>
+      <div id="pe-circle-mask" style="position:absolute;inset:0;pointer-events:none;border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,.55), inset 0 0 0 2px rgba(255,255,255,.85);display:none;"></div>
     </div>
   </div>
   <div style="padding:8px 28px 36px;">
@@ -3012,6 +3021,7 @@ async function completeLogin() {
   if (el_i) el_i.textContent = uname.substring(0,2).toUpperCase();
   if (el_n) el_n.textContent = fname;
   if (el_u) el_u.textContent = '@' + uname + ' · Store Open 🟢';
+  updateProfileAvatar();
   const firstName = fname.split(' ')[0] || uname;
   // Check if new user — profile created in last 60 seconds
   const isNewUser = currentProfile?.created_at &&
@@ -3564,8 +3574,12 @@ function handlePhotoSelected(input) {
 let peImg = null, peV = 320, peScale = 1, peBaseRatio = 1, peRot = 0, peOffX = 0, peOffY = 0;
 let peSourceDataUrl = null, peDrag = null, pePinch = null;
 
-function openPhotoEditor(dataUrl) {
+function openPhotoEditor(dataUrl, shape) {
   peSourceDataUrl = dataUrl;
+  const grid = document.getElementById('pe-grid');
+  const circle = document.getElementById('pe-circle-mask');
+  if (shape === 'circle') { if (grid) grid.style.display = 'none'; if (circle) circle.style.display = 'block'; }
+  else { if (grid) grid.style.display = 'block'; if (circle) circle.style.display = 'none'; }
   const img = new Image();
   img.onload = () => {
     peImg = img;
@@ -3712,6 +3726,13 @@ function applyPhotoEditor() {
     return;
   }
 
+  if (window._avatarPending) {
+    window._avatarPending = false;
+    document.getElementById('modal-photo-editor').style.display = 'none';
+    saveAvatar(dataUrl);
+    return;
+  }
+
   document.getElementById('ai-preview-img').src = dataUrl;
   document.getElementById('ai-photo-preview').style.display = 'block';
   document.getElementById('ai-photo-placeholder').style.display = 'none';
@@ -3730,6 +3751,42 @@ function cancelPhotoEditor() {
 function editCurrentPhoto() {
   if (peSourceDataUrl) { openPhotoEditor(peSourceDataUrl); }
   else { showToast('Tap "Change" to pick a photo to crop'); }
+}
+
+// ── PROFILE AVATAR ────────────────────────────────────────────────────────────
+function changeAvatar() {
+  if (!currentUser) { showToast('Log in to set a profile photo'); return; }
+  const inp = document.getElementById('avatar-input'); if (inp) inp.click();
+}
+
+function handleAvatarPhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => { window._avatarPending = true; openPhotoEditor(e.target.result, 'circle'); };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+async function saveAvatar(dataUrl) {
+  showToast('📤 Uploading photo...');
+  const b64 = dataUrl.split(',')[1];
+  const url = await uploadToCloudinary(b64, 'image/jpeg', false);
+  if (!url) { showToast('❌ Upload failed — try again'); return; }
+  if (currentUser) {
+    const { error } = await sb.from('profiles').update({ avatar_url: url }).eq('id', currentUser.id);
+    if (error) { showToast('❌ ' + error.message); return; }
+  }
+  if (currentProfile) currentProfile.avatar_url = url;
+  updateProfileAvatar();
+  showToast('✅ Profile photo updated!');
+}
+
+function updateProfileAvatar() {
+  const img = document.getElementById('prof-avatar-img');
+  const ini = document.getElementById('prof-initials');
+  const url = currentProfile && currentProfile.avatar_url;
+  if (url) { if (img) { img.src = url; img.style.display = 'block'; } if (ini) ini.style.display = 'none'; }
+  else { if (img) img.style.display = 'none'; if (ini) ini.style.display = 'block'; }
 }
 
 async function runAIListing() {
@@ -6964,6 +7021,7 @@ async function saveProfileSettings() {
   if (el_i) el_i.textContent = username.substring(0,2).toUpperCase();
   if (el_n) el_n.textContent = name;
   if (el_u) el_u.textContent = '@' + username + ' · Store Open 🟢';
+  updateProfileAvatar();
 
   sucEl.textContent = '✓ Profile updated successfully!';
   sucEl.style.display = 'block';
