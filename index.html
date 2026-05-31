@@ -1117,7 +1117,63 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 
-<!-- REPORT ISSUE MODAL -->
+<!-- EDIT AUCTION MODAL -->
+<div id="modal-edit-auction" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:flex-end;justify-content:center;z-index:850;" onclick="if(event.target===this)closeEditAuction()">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 40px;width:100%;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease;">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div style="color:#fff;font-weight:900;font-size:20px;">Edit Auction</div>
+      <button onclick="closeEditAuction()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
+      <div style="width:72px;height:72px;border-radius:14px;overflow:hidden;background:#222;flex-shrink:0;">
+        <img id="ae-photo" src="" style="width:100%;height:100%;object-fit:cover;">
+      </div>
+      <button onclick="document.getElementById('ae-photo-input').click()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:10px 16px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">📷 Change Photo</button>
+      <input id="ae-photo-input" type="file" accept="image/*" style="display:none;" onchange="handleAuctionEditPhoto(this)">
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Title</div>
+        <input id="ae-title" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Category</div>
+          <select id="ae-category" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
+            <option>Sneakers</option><option>Streetwear</option><option>Vintage</option><option>Kids & Baby</option><option>Other</option>
+          </select>
+        </div>
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Condition</div>
+          <select id="ae-condition" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
+            <option>New with tags</option><option>Like New</option><option>Good</option><option>Fair</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Description</div>
+        <textarea id="ae-desc" rows="3" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;"></textarea>
+      </div>
+      <div id="ae-price-fields" style="display:none;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Starting Bid</div>
+          <input id="ae-start" type="number" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+        </div>
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Reserve (0 = none)</div>
+          <input id="ae-reserve" type="number" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+        </div>
+      </div>
+      <div id="ae-prebid-note" style="display:none;background:rgba(0,200,100,.08);border:1px solid rgba(0,200,100,.2);border-radius:12px;padding:10px 14px;color:rgba(0,200,100,.9);font-size:12px;">✓ No bids yet — you can still adjust the starting bid &amp; reserve.</div>
+      <div id="ae-lock-note" style="display:none;background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:12px;padding:10px 14px;color:rgba(255,179,71,.9);font-size:12px;">🔒 Bidding has started — starting bid, reserve &amp; timing are locked to keep it fair to bidders. You can still refine the title, description &amp; photo.</div>
+      <button id="ae-save-btn" onclick="saveAuctionEdits()" style="width:100%;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-report-issue" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:700;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
     <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px;"></div>
@@ -1926,7 +1982,11 @@ function notifyMe() {
 function showDetail(id) {
   const p = PRODS.find(x=>x.id===id);
   if (!p) { go('home'); return; }
-  const isOwner = !!(currentProfile && p.seller && p.seller === currentProfile.username);
+  const isOwner = !!(
+    (currentUser && p.sellerId && p.sellerId === currentUser.id) ||
+    (currentProfile && currentProfile.username && p.seller &&
+      p.seller.toLowerCase() === currentProfile.username.toLowerCase())
+  );
   const isSold = !!p.sold;
   const isUSD = p.currency === 'USD';
   const canBuy = isUSD ? true : SB >= p.price;
@@ -2123,6 +2183,11 @@ async function openAuction(id) {
   _auctionOpening = false;
 
   const cd = formatCountdown(a.endTime - Date.now());
+  const isAucOwner = !!(
+    (currentUser && a.sellerId && a.sellerId === currentUser.id) ||
+    (currentProfile && currentProfile.username && a.seller &&
+      a.seller.toLowerCase() === currentProfile.username.toLowerCase())
+  );
   const canBid = SB >= a.currentBid + 5;
   const nextBid = a.currentBid + 5;
 
@@ -2160,7 +2225,9 @@ async function openAuction(id) {
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:12px 14px;cursor:pointer;" onclick="openSellerProfile('${a.seller}')">
         <div style="width:36px;height:36px;border-radius:10px;background:${a.sellerColor};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;">${a.sellerInitials}</div>
         <div style="flex:1;"><div style="color:#fff;font-weight:700;font-size:14px;">@${a.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${getSellerRating(a.seller).avg} · Verified seller ✓</div></div>
-        <button onclick="openChat('${a.seller}','${a.sellerColor}','#FF3B30','${a.sellerInitials}')" style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Ask</button>
+        ${isAucOwner
+          ? `<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:6px 14px;"><span style="color:#00C864;font-weight:700;font-size:13px;">✓ Your auction</span></div>`
+          : `<button onclick="event.stopPropagation();openChat('${a.seller}','${a.sellerColor}','#FF3B30','${a.sellerInitials}')" style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Ask</button>`}
       </div>
 
       <!-- Details -->
@@ -2187,7 +2254,13 @@ async function openAuction(id) {
 
     <!-- Bid bar -->
     <div style="position:fixed;bottom:0;left:0;right:0;padding:12px 16px 32px;background:rgba(10,10,10,.97);border-top:1px solid rgba(255,255,255,.08);">
-      ${cd.ended ? `
+      ${isAucOwner ? `
+        <div style="display:flex;gap:10px;">
+          <button onclick="openEditAuction('${a.id}')" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">✎ Edit Auction</button>
+          <button onclick="endAuctionFromScreen('${a.id}')" style="flex:0 0 auto;background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.4);border-radius:16px;padding:14px 18px;color:#FFB347;font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">⏹ End</button>
+        </div>
+        <div style="text-align:center;margin-top:8px;color:rgba(255,255,255,.35);font-size:12px;">Your auction · ${a.bidCount} bids · ${a.currentBid} SB high bid</div>
+      ` : cd.ended ? `
         <div style="background:rgba(255,255,255,.06);border-radius:16px;padding:16px;text-align:center;color:rgba(255,255,255,.4);font-weight:700;">Auction Ended</div>
       ` : `
         <div style="display:flex;gap:10px;margin-bottom:10px;">
@@ -3035,7 +3108,7 @@ async function loadListings() {
   const now = Date.now();
   const mapped = data.filter(l => !l.sold).map(l => ({
     id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
-    seller: l.seller_username || 'user', location: l.location || '',
+    seller: l.seller_username || 'user', sellerId: l.seller_id, location: l.location || '',
     img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
     condition: l.condition || '', sold: !!l.sold,
     likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || '',
@@ -3620,6 +3693,13 @@ function applyPhotoEditor() {
   aiPhotoBase64 = dataUrl.split(',')[1];
   aiPreviewDataUrl = dataUrl;
 
+  if (window._aePhotoPending) {
+    const aep = document.getElementById('ae-photo'); if (aep) aep.src = dataUrl;
+    window._aePhotoPending = false;
+    document.getElementById('modal-photo-editor').style.display = 'none';
+    return;
+  }
+
   document.getElementById('ai-preview-img').src = dataUrl;
   document.getElementById('ai-photo-preview').style.display = 'block';
   document.getElementById('ai-photo-placeholder').style.display = 'none';
@@ -3971,7 +4051,7 @@ async function loadAuctionsFromDb() {
       id: a.id, dbId: a.id,
       title: a.title, description: a.description,
       img: a.image_url || '',
-      seller: a.seller_username,
+      seller: a.seller_username, sellerId: a.seller_id,
       sellerInitials: (a.seller_username||'').substring(0,2).toUpperCase(),
       sellerColor: '#FF3B30',
       category: a.category, condition: a.condition,
@@ -6278,9 +6358,10 @@ async function renderMyListings() {
           <div style="color:${cd.urgent?'#FF3B30':'rgba(255,179,71,.8)'};font-size:11px;font-weight:700;">⏱ ${cd.text}</div>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:8px;padding:12px;justify-content:center;flex-shrink:0;">
+      <div style="display:flex;flex-direction:column;gap:6px;padding:12px;justify-content:center;flex-shrink:0;">
         <button onclick="openAuction('${a.id}')" style="background:rgba(255,179,71,.1);border:1px solid rgba(255,179,71,.3);border-radius:10px;padding:7px 12px;color:#FFB347;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View</button>
-        <button onclick="deleteAuction('${a.id}','${a.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">End</button>
+        <button onclick="openEditAuction('${a.id}')" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.25);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
+        <button onclick="deleteAuction('${a.id}','${a.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">End</button>
       </div>
     </div>`;
   }).join('');
@@ -6451,6 +6532,119 @@ async function removeListingFromDetail(id) {
   if (idx > -1) PRODS.splice(idx, 1);
   renderAll();
   showToast('🗑️ Listing removed');
+  go('my-listings');
+}
+
+// ── OWNER AUCTION CONTROLS (edit / end) ───────────────────────────────────────
+let editingAuctionId = null;
+
+function openEditAuction(id) {
+  const a = AUCTIONS.find(x => x.id === id || x.dbId === id);
+  if (!a) { showToast('Auction not found'); return; }
+  editingAuctionId = a.dbId || a.id;
+  document.getElementById('ae-title').value = a.title || '';
+  document.getElementById('ae-desc').value = a.description || '';
+  const cat = document.getElementById('ae-category'); if (cat) cat.value = a.category || 'Other';
+  const cond = document.getElementById('ae-condition'); if (cond) cond.value = a.condition || 'Good';
+  const aep = document.getElementById('ae-photo'); if (aep) aep.src = a.img || '';
+  // Bid-aware: price/reserve editable only before the first bid (fair to bidders)
+  const hasBids = (a.bidCount || 0) > 0;
+  const priceFields = document.getElementById('ae-price-fields');
+  const preNote = document.getElementById('ae-prebid-note');
+  const lockNote = document.getElementById('ae-lock-note');
+  if (hasBids) {
+    if (priceFields) priceFields.style.display = 'none';
+    if (preNote) preNote.style.display = 'none';
+    if (lockNote) lockNote.style.display = 'block';
+  } else {
+    document.getElementById('ae-start').value = (a.startPrice ?? '');
+    document.getElementById('ae-reserve').value = (a.reservePrice ?? 0);
+    if (priceFields) priceFields.style.display = 'grid';
+    if (preNote) preNote.style.display = 'block';
+    if (lockNote) lockNote.style.display = 'none';
+  }
+  aiPhotoBase64 = null; aiPhotoMime = null; window._aePhotoPending = false;
+  document.getElementById('modal-edit-auction').style.display = 'flex';
+}
+
+function closeEditAuction() {
+  document.getElementById('modal-edit-auction').style.display = 'none';
+  editingAuctionId = null; aiPhotoBase64 = null; aiPhotoMime = null; window._aePhotoPending = false;
+}
+
+function handleAuctionEditPhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => { window._aePhotoPending = true; openPhotoEditor(e.target.result); };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+async function saveAuctionEdits() {
+  if (!editingAuctionId) return;
+  const id = editingAuctionId;
+  const title = document.getElementById('ae-title').value.trim();
+  const desc = document.getElementById('ae-desc').value.trim();
+  const category = document.getElementById('ae-category').value;
+  const condition = document.getElementById('ae-condition').value;
+  if (!title) { showToast('Title cannot be empty'); return; }
+  const btn = document.getElementById('ae-save-btn');
+  if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+
+  let newImgUrl = null;
+  if (aiPhotoBase64 && aiPhotoMime) {
+    showToast('📤 Uploading photo...');
+    newImgUrl = await uploadToCloudinary(aiPhotoBase64, aiPhotoMime, false);
+  }
+  const update = { title, description: desc, category, condition };
+  if (newImgUrl) update.image_url = newImgUrl;
+
+  // Price/reserve editable only before the first bid
+  const la0 = AUCTIONS.find(x => x.id === id || x.dbId === id);
+  const hasBids = (la0?.bidCount || 0) > 0;
+  if (!hasBids) {
+    const startEl = document.getElementById('ae-start');
+    const resEl = document.getElementById('ae-reserve');
+    if (startEl && startEl.value !== '') {
+      const sp = parseInt(startEl.value) || 0;
+      update.start_price = sp;
+      update.current_bid = sp; // no bids yet, so current bid tracks the new start
+    }
+    if (resEl && resEl.value !== '') update.reserve_price = parseInt(resEl.value) || 0;
+  }
+
+  const { error } = await sb.from('auctions').update(update).eq('id', id).eq('seller_id', currentUser.id);
+  if (btn) { btn.disabled = false; btn.textContent = '💾 Save Changes'; }
+  if (error) { showToast('❌ ' + error.message); return; }
+
+  const la = AUCTIONS.find(x => x.id === id || x.dbId === id);
+  if (la) {
+    la.title = title; la.description = desc; la.category = category; la.condition = condition;
+    if (newImgUrl) la.img = newImgUrl;
+    if (update.start_price != null) { la.startPrice = update.start_price; la.currentBid = update.current_bid; }
+    if (update.reserve_price != null) la.reservePrice = update.reserve_price;
+  }
+  document.getElementById('modal-edit-auction').style.display = 'none';
+  editingAuctionId = null; aiPhotoBase64 = null; aiPhotoMime = null;
+  showToast('✅ Auction updated');
+  renderAuctionList();
+  if (currentAuctionId === id) openAuction(id);
+}
+
+async function endAuctionFromScreen(id) {
+  if (window._endAucConfirm !== id) {
+    window._endAucConfirm = id;
+    showToast('Tap End again to confirm ending');
+    setTimeout(() => { if (window._endAucConfirm === id) window._endAucConfirm = null; }, 3000);
+    return;
+  }
+  window._endAucConfirm = null;
+  const { error } = await sb.from('auctions').update({ status: 'ended' }).eq('id', id).eq('seller_id', currentUser.id);
+  if (error) { showToast('❌ ' + error.message); return; }
+  const idx = AUCTIONS.findIndex(x => x.id === id || x.dbId === id);
+  if (idx > -1) AUCTIONS.splice(idx, 1);
+  showToast('⏹️ Auction ended');
+  renderAuctionList();
   go('my-listings');
 }
 
