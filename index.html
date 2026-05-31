@@ -711,10 +711,10 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
       <button onclick="go('profile')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
       <h2 style="color:#fff;font-weight:900;font-size:24px;flex:1;">My Listings</h2>
-      <button onclick="go('new-listing')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:8px 16px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ List Item</button>
+      <button onclick="startNewListing()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:8px 16px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ List Item</button>
     </div>
     <!-- AI banner -->
-    <div onclick="go('new-listing')" style="background:linear-gradient(135deg,#1A0000,#2D0000);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:16px 18px;margin-bottom:20px;cursor:pointer;display:flex;align-items:center;gap:14px;">
+    <div onclick="startNewListing()" style="background:linear-gradient(135deg,#1A0000,#2D0000);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:16px 18px;margin-bottom:20px;cursor:pointer;display:flex;align-items:center;gap:14px;">
       <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">📸</div>
       <div style="flex:1;">
         <div style="color:#fff;font-weight:800;font-size:15px;margin-bottom:2px;">AI Listing Generator</div>
@@ -731,8 +731,8 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 <div id="s-new-listing" class="screen">
   <div style="padding:52px 20px 20px;padding-bottom:40px;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
-      <button onclick="go('my-listings')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
-      <h2 style="color:#fff;font-weight:900;font-size:24px;flex:1;">New Listing</h2>
+      <button onclick="exitNewListing()" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+      <h2 id="new-listing-title" style="color:#fff;font-weight:900;font-size:24px;flex:1;">New Listing</h2>
       <div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:10px;padding:4px 10px;">
         <span style="color:#fff;font-size:10px;font-weight:800;">⚡ AI Powered</span>
       </div>
@@ -1925,6 +1925,9 @@ function notifyMe() {
 
 function showDetail(id) {
   const p = PRODS.find(x=>x.id===id);
+  if (!p) { go('home'); return; }
+  const isOwner = !!(currentProfile && p.seller && p.seller === currentProfile.username);
+  const isSold = !!p.sold;
   const isUSD = p.currency === 'USD';
   const canBuy = isUSD ? true : SB >= p.price;
   const priceDisplay = isUSD
@@ -1944,6 +1947,16 @@ function showDetail(id) {
           <button class="rbtn" onclick="showSBShortfall(${p.price}, () => swapItem('${p.id}'))" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);color:#fff;cursor:pointer;">💰 Get SB to Swap</button>
           <button onclick="openMakeOffer('${p.id}')" style="flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:15px 18px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer</button>
         </div>`;
+  const ownerBar = isSold
+    ? `<div style="display:flex;gap:10px;">
+        <button class="rbtn" onclick="relistListing('${p.id}')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);color:#fff;cursor:pointer;">↩︎ Relist Item</button>
+        <button onclick="removeListingFromDetail('${p.id}')" style="flex:0 0 auto;background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:16px;padding:15px 18px;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🗑️ Remove</button>
+      </div>`
+    : `<div style="display:flex;gap:10px;">
+        <button class="rbtn" onclick="openEditListing('${p.id}')" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);color:#fff;cursor:pointer;">✎ Edit Listing</button>
+        <button onclick="markAsSold('${p.id}')" style="flex:0 0 auto;background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:16px;padding:15px 14px;color:#00C864;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">✓ Sold</button>
+        <button onclick="removeListingFromDetail('${p.id}')" style="flex:0 0 auto;background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:16px;padding:15px 14px;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🗑️</button>
+      </div>`;
   const similar = PRODS.filter(x=>x.category===p.category && x.id!==p.id).slice(0,4);
   document.getElementById('detail-body').innerHTML = `
     <div style="position:relative;height:360px;overflow:hidden;background:#111;flex-shrink:0;">
@@ -1962,8 +1975,10 @@ function showDetail(id) {
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
           <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:800;font-size:16px;">${p.seller[0].toUpperCase()}</span></div>
           <div><div style="color:#fff;font-weight:700;font-size:15px;">@${p.seller}</div><div id="detail-seller-rating" style="color:rgba(255,255,255,.4);font-size:12px;">${getSellerRating(p.seller).count > 0 ? '⭐ ' + getSellerRating(p.seller).avg + ' · ' + getSellerRating(p.seller).count + ' reviews' : 'No reviews yet'}</div></div>
-          <button onclick="event.stopPropagation();openChat('${p.seller}','#1a0000','#FF3B30','${p.seller.substring(0,2).toUpperCase()}')" style="margin-left:auto;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
-          <button onclick="event.stopPropagation();openReviewFromProfile('${p.seller}','${p.title}')" style="background:rgba(255,200,0,.12);border:1px solid rgba(255,200,0,.25);border-radius:10px;padding:6px 14px;color:#FFD700;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">⭐ Review</button>
+          ${isOwner
+            ? `<div style="margin-left:auto;background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:6px 14px;"><span style="color:#00C864;font-weight:700;font-size:13px;">${isSold ? '✓ Sold' : '✓ Your listing'}</span></div>`
+            : `<button onclick="event.stopPropagation();openChat('${p.seller}','#1a0000','#FF3B30','${p.seller.substring(0,2).toUpperCase()}')" style="margin-left:auto;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
+          <button onclick="event.stopPropagation();openReviewFromProfile('${p.seller}','${p.title}')" style="background:rgba(255,200,0,.12);border:1px solid rgba(255,200,0,.25);border-radius:10px;padding:6px 14px;color:#FFD700;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">⭐ Review</button>`}
         </div>
         <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:12px;display:flex;gap:20px;">
           <div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Ships from</div><div style="color:#fff;font-weight:600;font-size:13px;">${p.location}</div></div>
@@ -1988,7 +2003,7 @@ function showDetail(id) {
       </div>` : ''}
     </div>
     <div style="position:fixed;bottom:0;left:0;right:0;padding:12px 20px 32px;background:linear-gradient(180deg,transparent,#0A0A0A 30%);">
-      ${buyBtn}
+      ${isOwner ? ownerBar : buyBtn}
     </div>`;
   loadSellerRating(p.seller).then(r => {
     const el = document.getElementById('detail-seller-rating');
@@ -3018,10 +3033,11 @@ async function loadListings() {
   const { data, error } = await sb.from('listings').select('*').eq('is_active', true).order('created_at', { ascending: false });
   if (error || !data || !data.length) return;
   const now = Date.now();
-  const mapped = data.map(l => ({
+  const mapped = data.filter(l => !l.sold).map(l => ({
     id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
     seller: l.seller_username || 'user', location: l.location || '',
     img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
+    condition: l.condition || '', sold: !!l.sold,
     likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || '',
     isNew: l.created_at ? (now - new Date(l.created_at).getTime()) < 86400000 : false
   }));
@@ -3620,7 +3636,8 @@ function cancelPhotoEditor() {
 }
 
 function editCurrentPhoto() {
-  if (peSourceDataUrl) openPhotoEditor(peSourceDataUrl);
+  if (peSourceDataUrl) { openPhotoEditor(peSourceDataUrl); }
+  else { showToast('Tap "Change" to pick a photo to crop'); }
 }
 
 async function runAIListing() {
@@ -3752,6 +3769,12 @@ async function postListing() {
   const category = document.getElementById('f-category').value || 'Streetwear';
   const condition = document.getElementById('f-condition').value || 'Good';
   if (!title) { showToast('Please add a title first!'); return; }
+
+  // Edit mode → save changes to existing listing instead of creating new
+  if (editingListingId) {
+    await saveListingEdits(title, desc, category, condition);
+    return;
+  }
 
   // Route to auction or fixed price
   if (sellMode === 'auction') {
@@ -6195,7 +6218,7 @@ async function renderMyListings() {
         <div style="font-size:48px;margin-bottom:16px;">🏪</div>
         <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:8px;">No listings yet</div>
         <div style="color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;">Post your first item and start selling!</div>
-        <button onclick="go('new-listing')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px 28px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ Post a Listing</button>
+        <button onclick="startNewListing()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px 28px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ Post a Listing</button>
       </div>`;
     return;
   }
@@ -6205,10 +6228,11 @@ async function renderMyListings() {
 
   // Render fixed-price listings
   const listingsHTML = listings.map(l => `
-    <div style="background:#1A1A1A;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.08);display:flex;align-items:stretch;">
+    <div style="background:#1A1A1A;border-radius:18px;overflow:hidden;border:1px solid ${l.sold ? 'rgba(0,200,100,.25)' : 'rgba(255,255,255,.08)'};display:flex;align-items:stretch;">
       <div style="width:90px;flex-shrink:0;background:#111;position:relative;">
-        <img src="${l.image_url || ''}" style="width:100%;height:100%;object-fit:cover;display:block;">
+        <img src="${l.image_url || ''}" style="width:100%;height:100%;object-fit:cover;display:block;${l.sold ? 'opacity:.5;' : ''}">
         ${l.image_url ? '' : '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;">🏷️</div>'}
+        ${l.sold ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><span style="background:#00C864;color:#000;font-size:10px;font-weight:900;padding:3px 8px;border-radius:6px;transform:rotate(-12deg);">SOLD</span></div>' : ''}
       </div>
       <div style="flex:1;padding:12px 14px;min-width:0;">
         <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.title}</div>
@@ -6217,14 +6241,18 @@ async function renderMyListings() {
           <div style="background:linear-gradient(135deg,${l.currency==='USD'?'#00A550,#007A3D':'#FF3B30,#C0392B'});border-radius:8px;padding:3px 10px;">
             <span style="color:#fff;font-weight:800;font-size:13px;">${l.currency==='USD'?'$':''}${l.price}${l.currency==='SB'?' SB':''}</span>
           </div>
-          <div style="background:rgba(0,200,100,.1);border:1px solid rgba(0,200,100,.2);border-radius:8px;padding:3px 8px;">
-            <span style="color:#00C864;font-size:11px;font-weight:700;">● Fixed Price</span>
-          </div>
+          ${l.sold
+            ? '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">✓ Sold</span></div>'
+            : '<div style="background:rgba(0,200,100,.1);border:1px solid rgba(0,200,100,.2);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">● Fixed Price</span></div>'}
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:8px;padding:12px;justify-content:center;flex-shrink:0;">
-        <button onclick="showDetail('${l.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View</button>
-        <button onclick="deleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:12px;justify-content:center;flex-shrink:0;">
+        ${l.sold
+          ? `<button onclick="relistListing('${l.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 12px;color:#00C864;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Relist</button>
+             <button onclick="deleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>`
+          : `<button onclick="showDetail('${l.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View</button>
+             <button onclick="openEditListing('${l.id}')" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.25);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
+             <button onclick="deleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>`}
       </div>
     </div>`).join('');
 
@@ -6297,6 +6325,133 @@ async function deleteAuction(id, title, btn) {
   btn.textContent = 'Confirm?';
   btn.style.background = 'rgba(255,59,48,.3)';
   setTimeout(() => { if (btn.dataset.confirming) { btn.dataset.confirming = ''; btn.textContent = 'End'; btn.style.background = 'rgba(255,59,48,.1)'; } }, 3000);
+}
+
+// ── OWNER LISTING CONTROLS (edit / sold / relist / remove) ────────────────────
+let editingListingId = null;
+
+function resetListingForm() {
+  ['f-title', 'f-desc', 'f-price', 'f-location'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+  const cat = document.getElementById('f-category'); if (cat) cat.value = '';
+  const cond = document.getElementById('f-condition'); if (cond) cond.value = '';
+  aiPhotoBase64 = null; aiPhotoMime = null; aiPreviewDataUrl = null; peSourceDataUrl = null;
+  const inp = document.getElementById('ai-photo-input'); if (inp) inp.value = '';
+  const pv = document.getElementById('ai-photo-preview'); if (pv) pv.style.display = 'none';
+  const ph = document.getElementById('ai-photo-placeholder'); if (ph) ph.style.display = 'block';
+  const area = document.getElementById('ai-photo-area'); if (area) area.style.height = '';
+  const gen = document.getElementById('ai-generate-btn'); if (gen) gen.style.display = 'none';
+  sellMode = 'fixed';
+  if (typeof setSellMode === 'function') setSellMode('fixed');
+}
+
+function startNewListing() {
+  editingListingId = null;
+  resetListingForm();
+  const h = document.getElementById('new-listing-title'); if (h) h.textContent = 'New Listing';
+  const pb = document.getElementById('post-listing-btn'); if (pb) pb.textContent = '🚀 Post Listing';
+  go('new-listing');
+}
+
+function exitNewListing() {
+  editingListingId = null;
+  const h = document.getElementById('new-listing-title'); if (h) h.textContent = 'New Listing';
+  if (typeof setSellMode === 'function') setSellMode('fixed');
+  go('my-listings');
+}
+
+function openEditListing(id) {
+  const p = PRODS.find(x => String(x.id) === String(id));
+  if (!p) { showToast('Listing not found'); return; }
+  editingListingId = id;
+  go('new-listing');
+  sellMode = 'fixed';
+  if (typeof setSellMode === 'function') setSellMode('fixed');
+  document.getElementById('f-title').value = p.title || '';
+  document.getElementById('f-desc').value = p.description || '';
+  const pr = document.getElementById('f-price'); if (pr) pr.value = (p.price ?? '');
+  const cat = document.getElementById('f-category'); if (cat) cat.value = p.category || '';
+  const cond = document.getElementById('f-condition'); if (cond) cond.value = p.condition || '';
+  const loc = document.getElementById('f-location'); if (loc) loc.value = p.location || '';
+  selectedCurrency = p.currency || 'SB';
+  if (typeof selectCurrency === 'function') selectCurrency(selectedCurrency);
+  // Existing photo shows as preview; only re-uploads if the user picks a new one
+  aiPreviewDataUrl = p.img || ''; aiPhotoBase64 = null; aiPhotoMime = null; peSourceDataUrl = null;
+  const pi = document.getElementById('ai-preview-img'); if (pi) pi.src = p.img || '';
+  document.getElementById('ai-photo-preview').style.display = p.img ? 'block' : 'none';
+  document.getElementById('ai-photo-placeholder').style.display = p.img ? 'none' : 'block';
+  document.getElementById('ai-photo-area').style.height = p.img ? '220px' : '';
+  document.getElementById('ai-generate-btn').style.display = 'none';
+  const h = document.getElementById('new-listing-title'); if (h) h.textContent = 'Edit Listing';
+  const pb = document.getElementById('post-listing-btn'); if (pb) pb.textContent = '💾 Save Changes';
+}
+
+async function saveListingEdits(title, desc, category, condition) {
+  const id = editingListingId;
+  const price = parseInt(document.getElementById('f-price').value) || 0;
+  const location = document.getElementById('f-location').value.trim();
+  const currency = selectedCurrency || 'SB';
+  const btn = document.getElementById('post-listing-btn');
+  if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+
+  let newImgUrl = null;
+  if (aiPhotoBase64 && aiPhotoMime) {
+    showToast('📤 Uploading photo...');
+    newImgUrl = await uploadToCloudinary(aiPhotoBase64, aiPhotoMime, bgRemovalEnabled);
+  }
+  const update = { title, description: desc, price, currency, category, condition, location };
+  if (newImgUrl) update.image_url = newImgUrl;
+
+  const { error } = await sb.from('listings').update(update).eq('id', id).eq('seller_id', currentUser.id);
+  if (btn) btn.disabled = false;
+  if (error) { showToast('❌ ' + error.message); if (btn) btn.textContent = '💾 Save Changes'; return; }
+
+  const lp = PRODS.find(x => String(x.id) === String(id));
+  if (lp) { lp.title = title; lp.description = desc; lp.price = price; lp.currency = currency; lp.category = category; lp.condition = condition; lp.location = location; if (newImgUrl) lp.img = newImgUrl; }
+  renderAll();
+  showToast('✅ Listing updated');
+  editingListingId = null;
+  const h = document.getElementById('new-listing-title'); if (h) h.textContent = 'New Listing';
+  if (btn) btn.textContent = '🚀 Post Listing';
+  resetListingForm();
+  go('my-listings');
+}
+
+async function markAsSold(id) {
+  if (!currentUser) return;
+  const { error } = await sb.from('listings').update({ sold: true }).eq('id', id).eq('seller_id', currentUser.id);
+  if (error) { showToast('❌ ' + (error.message || 'Could not mark as sold')); return; }
+  const idx = PRODS.findIndex(x => String(x.id) === String(id));
+  if (idx > -1) PRODS.splice(idx, 1);
+  renderAll();
+  showToast('🎉 Marked as sold!');
+  go('my-listings');
+}
+
+async function relistListing(id) {
+  if (!currentUser) return;
+  const { error } = await sb.from('listings').update({ sold: false, is_active: true }).eq('id', id).eq('seller_id', currentUser.id);
+  if (error) { showToast('❌ ' + (error.message || 'Could not relist')); return; }
+  showToast('↩︎ Relisted — live in the shop again!');
+  await loadListings(); renderAll();
+  go('my-listings');
+}
+
+async function removeListingFromDetail(id) {
+  if (!currentUser) return;
+  if (window._removeConfirmId !== id) {
+    window._removeConfirmId = id;
+    showToast('Tap Remove again to confirm');
+    setTimeout(() => { if (window._removeConfirmId === id) window._removeConfirmId = null; }, 3000);
+    return;
+  }
+  window._removeConfirmId = null;
+  const { error } = await sb.from('listings').update({ is_active: false }).eq('id', id).eq('seller_id', currentUser.id);
+  if (error) { showToast('❌ ' + error.message); return; }
+  const idx = PRODS.findIndex(x => String(x.id) === String(id));
+  if (idx > -1) PRODS.splice(idx, 1);
+  renderAll();
+  showToast('🗑️ Listing removed');
+  go('my-listings');
 }
 
 function showAccountCompletion() {
