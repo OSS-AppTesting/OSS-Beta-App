@@ -1931,7 +1931,7 @@ function showDetail(id) {
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:20px;cursor:pointer;" onclick="openSellerProfile('${p.seller}')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
           <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:800;font-size:16px;">${p.seller[0].toUpperCase()}</span></div>
-          <div><div style="color:#fff;font-weight:700;font-size:15px;">@${p.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">${getSellerRating(p.seller).count > 0 ? '⭐ ' + getSellerRating(p.seller).avg + ' · ' + getSellerRating(p.seller).count + ' reviews' : 'No reviews yet'}</div></div>
+          <div><div style="color:#fff;font-weight:700;font-size:15px;">@${p.seller}</div><div id="detail-seller-rating" style="color:rgba(255,255,255,.4);font-size:12px;">${getSellerRating(p.seller).count > 0 ? '⭐ ' + getSellerRating(p.seller).avg + ' · ' + getSellerRating(p.seller).count + ' reviews' : 'No reviews yet'}</div></div>
           <button onclick="event.stopPropagation();openChat('${p.seller}','#1a0000','#FF3B30','${p.seller.substring(0,2).toUpperCase()}')" style="margin-left:auto;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
           <button onclick="event.stopPropagation();openReviewFromProfile('${p.seller}','${p.title}')" style="background:rgba(255,200,0,.12);border:1px solid rgba(255,200,0,.25);border-radius:10px;padding:6px 14px;color:#FFD700;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">⭐ Review</button>
         </div>
@@ -1960,6 +1960,10 @@ function showDetail(id) {
     <div style="position:fixed;bottom:0;left:0;right:0;padding:12px 20px 32px;background:linear-gradient(180deg,transparent,#0A0A0A 30%);">
       ${buyBtn}
     </div>`;
+  loadSellerRating(p.seller).then(r => {
+    const el = document.getElementById('detail-seller-rating');
+    if (el && r) el.innerHTML = r.count > 0 ? '⭐ ' + r.avg + ' · ' + r.count + ' reviews' : 'No reviews yet';
+  });
   go('detail');
 }
 
@@ -4166,7 +4170,21 @@ function openReviewFromProfile(seller, itemTitle) {
   document.getElementById('modal-review').style.display = 'flex';
 }
 
+let _currentSellerView = null;
+
 function openSellerProfile(seller) {
+  _currentSellerView = seller;
+  renderSellerProfile(seller);   // instant render from cache/seed
+  go('seller');
+  // Then pull real reviews and re-render if still viewing this seller
+  loadSellerRating(seller).then(r => {
+    if (r && _currentSellerView === seller && document.getElementById('s-seller')?.classList.contains('active')) {
+      renderSellerProfile(seller);
+    }
+  });
+}
+
+function renderSellerProfile(seller) {
   const rating = getSellerRating(seller);
   const bio = SELLER_BIOS[seller] || { bio: 'OneStopSwap seller', location: 'USA', joined: '2023' };
   const initials = seller.substring(0,2).toUpperCase();
@@ -4175,13 +4193,13 @@ function openSellerProfile(seller) {
   // Get seller listings
   const listings = PRODS.filter(p => p.seller === seller);
 
-  // Get reviews — combine sample + any live reviews left by user
+  // Get reviews — combine real DB reviews + any sample flavor reviews
   const liveReviews = rating.reviews || [];
   const sampleReviews = SELLER_SAMPLE_REVIEWS[seller] || [];
   const allReviews = [...liveReviews, ...sampleReviews];
 
-  // Rating breakdown
-  const pcts = [78, 15, 5, 1, 1];
+  // Rating breakdown — computed from real reviews when present, else seed flavor
+  const pcts = ratingBreakdown(liveReviews, [78, 15, 5, 1, 1]);
 
   document.getElementById('seller-body').innerHTML = `
     <div style="position:sticky;top:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
@@ -4237,7 +4255,7 @@ function openSellerProfile(seller) {
       </div>` : ''}
 
       <!-- Rating breakdown -->
-      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Reviews · ${allReviews.length + rating.count - (SELLER_SAMPLE_REVIEWS[seller]?.length||0)}</div>
+      <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Reviews · ${rating.count}</div>
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:16px;margin-bottom:16px;">
         <div style="display:flex;align-items:center;gap:16px;">
           <div style="text-align:center;">
@@ -4275,8 +4293,6 @@ function openSellerProfile(seller) {
           <div style="color:rgba(255,255,255,.3);text-align:center;padding:30px 0;font-size:14px;">No reviews yet — be the first!</div>`}
       </div>
     </div>`;
-
-  go('seller');
 }
 
 // ── SELLER RATINGS & REVIEWS ─────────────────────────────────────────────────
@@ -4299,6 +4315,9 @@ const SELLER_RATINGS = {
 };
 
 const STAR_LABELS = ['','😞 Poor','😐 Fair','🙂 Good','😊 Great','🤩 Amazing!'];
+
+// Immutable copy of the seed demo ratings so blending real reviews stays idempotent
+const SELLER_RATINGS_SEED = JSON.parse(JSON.stringify(SELLER_RATINGS));
 
 function openReviewModal(orderId) {
   const o = ORDERS.find(x=>x.id===orderId);
@@ -4364,7 +4383,7 @@ async function submitReview() {
   // For direct seller reviews, o may not exist — use currentReviewSeller fallback
   const sellerName = o?.seller || currentReviewSeller || '';
   const itemName = o?.item || currentReviewItem || 'Item purchase';
-  if (!sellerName) { showToast('Something went wrong — try again'); return; }
+  if (!sellerName || sellerName === 'user') { showToast("⚠️ This seller has no username set yet — can't attach a review."); return; }
 
   const reviewer = currentProfile?.username || 'user';
   const initials = reviewer.substring(0,2).toUpperCase();
@@ -4423,6 +4442,9 @@ async function submitReview() {
     }
     showToast('⭐ Review saved! Thanks for your feedback.');
     await loadReviews();
+    await loadSellerRating(sellerName);
+    const drEl = document.getElementById('detail-seller-rating');
+    if (drEl) { const rr = getSellerRating(sellerName); drEl.innerHTML = rr.count > 0 ? '⭐ ' + rr.avg + ' · ' + rr.count + ' reviews' : 'No reviews yet'; }
     if (document.getElementById('s-my-reviews')?.classList.contains('active')) renderReviews();
   } else {
     showToast('⭐ Review posted! (Login to save permanently)');
@@ -4434,6 +4456,51 @@ async function submitReview() {
 
 function getSellerRating(seller) {
   return SELLER_RATINGS[seller] || { avg: 0, count: 0, reviews: [] };
+}
+
+// Pull real reviews for a seller from the DB, blend with the demo seed baseline.
+// Idempotent: always recomputes from SEED + current DB rows.
+async function loadSellerRating(seller) {
+  if (!seller || seller === 'user') return getSellerRating(seller);
+  try {
+    const { data, error } = await sb.from('reviews')
+      .select('*').eq('seller_username', seller)
+      .order('created_at', { ascending: false });
+    if (error) { console.error('loadSellerRating error:', error); return getSellerRating(seller); }
+    const rows = data || [];
+    const seed = SELLER_RATINGS_SEED[seller] || { avg: 0, count: 0 };
+    const realCount = rows.length;
+    const realSum = rows.reduce((s, r) => s + (r.rating || 0), 0);
+    const totalCount = seed.count + realCount;
+    const totalSum = (seed.avg * seed.count) + realSum;
+    const avg = totalCount ? Math.round((totalSum / totalCount) * 10) / 10 : 0;
+    const reviews = rows.map(r => ({
+      name: r.reviewer_username || 'user',
+      initials: (r.reviewer_username || 'us').substring(0, 2).toUpperCase(),
+      color: '#FF3B30',
+      stars: r.rating || 0,
+      item: r.item_title || r.listing_title || 'Item purchase',
+      text: r.review_text || '',
+      date: r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recently'
+    }));
+    SELLER_RATINGS[seller] = { avg, count: totalCount, reviews };
+    return SELLER_RATINGS[seller];
+  } catch (e) {
+    console.error('loadSellerRating exception:', e);
+    return getSellerRating(seller);
+  }
+}
+
+// Star distribution (percent per star, 5→1) from a reviews array; fallback if empty.
+function ratingBreakdown(reviews, fallback) {
+  if (!reviews || !reviews.length) return fallback || [0, 0, 0, 0, 0];
+  const buckets = [0, 0, 0, 0, 0]; // index 0 = 5 stars ... index 4 = 1 star
+  reviews.forEach(r => {
+    const s = Math.max(1, Math.min(5, Math.round(r.stars || r.rating || 0)));
+    buckets[5 - s] += 1;
+  });
+  const total = reviews.length;
+  return buckets.map(b => Math.round((b / total) * 100));
 }
 
 function confirmDelivery(orderId) {
