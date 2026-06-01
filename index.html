@@ -2238,6 +2238,8 @@ async function openAuction(id) {
   }
   _auctionOpening = false;
 
+  if (a.seller && !(a.seller.toLowerCase() in avatarCache)) { try { await primeAvatars([a.seller]); } catch(e){} }
+
   const cd = formatCountdown(a.endTime - Date.now());
   const isAucOwner = !!(
     (currentUser && a.sellerId && a.sellerId === currentUser.id) ||
@@ -2279,7 +2281,7 @@ async function openAuction(id) {
     <div style="padding:16px;padding-bottom:160px;">
       <!-- Seller -->
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:12px 14px;cursor:pointer;" onclick="openSellerProfile('${a.seller}')">
-        <div style="width:36px;height:36px;border-radius:10px;background:${a.sellerColor};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;">${a.sellerInitials}</div>
+        ${avatarHTML(a.seller, 36, 10)}
         <div style="flex:1;"><div style="color:#fff;font-weight:700;font-size:14px;">@${a.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${getSellerRating(a.seller).avg} · Verified seller ✓</div></div>
         ${isAucOwner
           ? `<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:6px 14px;"><span style="color:#00C864;font-weight:700;font-size:13px;">✓ Your auction</span></div>`
@@ -4353,6 +4355,7 @@ async function loadAuctionsFromDb() {
 
   startAuctionTimers();
   renderAuctionList(); // always render after load
+  primeAvatars(AUCTIONS.map(a => a.seller));
 }
 
 async function loadAuctionBids(auctionId) {
