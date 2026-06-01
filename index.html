@@ -402,7 +402,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
             <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Expiry</div>
-            <input id="ac-expiry" type="text" placeholder="MM/YY" maxlength="5" oninput="formatExpiry(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+            <input id="ac-expiry" type="text" placeholder="MM/YY" maxlength="5" oninput="formatCardExpiry(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
           </div>
           <div>
             <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">CVV</div>
@@ -7165,7 +7165,7 @@ function formatCardNumber(input) {
   else typeEl.textContent = '';
 }
 
-function formatExpiry(input) {
+function formatCardExpiry(input) {
   let val = input.value.replace(/\D/g, '').substring(0, 4);
   if (val.length >= 2) val = val.substring(0,2) + '/' + val.substring(2);
   input.value = val;
