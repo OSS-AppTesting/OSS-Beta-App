@@ -1126,6 +1126,32 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 
+<!-- AVATAR ACTION SHEET -->
+<div id="modal-avatar-actions" style="position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-end;justify-content:center;z-index:860;" onclick="if(event.target===this)closeAvatarActions()">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:20px 18px 40px;width:100%;animation:slideUp .3s ease;">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px;"></div>
+    <div style="color:#fff;font-weight:900;font-size:19px;text-align:center;margin-bottom:18px;">Profile Photo</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button id="avatar-edit-btn" onclick="editSavedAvatar()" style="display:none;width:100%;background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:14px;padding:15px;color:#FF3B30;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">✎ Edit current photo</button>
+      <button onclick="chooseNewAvatar()" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:15px;color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">📷 Choose new photo</button>
+      <button onclick="openAvatarPresets()" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:15px;color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">🎨 Pick an avatar</button>
+      <button onclick="closeAvatarActions()" style="width:100%;background:none;border:none;color:rgba(255,255,255,.4);font-size:14px;cursor:pointer;padding:8px;font-family:'DM Sans',sans-serif;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- AVATAR PRESET PICKER -->
+<div id="modal-avatar-presets" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:flex-end;justify-content:center;z-index:870;" onclick="if(event.target===this)closeAvatarPresets()">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 40px;width:100%;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease;">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div style="color:#fff;font-weight:900;font-size:19px;">Pick an Avatar</div>
+      <button onclick="closeAvatarPresets()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
+    </div>
+    <div id="avatar-presets-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;"></div>
+  </div>
+</div>
+
 <!-- EDIT AUCTION MODAL -->
 <div id="modal-edit-auction" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:flex-end;justify-content:center;z-index:850;" onclick="if(event.target===this)closeEditAuction()">
   <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 40px;width:100%;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease;">
@@ -3581,6 +3607,7 @@ function openPhotoEditor(dataUrl, shape) {
   if (shape === 'circle') { if (grid) grid.style.display = 'none'; if (circle) circle.style.display = 'block'; }
   else { if (grid) grid.style.display = 'block'; if (circle) circle.style.display = 'none'; }
   const img = new Image();
+  if (/^https?:\/\//.test(dataUrl)) img.crossOrigin = 'anonymous';
   img.onload = () => {
     peImg = img;
     peV = Math.round(Math.min(window.innerWidth - 40, window.innerHeight * 0.55, 380));
@@ -3754,9 +3781,45 @@ function editCurrentPhoto() {
 }
 
 // ── PROFILE AVATAR ────────────────────────────────────────────────────────────
+const AVATAR_PRESETS = [
+  { emoji: '🦊', grad: ['#FF9A56','#FF3B30'] }, { emoji: '🐱', grad: ['#FFD86B','#FF8A3D'] },
+  { emoji: '🔥', grad: ['#FF6B6B','#C0392B'] }, { emoji: '⚡', grad: ['#FFE259','#FFA751'] },
+  { emoji: '👟', grad: ['#43E97B','#38F9D7'] }, { emoji: '💎', grad: ['#4FACFE','#00F2FE'] },
+  { emoji: '🎧', grad: ['#A18CD1','#FBC2EB'] }, { emoji: '🚀', grad: ['#667EEA','#764BA2'] },
+  { emoji: '🌊', grad: ['#2193B0','#6DD5ED'] }, { emoji: '🍀', grad: ['#11998E','#38EF7D'] },
+  { emoji: '🎯', grad: ['#EB3349','#F45C43'] }, { emoji: '👑', grad: ['#F7971E','#FFD200'] },
+  { emoji: '🦋', grad: ['#7F00FF','#E100FF'] }, { emoji: '🌈', grad: ['#FC466B','#3F5EFB'] },
+  { emoji: '⭐', grad: ['#F09819','#EDDE5D'] }, { emoji: '🎮', grad: ['#3A1C71','#D76D77'] },
+  { emoji: '🐶', grad: ['#F8B500','#FCEABB'] }, { emoji: '🏀', grad: ['#FF512F','#DD2476'] },
+  { emoji: '🎸', grad: ['#8E2DE2','#4A00E0'] }, { emoji: '🌸', grad: ['#FF9A9E','#FECFEF'] }
+];
+
 function changeAvatar() {
   if (!currentUser) { showToast('Log in to set a profile photo'); return; }
+  const editBtn = document.getElementById('avatar-edit-btn');
+  const hasPhoto = currentProfile && currentProfile.avatar_url && !String(currentProfile.avatar_url).startsWith('preset:');
+  if (editBtn) editBtn.style.display = hasPhoto ? 'block' : 'none';
+  document.getElementById('modal-avatar-actions').style.display = 'flex';
+}
+
+function closeAvatarActions() { document.getElementById('modal-avatar-actions').style.display = 'none'; }
+
+function chooseNewAvatar() {
+  closeAvatarActions();
   const inp = document.getElementById('avatar-input'); if (inp) inp.click();
+}
+
+function editSavedAvatar() {
+  closeAvatarActions();
+  const url = currentProfile && currentProfile.avatar_url;
+  if (!url || String(url).startsWith('preset:')) { showToast('No photo to edit — choose one first'); return; }
+  // Load the saved avatar back into the circular editor (re-crop the saved version)
+  window._avatarPending = true;
+  const tmp = new Image();
+  tmp.crossOrigin = 'anonymous';
+  tmp.onload = () => openPhotoEditor(url, 'circle');
+  tmp.onerror = () => openPhotoEditor(url, 'circle');
+  tmp.src = url;
 }
 
 function handleAvatarPhoto(input) {
@@ -3765,6 +3828,30 @@ function handleAvatarPhoto(input) {
   reader.onload = (e) => { window._avatarPending = true; openPhotoEditor(e.target.result, 'circle'); };
   reader.readAsDataURL(file);
   input.value = '';
+}
+
+function openAvatarPresets() {
+  closeAvatarActions();
+  const grid = document.getElementById('avatar-presets-grid');
+  grid.innerHTML = AVATAR_PRESETS.map((p, i) => `
+    <div onclick="selectAvatarPreset(${i})" style="aspect-ratio:1;border-radius:50%;background:linear-gradient(135deg,${p.grad[0]},${p.grad[1]});display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;border:2px solid rgba(255,255,255,.1);">${p.emoji}</div>
+  `).join('');
+  document.getElementById('modal-avatar-presets').style.display = 'flex';
+}
+
+function closeAvatarPresets() { document.getElementById('modal-avatar-presets').style.display = 'none'; }
+
+async function selectAvatarPreset(i) {
+  const p = AVATAR_PRESETS[i]; if (!p) return;
+  const val = `preset:${p.emoji}:${p.grad[0]},${p.grad[1]}`;
+  if (currentUser) {
+    const { error } = await sb.from('profiles').update({ avatar_url: val }).eq('id', currentUser.id);
+    if (error) { showToast('❌ ' + error.message); return; }
+  }
+  if (currentProfile) currentProfile.avatar_url = val;
+  closeAvatarPresets();
+  updateProfileAvatar();
+  showToast('✅ Avatar updated!');
 }
 
 async function saveAvatar(dataUrl) {
@@ -3781,12 +3868,35 @@ async function saveAvatar(dataUrl) {
   showToast('✅ Profile photo updated!');
 }
 
+// Parse a preset string into {emoji, grad:[a,b]} or return null
+function parsePresetAvatar(val) {
+  if (!val || !String(val).startsWith('preset:')) return null;
+  const parts = String(val).split(':');
+  const emoji = parts[1] || '🙂';
+  const grad = (parts[2] || '#FF3B30,#C0392B').split(',');
+  return { emoji, grad };
+}
+
 function updateProfileAvatar() {
   const img = document.getElementById('prof-avatar-img');
   const ini = document.getElementById('prof-initials');
   const url = currentProfile && currentProfile.avatar_url;
-  if (url) { if (img) { img.src = url; img.style.display = 'block'; } if (ini) ini.style.display = 'none'; }
-  else { if (img) img.style.display = 'none'; if (ini) ini.style.display = 'block'; }
+  const preset = parsePresetAvatar(url);
+  if (preset) {
+    if (img) img.style.display = 'none';
+    if (ini) {
+      ini.style.display = 'block';
+      ini.textContent = preset.emoji;
+      const pav = ini.closest('.pav');
+      if (pav) pav.style.background = `linear-gradient(135deg,${preset.grad[0]},${preset.grad[1]})`;
+    }
+  } else if (url) {
+    if (img) { img.src = url; img.style.display = 'block'; }
+    if (ini) ini.style.display = 'none';
+  } else {
+    if (img) img.style.display = 'none';
+    if (ini) { ini.style.display = 'block'; if (currentProfile && currentProfile.username) ini.textContent = currentProfile.username.substring(0,2).toUpperCase(); }
+  }
 }
 
 async function runAIListing() {
