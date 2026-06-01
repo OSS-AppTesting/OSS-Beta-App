@@ -2086,7 +2086,7 @@ function showDetail(id) {
       <h2 style="color:#fff;font-weight:800;font-size:22px;line-height:1.2;margin-bottom:16px;">${p.title}</h2>
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:20px;cursor:pointer;" onclick="openSellerProfile('${p.seller}')">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:800;font-size:16px;">${p.seller[0].toUpperCase()}</span></div>
+          ${avatarHTML(p.seller, 40, 12)}
           <div><div style="color:#fff;font-weight:700;font-size:15px;">@${p.seller}</div><div id="detail-seller-rating" style="color:rgba(255,255,255,.4);font-size:12px;">${getSellerRating(p.seller).count > 0 ? '⭐ ' + getSellerRating(p.seller).avg + ' · ' + getSellerRating(p.seller).count + ' reviews' : 'No reviews yet'}</div></div>
           ${isOwner
             ? `<div style="margin-left:auto;background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:6px 14px;"><span style="color:#00C864;font-weight:700;font-size:13px;">${isSold ? '✓ Sold' : '✓ Your listing'}</span></div>`
@@ -2122,6 +2122,9 @@ function showDetail(id) {
     const el = document.getElementById('detail-seller-rating');
     if (el && r) el.innerHTML = r.count > 0 ? '⭐ ' + r.avg + ' · ' + r.count + ' reviews' : 'No reviews yet';
   });
+  if (p.seller && !(p.seller.toLowerCase() in avatarCache)) {
+    primeAvatars([p.seller]).then(() => { if (document.getElementById('s-detail')?.classList.contains('active')) showDetail(id); });
+  }
   go('detail');
 }
 
@@ -3062,6 +3065,7 @@ async function completeLogin() {
   if (el_i) el_i.textContent = uname.substring(0,2).toUpperCase();
   if (el_n) el_n.textContent = fname;
   if (el_u) el_u.textContent = '@' + uname + ' · Store Open 🟢';
+  if (currentProfile) cacheAvatar(currentProfile.username, currentProfile.avatar_url);
   updateProfileAvatar();
   const firstName = fname.split(' ')[0] || uname;
   // Check if new user — profile created in last 60 seconds
@@ -3180,6 +3184,7 @@ async function loadListings() {
   // Logged in: show DB listings only (no demo data mixed in)
   PRODS.length = 0;
   PRODS.push(...mapped);
+  primeAvatars(mapped.map(m => m.seller));
 }
 
 async function loadOrders() {
@@ -3915,6 +3920,49 @@ async function saveAvatar(dataUrl) {
   showToast('✅ Profile photo updated!');
 }
 
+// ── UNIVERSAL AVATAR RENDERING (any user, anywhere) ───────────────────────────
+// Cache of username(lowercased) -> avatar_url value (upload URL | 'char:N' | 'preset:emoji:gA,gB')
+const avatarCache = {};
+
+function cacheAvatar(username, avatarUrl) {
+  if (!username) return;
+  if (avatarUrl) avatarCache[username.toLowerCase()] = avatarUrl;
+}
+
+// Pull avatars for a set of usernames from the DB and cache them (one query)
+async function primeAvatars(usernames) {
+  const names = [...new Set((usernames || []).filter(Boolean).map(u => u.toLowerCase())
+    .filter(u => !(u in avatarCache)))];
+  if (!names.length) return;
+  try {
+    const { data } = await sb.from('profiles').select('username,avatar_url').in('username', names);
+    (data || []).forEach(p => { if (p.username) avatarCache[p.username.toLowerCase()] = p.avatar_url || ''; });
+    names.forEach(n => { if (!(n in avatarCache)) avatarCache[n] = ''; }); // mark misses so we don't re-query
+  } catch (e) { /* ignore — falls back to initials */ }
+}
+
+// Stable gradient from a username (for initials/preset fallbacks)
+function avatarColor(username) {
+  const u = username || '?';
+  const hash = [...u].reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0);
+  const hues = ['#FF3B30,#C0392B','#FF9A56,#FF3B30','#43E97B,#38F9D7','#4FACFE,#00F2FE','#A18CD1,#FBC2EB','#667EEA,#764BA2','#F7971E,#FFD200','#EB3349,#F45C43'];
+  return hues[Math.abs(hash) % hues.length];
+}
+
+// Returns an HTML string for a user's avatar at the given pixel size + corner radius.
+function avatarHTML(username, size = 40, radius = 12) {
+  const url = username ? avatarCache[username.toLowerCase()] : null;
+  const initials = (username || '?').substring(0, 2).toUpperCase();
+  const fontSize = Math.round(size * 0.4);
+  const box = `width:${size}px;height:${size}px;border-radius:${radius}px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;`;
+  const charSrc = (typeof parseCharAvatar === 'function') ? parseCharAvatar(url) : null;
+  if (charSrc) return `<div style="${box}background:#222;"><img src="${charSrc}" style="width:100%;height:100%;object-fit:cover;"></div>`;
+  const preset = (typeof parsePresetAvatar === 'function') ? parsePresetAvatar(url) : null;
+  if (preset) return `<div style="${box}background:linear-gradient(135deg,${preset.grad[0]},${preset.grad[1]});font-size:${fontSize}px;">${preset.emoji}</div>`;
+  if (url && /^https?:\/\//.test(url)) return `<div style="${box}background:#222;"><img src="${url}" style="width:100%;height:100%;object-fit:cover;"></div>`;
+  return `<div style="${box}background:linear-gradient(135deg,${avatarColor(username)});"><span style="color:#fff;font-weight:800;font-size:${fontSize}px;">${initials}</span></div>`;
+}
+
 // Parse a preset string into {emoji, grad:[a,b]} or return null
 function parsePresetAvatar(val) {
   if (!val || !String(val).startsWith('preset:')) return null;
@@ -4420,6 +4468,8 @@ async function renderMessages() {
     if (!convos[partner]) convos[partner] = m;
   });
 
+  await primeAvatars(Object.keys(convos));
+
   list.innerHTML = Object.entries(convos).map(([partner, lastMsg]) => {
     const initials = partner.substring(0,2).toUpperCase();
     const color = '#' + [...partner].reduce((h,c) => ((h<<5)-h+c.charCodeAt(0))|0, 0).toString(16).slice(-6).padStart(6,'0');
@@ -4427,7 +4477,7 @@ async function renderMessages() {
     const preview = lastMsg.message.length > 40 ? lastMsg.message.substring(0,40) + '...' : lastMsg.message;
     const isMe = lastMsg.sender_username === myUsername;
     return `<div class="mt" onclick="openChat('${partner}','${color}','#FF3B30','${initials}')">
-      <div class="mav" style="background:linear-gradient(135deg,${color},#1a0000);">${initials}</div>
+      ${avatarHTML(partner, 48, 12)}
       <div style="flex:1;min-width:0;">
         <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#fff;font-weight:700;font-size:15px;">@${partner}</span><span style="color:rgba(255,255,255,.3);font-size:11px;">${time}</span></div>
         <div style="color:rgba(255,255,255,.5);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${isMe ? 'You: ' : ''}${preview}</div>
@@ -4440,6 +4490,7 @@ async function openChat(seller, color, accent, initials) {
   currentChatSeller = seller;
   currentChatColor = color;
   currentChatAccent = accent;
+  await primeAvatars([seller]);
 
   // Always load fresh from Supabase when opening chat
   let msgs = CHAT_DATA[seller] || [{f:'them',t:"Hey! Happy to answer any questions 😊",ts:"Just now"}];
@@ -4467,7 +4518,7 @@ async function openChat(seller, color, accent, initials) {
   document.getElementById('chat-body').innerHTML = `
     <div style="position:sticky;top:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
       <button onclick="go('messages')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">←</button>
-      <div style="width:36px;height:36px;border-radius:10px;background:${color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;flex-shrink:0;">${initials}</div>
+      ${avatarHTML(seller, 36, 10)}
       <div style="flex:1;">
         <div style="color:#fff;font-weight:700;font-size:15px;">@${seller}</div>
         <div id="chat-status" style="color:${accent};font-size:11px;font-weight:600;">● Online</div>
@@ -4697,7 +4748,10 @@ function openSellerProfile(seller) {
   _currentSellerView = seller;
   renderSellerProfile(seller);   // instant render from cache/seed
   go('seller');
-  // Then pull real reviews and re-render if still viewing this seller
+  // Pull this seller's avatar (if not cached) then their reviews; re-render as data lands
+  primeAvatars([seller]).then(() => {
+    if (_currentSellerView === seller && document.getElementById('s-seller')?.classList.contains('active')) renderSellerProfile(seller);
+  });
   loadSellerRating(seller).then(r => {
     if (r && _currentSellerView === seller && document.getElementById('s-seller')?.classList.contains('active')) {
       renderSellerProfile(seller);
@@ -4737,7 +4791,7 @@ function renderSellerProfile(seller) {
       <!-- Seller card -->
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:20px;margin-bottom:20px;">
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
-          <div style="width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#fff;flex-shrink:0;">${initials}</div>
+          ${avatarHTML(seller, 60, 18)}
           <div style="flex:1;">
             <div style="color:#fff;font-weight:900;font-size:18px;">@${seller}</div>
             <div style="color:rgba(255,255,255,.4);font-size:12px;">📍 ${bio.location} · Member since ${bio.joined}</div>
@@ -4802,7 +4856,7 @@ function renderSellerProfile(seller) {
         ${allReviews.length > 0 ? allReviews.map(r=>`
           <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-              <div style="width:34px;height:34px;border-radius:10px;background:${r.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;flex-shrink:0;">${r.initials}</div>
+              ${avatarHTML(r.name, 34, 10)}
               <div style="flex:1;">
                 <div style="color:#fff;font-weight:700;font-size:13px;">@${r.name}</div>
                 <div style="color:rgba(255,255,255,.35);font-size:11px;">${r.item} · ${r.date}</div>
@@ -5005,6 +5059,7 @@ async function loadSellerRating(seller) {
       date: r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recently'
     }));
     SELLER_RATINGS[seller] = { avg, count: totalCount, reviews };
+    primeAvatars(reviews.map(rv => rv.name));
     return SELLER_RATINGS[seller];
   } catch (e) {
     console.error('loadSellerRating exception:', e);
