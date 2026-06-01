@@ -2410,6 +2410,15 @@ async function placeBid(auctionId, amount) {
 
     // Update auction current_bid in DB
     await sb.from('auctions').update({ current_bid: amount, bid_count: a.bidCount }).eq('id', dbId);
+
+    // v31: notify the auction seller of the new bid (best-effort, never blocks the bid)
+    const _bidNotif = {
+      type: 'auction', icon: '⚡',
+      title: 'New bid on your auction',
+      body: '@' + myUsername + ' bid ' + amount + ' SB on ' + a.title,
+      actionLabel: 'View Auction', actionTarget: 'my-listings'
+    };
+    if (a.sellerId) notifyUser(a.sellerId, _bidNotif); else notifyUsername(a.seller, _bidNotif);
   }
 
   // Simulate a competing bid after 8-15 seconds on close auctions
@@ -2853,6 +2862,13 @@ async function confirmCheckout() {
         saveOrderToDb(offer.title, offer.offerAmount, offer.currency || 'USD', offer.seller);
         // Update offer status in DB
         sb.from('offers').update({ status: 'Completed' }).eq('id', offerId).then(() => {});
+        // v31: notify the seller of the sale (best-effort, never blocks the order)
+        notifyUsername(offer.seller, {
+          type: 'order', icon: '🎉',
+          title: 'You made a sale!',
+          body: '@' + (currentProfile?.username || 'A buyer') + ' bought ' + offer.title + ' for ' + (offer.currency === 'USD' ? '$' + offer.offerAmount : offer.offerAmount + ' SB'),
+          actionLabel: 'View', actionTarget: 'my-listings'
+        });
       }
       showToast('🎉 Order placed at offer price of $' + offer.offerAmount + '!');
       go('home');
@@ -2872,6 +2888,14 @@ async function confirmCheckout() {
       const localOrder = { id: dbOrder.id, item: p.title, price: p.price, currency: 'USD', seller: p.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') };
       ORDERS.unshift(localOrder);
     }
+    // v31: notify the seller of the sale (best-effort, never blocks the order)
+    const _saleNotif = {
+      type: 'order', icon: '🎉',
+      title: 'You made a sale!',
+      body: '@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + ' for $' + p.price,
+      actionLabel: 'View', actionTarget: 'my-listings'
+    };
+    if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
   }
   showToast('🎉 Order placed! 6% platform fee: $' + fee + '. Check My Orders for tracking.');
   go('home');
@@ -3121,12 +3145,10 @@ function setupRealtimeSubscriptions(myUsername) {
       filter: `seller_username=eq.${myUsername}`
     }, payload => {
       if (payload.eventType === 'INSERT') {
-        const o = payload.new;
-        addNotification('offer','🏷️','rgba(255,59,48,.15)','rgba(255,59,48,.3)',
-          'New offer on your listing',
-          '@' + o.buyer_username + ' offered ' + (o.offer_currency==='USD'?'$':'')+o.offer_amount+(o.offer_currency==='SB'?' SB':'') + ' on ' + o.listing_title,
-          'View Offer', () => go('my-offers'));
-        loadOffersFromDb(); // refresh offers list
+        // v31: the seller's notification now comes from the notifications table
+        // (written by the buyer in submitOffer), so we no longer synthesize a local
+        // one here — that would double-buzz. Just refresh the offers list.
+        loadOffersFromDb();
       }
     })
     .subscribe();
@@ -3155,6 +3177,25 @@ function setupRealtimeSubscriptions(myUsername) {
     })
     .subscribe();
   _realtimeChannels.push(listingCh);
+
+  // Realtime: my notifications — canonical live delivery for v31 events.
+  // Any row inserted with my user_id surfaces instantly, newest first.
+  const notifCh = sb.channel('notifications-' + currentUser.id)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'notifications',
+      filter: `user_id=eq.${currentUser.id}`
+    }, payload => {
+      const row = payload.new;
+      if (NOTIFICATIONS.find(x => x.id === row.id)) return; // dedupe (already loaded)
+      const mapped = mapDbNotif(row);
+      mapped.time = 'Just now';
+      NOTIFICATIONS.unshift(mapped);
+      updateNotifBadge();
+      showToast('🔔 ' + (row.title || 'New notification'));
+      if (document.getElementById('s-notifications')?.classList.contains('active')) renderNotifications(notifFilter);
+    })
+    .subscribe();
+  _realtimeChannels.push(notifCh);
 }
 
 
@@ -3218,14 +3259,87 @@ async function loadNotificationsFromDb() {
   if (!currentUser) return;
   const { data, error } = await sb.from('notifications').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   if (error || !data || !data.length) return;
-  const mapped = data.map(n => ({
-    id: n.id, type: n.type, read: n.read,
-    icon: n.icon, iconBg: 'rgba(255,59,48,.15)', iconBorder: 'rgba(255,59,48,.3)',
-    title: n.title, body: n.body, time: new Date(n.created_at).toLocaleDateString(),
-    actionLabel: n.action_label, action: () => go(n.action_target || 'home')
-  }));
+  // Map via the shared mapper; skip any row already present (e.g. arrived live via Realtime).
+  const mapped = data.filter(n => !NOTIFICATIONS.find(x => x.id === n.id)).map(mapDbNotif);
   NOTIFICATIONS.unshift(...mapped);
   updateNotifBadge();
+}
+
+// ── v31 notification infrastructure ───────────────────────────────────────────
+// Per-type icon tint so notifications arriving live look identical to reloaded ones.
+function notifColor(type) {
+  switch (type) {
+    case 'order':   return { bg:'rgba(79,195,247,.15)', border:'rgba(79,195,247,.3)' };
+    case 'auction': return { bg:'rgba(255,179,71,.15)', border:'rgba(255,179,71,.3)' };
+    case 'wallet':  return { bg:'rgba(0,200,100,.15)',  border:'rgba(0,200,100,.3)'  };
+    case 'review':  return { bg:'rgba(255,179,71,.15)', border:'rgba(255,179,71,.3)' };
+    default:        return { bg:'rgba(255,59,48,.15)',  border:'rgba(255,59,48,.3)'  }; // offer / message / other
+  }
+}
+
+// Friendly relative time used for both the initial load and live inserts (drives the
+// Recent / Yesterday / Older grouping in renderNotifications).
+function notifTimeLabel(ts) {
+  const d = new Date(ts);
+  const diff = Math.max(0, Date.now() - d.getTime());
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return mins + ' min ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + ' hour' + (hrs > 1 ? 's' : '') + ' ago';
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'Yesterday';
+  return d.toLocaleDateString();
+}
+
+// Shape a DB notifications row into the local NOTIFICATIONS item shape.
+function mapDbNotif(n) {
+  const c = notifColor(n.type);
+  return {
+    id: n.id, type: n.type, read: !!n.read,
+    icon: n.icon || '🔔', iconBg: c.bg, iconBorder: c.border,
+    title: n.title, body: n.body,
+    time: notifTimeLabel(n.created_at),
+    actionLabel: n.action_label || 'View',
+    action: () => go(n.action_target || 'home')
+  };
+}
+
+// username -> user uuid, cached. For recipients we only know by name (reviews, checkout).
+const _userIdCache = {};
+async function resolveUserId(username) {
+  if (!username || username === 'user') return null;
+  const key = username.toLowerCase();
+  if (key in _userIdCache) return _userIdCache[key];
+  try {
+    const { data } = await sb.from('profiles').select('id').eq('username', username).limit(1);
+    _userIdCache[key] = (data && data[0]) ? data[0].id : null;
+  } catch (e) { _userIdCache[key] = null; }
+  return _userIdCache[key];
+}
+
+// Insert a notification row for the user an event happened TO (the recipient).
+// RLS permits system inserts, so the actor's client writes the recipient's row.
+async function notifyUser(targetUserId, n) {
+  if (!currentUser || !targetUserId) return;
+  if (targetUserId === currentUser.id) return; // never notify yourself about your own action
+  try {
+    const { error } = await sb.from('notifications').insert({
+      user_id: targetUserId,
+      type: n.type, icon: n.icon,
+      title: n.title, body: n.body,
+      action_label: n.actionLabel || 'View',
+      action_target: n.actionTarget || 'home',
+      read: false
+    });
+    if (error) console.error('notifyUser error:', error);
+  } catch (e) { console.error('notifyUser exception:', e); }
+}
+
+// Convenience wrapper when we only have the recipient's username.
+async function notifyUsername(username, n) {
+  const id = await resolveUserId(username);
+  if (id) await notifyUser(id, n);
 }
 
 function buildTimeline(status) {
@@ -3310,7 +3424,8 @@ async function loadOffersFromDb() {
           RECEIVED_OFFERS.unshift({
             id: 'RDBO-' + o.id, dbId: o.id,
             productId: o.listing_id, title: o.listing_title,
-            buyer: o.buyer_username, buyerInitials: (o.buyer_username||'').substring(0,2).toUpperCase(),
+            buyer: o.buyer_username, buyerId: o.buyer_id,
+            buyerInitials: (o.buyer_username||'').substring(0,2).toUpperCase(),
             buyerColor: '#1a0000', listedPrice: o.listed_price,
             offerAmount: o.offer_amount, currency: o.offer_currency,
             currencyChanged: o.currency_changed, message: o.message,
@@ -5019,6 +5134,13 @@ async function submitReview() {
       return;
     }
     showToast('⭐ Review saved! Thanks for your feedback.');
+    // v31: notify the seller of the new review (best-effort, never blocks)
+    notifyUsername(sellerName, {
+      type: 'review', icon: '⭐',
+      title: 'New review!',
+      body: '@' + reviewer + ' left you ' + selectedStars + '★ on ' + itemName,
+      actionLabel: 'View', actionTarget: 'profile'
+    });
     await loadReviews();
     await loadSellerRating(sellerName);
     const drEl = document.getElementById('detail-seller-rating');
@@ -5575,6 +5697,15 @@ function submitOffer() {
       if (data) offer.dbId = data.id; // store DB id for later updates
       if (error) console.error('Offer save error:', error);
     });
+
+    // v31: notify the seller of the new offer (best-effort, never blocks the offer)
+    const _offerNotif = {
+      type: 'offer', icon: '🏷️',
+      title: 'New offer on your listing',
+      body: '@' + (currentProfile?.username || 'Someone') + ' offered ' + (chosenCurrency === 'USD' ? '$' + amount : amount + ' SB') + ' on ' + p.title,
+      actionLabel: 'View Offer', actionTarget: 'my-offers'
+    };
+    if (p.sellerId) notifyUser(p.sellerId, _offerNotif); else notifyUsername(p.seller, _offerNotif);
   }
 
   // Show notification if currency was changed
@@ -6199,10 +6330,26 @@ function respondToOffer(offerId, action) {
       'You accepted an offer',
       '@' + o.buyer + '\'s offer of ' + (o.currency==='USD'?'$'+o.offerAmount:o.offerAmount+' SB') + ' on ' + o.title + '. Order created!',
       'View Order', () => go('my-orders'));
+    // v31: notify the buyer their offer was accepted (best-effort, never blocks)
+    const _accNotif = {
+      type: 'offer', icon: '✅',
+      title: 'Offer accepted!',
+      body: 'Your offer of ' + (o.currency==='USD'?'$'+o.offerAmount:o.offerAmount+' SB') + ' on ' + o.title + ' was accepted.',
+      actionLabel: 'Complete Purchase', actionTarget: 'my-offers'
+    };
+    if (o.buyerId) notifyUser(o.buyerId, _accNotif); else notifyUsername(o.buyer, _accNotif);
     renderReceivedOffers();
   } else if (action === 'declined') {
     o.status = 'Declined';
     showToast('❌ Offer declined.');
+    // v31: notify the buyer their offer was declined (best-effort, never blocks)
+    const _decNotif = {
+      type: 'offer', icon: '❌',
+      title: 'Offer declined',
+      body: 'Your offer of ' + (o.currency==='USD'?'$'+o.offerAmount:o.offerAmount+' SB') + ' on ' + o.title + ' was declined.',
+      actionLabel: 'View', actionTarget: 'my-offers'
+    };
+    if (o.buyerId) notifyUser(o.buyerId, _decNotif); else notifyUsername(o.buyer, _decNotif);
     renderReceivedOffers();
   } else if (action === 'countered') {
     // Open seller counter modal
@@ -6235,6 +6382,14 @@ function submitSellerCounter() {
   o.sellerCounter = amt;
   document.getElementById('modal-seller-counter').style.display = 'none';
   showToast('🔄 Counter offer of ' + (o.currency==='USD'?'$'+amt:amt+' SB') + ' sent to @' + o.buyer + '!');
+  // v31: notify the buyer of the counter offer (best-effort, never blocks)
+  const _ctrNotif = {
+    type: 'offer', icon: '🔄',
+    title: 'Counter offer received',
+    body: '@' + (currentProfile?.username || 'The seller') + ' countered with ' + (o.currency==='USD'?'$'+amt:amt+' SB') + ' on ' + o.title,
+    actionLabel: 'Respond', actionTarget: 'my-offers'
+  };
+  if (o.buyerId) notifyUser(o.buyerId, _ctrNotif); else notifyUsername(o.buyer, _ctrNotif);
   renderReceivedOffers();
 }
 
