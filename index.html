@@ -1810,19 +1810,21 @@ function priceBadge(p) {
 
 function pCard(p, i) {
   const lk = liked[p.id];
-  return `<div class="pcard" style="animation-delay:${i*50}ms" onclick="showDetail('${p.id}')">
+  const tap = p._isAuction ? `openAuction('${p.id}')` : `showDetail('${p.id}')`;
+  return `<div class="pcard" style="animation-delay:${i*50}ms" onclick="${tap}">
     <div class="cimg">
       <img src="${p.img}" alt="${p.title}" loading="lazy">
       <div class="cov"></div>
-      ${p.hot ? '<div class="hbadge">🔥 HOT</div>' : ''}
-      ${p.isNew ? '<div class="hbadge" style="background:linear-gradient(135deg,#00C864,#00A050);left:8px;">✨ NEW</div>' : ''}
-      ${OFFERS.some(o => o.productId === p.id && o.status === 'Pending') ? '<div class="hbadge" style="background:linear-gradient(135deg,#FFB347,#E67E00);right:8px;left:auto;">🏷️ Offer</div>' : ''}
-      <button class="lbtn${lk?' on':''}" id="lk-${p.id}" onclick="event.stopPropagation();toggleLike(${p.id})">${lk?'❤️':'🤍'}</button>
+      ${p._isAuction ? '<div class="hbadge" style="background:linear-gradient(135deg,#FFB347,#E67E00);">🔨 LIVE</div>' : ''}
+      ${!p._isAuction && p.hot ? '<div class="hbadge">🔥 HOT</div>' : ''}
+      ${!p._isAuction && p.isNew ? '<div class="hbadge" style="background:linear-gradient(135deg,#00C864,#00A050);left:8px;">✨ NEW</div>' : ''}
+      ${!p._isAuction && OFFERS.some(o => o.productId === p.id && o.status === 'Pending') ? '<div class="hbadge" style="background:linear-gradient(135deg,#FFB347,#E67E00);right:8px;left:auto;">🏷️ Offer</div>' : ''}
+      <button class="lbtn${lk?' on':''}" id="lk-${p.id}" onclick="event.stopPropagation();toggleLike('${p.id}')">${lk?'❤️':'🤍'}</button>
       ${priceBadge(p)}
     </div>
     <div class="cinfo">
       <div class="ctitle">${p.title}</div>
-      <div class="cmeta"><span class="cseller">@${p.seller}</span><div class="cstats"><span class="cstat">👁 ${p.views}</span><span class="cstat">♥ ${p.likes}</span></div></div>
+      <div class="cmeta"><span class="cseller">@${p.seller}</span><div class="cstats">${p._isAuction ? '<span class="cstat">🔨 bid</span>' : `<span class="cstat">👁 ${p.views}</span><span class="cstat">♥ ${p.likes}</span>`}</div></div>
     </div>
   </div>`;
 }
@@ -2577,7 +2579,16 @@ function runSearch() {
   defaultEl.style.display = 'none';
   document.getElementById('shop-filtered').style.display = 'none';
 
-  let pool = payFilter === 'all' ? PRODS : PRODS.filter(p => p.currency === payFilter);
+  // Build a combined pool: fixed-price listings + live auctions (tagged so cards/taps route correctly)
+  const auctionItems = (typeof AUCTIONS !== 'undefined' ? AUCTIONS : [])
+    .filter(a => !a.ended)
+    .map(a => ({
+      id: a.id, title: a.title || '', seller: a.seller || '', category: a.category || 'Other',
+      location: a.location || '', description: a.description || '', img: a.img,
+      price: a.currentBid, currency: 'SB', _isAuction: true
+    }));
+  let basePool = PRODS.concat(auctionItems);
+  let pool = payFilter === 'all' ? basePool : basePool.filter(p => p.currency === payFilter || p._isAuction);
 
   // Check if query is a category synonym — if so restrict to that category only
   const synonymTarget = SYNONYMS[searchQuery];
@@ -2599,7 +2610,7 @@ function runSearch() {
     });
   } else {
     results = pool.filter(p => {
-      const hay = [p.title, p.seller, p.seller.replace(/_/g,' '), p.category, p.location||''].join(' ').toLowerCase();
+      const hay = [p.title, p.seller, p.seller.replace(/_/g,' '), p.category, p.location||'', p.description||''].join(' ').toLowerCase();
       return fuzzyMatch(hay, searchQuery);
     });
   }
@@ -7273,12 +7284,19 @@ function setSrch(q) { document.getElementById('si').value=q; doSrch(q); }
 function doSrch(q) {
   const v = q.toLowerCase();
   document.getElementById('srch-lbl').textContent = v ? 'Results' : 'Popular Right Now';
-  const list = v ? PRODS.filter(p=>p.title.toLowerCase().includes(v)||p.category.toLowerCase().includes(v)||(v==='hot'&&p.hot)) : [...PRODS].sort((a,b)=>b.views-a.views).slice(0,6);
+  const auctionItems = (typeof AUCTIONS !== 'undefined' ? AUCTIONS : [])
+    .filter(a => !a.ended)
+    .map(a => ({ id: a.id, title: a.title || '', seller: a.seller || '', category: a.category || 'Other',
+                 description: a.description || '', img: a.img, price: a.currentBid, _isAuction: true, views: 0 }));
+  const all = PRODS.concat(auctionItems);
+  const list = v
+    ? all.filter(p => p.title.toLowerCase().includes(v) || p.category.toLowerCase().includes(v) || (p.description||'').toLowerCase().includes(v) || (v==='hot'&&p.hot))
+    : [...PRODS].sort((a,b)=>b.views-a.views).slice(0,6);
   document.getElementById('srch-res').innerHTML = list.length ? list.map(p=>`
-    <div class="srow" onclick="closeSrch();showDetail('${p.id}')">
-      <div style="width:48px;height:48px;border-radius:10px;overflow:hidden;background:#111;flex-shrink:0;"><img src="${p.img}" style="width:100%;height:100%;object-fit:cover;"></div>
+    <div class="srow" onclick="closeSrch();${p._isAuction ? `openAuction('${p.id}')` : `showDetail('${p.id}')`}">
+      <div style="width:48px;height:48px;border-radius:10px;overflow:hidden;background:#111;flex-shrink:0;position:relative;"><img src="${p.img}" style="width:100%;height:100%;object-fit:cover;">${p._isAuction?'<div style="position:absolute;top:0;left:0;right:0;background:rgba(230,126,0,.85);font-size:8px;font-weight:800;color:#fff;text-align:center;">LIVE</div>':''}</div>
       <div style="flex:1;min-width:0;"><div style="color:#fff;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">@${p.seller} · ${p.category}</div></div>
-      <div style="background:linear-gradient(135deg,#FF3B30,#C0392B);border-radius:8px;padding:3px 10px;flex-shrink:0;"><span style="color:#fff;font-weight:800;font-size:13px;">${p.price} SB</span></div>
+      <div style="background:linear-gradient(135deg,${p._isAuction?'#FFB347,#E67E00':'#FF3B30,#C0392B'});border-radius:8px;padding:3px 10px;flex-shrink:0;"><span style="color:#fff;font-weight:800;font-size:13px;">${p.price} SB</span></div>
     </div>`).join('') : '<div style="color:rgba(255,255,255,.3);text-align:center;padding:40px 0;font-size:15px;">No results found</div>';
 }
 
