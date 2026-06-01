@@ -5240,6 +5240,24 @@ function submitReport() {
 
 // ── MAKE AN OFFER ─────────────────────────────────────────────────────────────
 
+// Offers made to these "demo persona" sellers get a simulated (AI) seller response
+// so solo demos / investor pitches still show the accept-counter-decline flow.
+// Real registered users are NOT here, so when a real account owns the listing the AI
+// stays out — the real seller responds and gets the v31 notification instead.
+// The list auto-syncs with the built-in catalog; add any extra seeded demo usernames
+// (e.g. DB-only demo accounts that aren't in DEMO_PRODS) to EXTRA_DEMO_SELLERS.
+const EXTRA_DEMO_SELLERS = [
+  // 'demo_account_username',
+];
+const DEMO_SELLERS = new Set(
+  [...DEMO_PRODS.map(p => p.seller), ...EXTRA_DEMO_SELLERS]
+    .filter(Boolean)
+    .map(s => String(s).toLowerCase())
+);
+function isDemoSeller(username) {
+  return !!username && DEMO_SELLERS.has(String(username).toLowerCase());
+}
+
 const OFFERS = [
   {
     id: 'OFF-1001', productId: 5,
@@ -5721,10 +5739,14 @@ function submitOffer() {
     'Your offer of ' + (chosenCurrency==='USD'?'$'+amount:amount+' SB') + ' on ' + p.title + ' is pending.',
     'View Offer', () => go('my-offers'));
 
-  // Simulate seller response after 4-8 seconds
-  const pct = (amount / p.price) * 100;
-  const delay = 4000 + Math.random() * 4000;
-  setTimeout(() => simulateSellerResponse(offer.id, pct), delay);
+  // Simulate a seller response ONLY for demo personas (so solo demos still show the
+  // accept/counter/decline flow). Real accounts respond themselves and get the v31
+  // notification — no AI stand-in.
+  if (isDemoSeller(p.seller)) {
+    const pct = (amount / p.price) * 100;
+    const delay = 4000 + Math.random() * 4000;
+    setTimeout(() => simulateSellerResponse(offer.id, pct), delay);
+  }
 }
 
 function simulateSellerResponse(offerId, pct) {
