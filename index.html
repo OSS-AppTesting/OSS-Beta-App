@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-9</title>
+<title>OneStopSwap v31-10</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -14,8 +14,8 @@ const SUPABASE_URL = 'https://ynbqsjwyloumqiwtyjsc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ── v31-9 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-9';
+// ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
+window._OSS_BUILD = 'v31-10';
 window._ossErrs = [];
 window.addEventListener('error', function (e) {
   try {
@@ -3331,7 +3331,18 @@ function notifActionFor(n) {
   if (target === 'my-offers:received' || (target === 'my-offers' && title.includes('new offer on your listing'))) {
     return () => openOffersInbox();
   }
+  // Buyer-facing offer updates (accepted / declined / countered) live in My Offers —
+  // refresh from the DB first so the seller's persisted response actually shows.
+  if (target === 'my-offers') return () => openMyOffersFresh();
   return () => go(target || 'home');
+}
+
+// Open My Offers (sent), refreshing from the DB first so persisted status/counter
+// changes from the seller are reflected.
+async function openMyOffersFresh() {
+  go('my-offers');
+  try { await loadOffersFromDb(); } catch (e) { console.error('openMyOffersFresh refresh:', e); }
+  renderOffers('all');
 }
 
 // Open My Offers on the 📬 Inbox (received) tab, refreshing from the DB first so a
@@ -3453,33 +3464,48 @@ async function loadOffersFromDb() {
     .or(`buyer_id.eq.${currentUser.id},seller_username.eq.${myUsername}`)
     .order('created_at', { ascending: false });
   if (error || !data || !data.length) return;
-  // Merge DB offers, avoiding duplicates with local demo offers
+  // Merge DB offers: update existing entries in place (so status/counter changes
+  // reflect on re-load), otherwise add. Pull the photo from the matching listing.
   data.forEach(o => {
-    const localId = 'DB-' + o.id;
-    if (!OFFERS.find(x => x.id === localId || x.dbId === o.id)) {
-      const isReceived = o.seller_username === myUsername;
-      if (isReceived) {
-        // Add to received offers
-        if (!RECEIVED_OFFERS.find(x => x.dbId === o.id)) {
-          RECEIVED_OFFERS.unshift({
-            id: 'RDBO-' + o.id, dbId: o.id,
-            productId: o.listing_id, title: o.listing_title,
-            buyer: o.buyer_username, buyerId: o.buyer_id,
-            buyerInitials: (o.buyer_username||'').substring(0,2).toUpperCase(),
-            buyerColor: '#1a0000', listedPrice: o.listed_price,
-            offerAmount: o.offer_amount, currency: o.offer_currency,
-            currencyChanged: o.currency_changed, message: o.message,
-            status: o.status, date: new Date(o.created_at).toLocaleDateString(),
-            expiresAt: o.expires_at ? new Date(o.expires_at).getTime() : null
-          });
-        }
+    const isReceived = o.seller_username === myUsername;
+    const prod = PRODS.find(x => x.id === o.productId || x.id === o.listing_id);
+    const img = prod ? prod.img : null;
+    if (isReceived) {
+      const existing = RECEIVED_OFFERS.find(x => x.dbId === o.id);
+      if (existing) {
+        existing.status = o.status;
+        existing.counterAmount = o.counter_amount;
+        existing.sellerCounter = o.counter_amount;
+        existing.offerAmount = o.offer_amount;
+        if (img && !existing.img) existing.img = img;
+      } else {
+        RECEIVED_OFFERS.unshift({
+          id: 'RDBO-' + o.id, dbId: o.id,
+          productId: o.listing_id, title: o.listing_title, img: img,
+          buyer: o.buyer_username, buyerId: o.buyer_id,
+          buyerInitials: (o.buyer_username||'').substring(0,2).toUpperCase(),
+          buyerColor: '#1a0000', listedPrice: o.listed_price,
+          offerAmount: o.offer_amount, currency: o.offer_currency,
+          counterAmount: o.counter_amount, sellerCounter: o.counter_amount,
+          currencyChanged: o.currency_changed, message: o.message,
+          status: o.status, date: new Date(o.created_at).toLocaleDateString(),
+          expiresAt: o.expires_at ? new Date(o.expires_at).getTime() : null
+        });
+      }
+    } else {
+      const existing = OFFERS.find(x => x.dbId === o.id);
+      if (existing) {
+        existing.status = o.status;
+        existing.counterAmount = o.counter_amount;
+        if (img && !existing.img) existing.img = img;
       } else {
         OFFERS.unshift({
-          id: localId, dbId: o.id,
-          productId: o.listing_id, title: o.listing_title,
+          id: 'DB-' + o.id, dbId: o.id,
+          productId: o.listing_id, title: o.listing_title, img: img,
           seller: o.seller_username, listedPrice: o.listed_price,
           listedCurrency: o.listed_currency, offerAmount: o.offer_amount,
           currency: o.offer_currency, currencyChanged: o.currency_changed,
+          counterAmount: o.counter_amount,
           message: o.message, status: o.status,
           date: new Date(o.created_at).toLocaleDateString(),
           expiresAt: o.expires_at ? new Date(o.expires_at).getTime() : null
@@ -6240,11 +6266,12 @@ function renderOffers(filter) {
     const isUSD = o.currency === 'USD';
     const fmt = v => isUSD ? '$' + v : v + ' SB';
     const expiry = formatExpiry(o.expiresAt);
+    const p = PRODS.find(x => x.id === o.productId);
     return `
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;">
         <div style="display:flex;gap:12px;padding:14px;">
           <div style="width:64px;height:64px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#111;">
-            <img src="${o.img||''}" style="width:100%;height:100%;object-fit:cover;">
+            <img src="${o.img||p?.img||''}" style="width:100%;height:100%;object-fit:cover;">
           </div>
           <div style="flex:1;min-width:0;">
             <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.title}</div>
@@ -6358,6 +6385,7 @@ function respondToOffer(offerId, action) {
   if (!o) return;
   if (action === 'accepted') {
     o.status = 'Accepted';
+    if (o.dbId) sb.from('offers').update({ status: 'Accepted' }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('offer accept persist:', error); });
 
     // Auto-create order
     const p = PRODS.find(x => x.id === o.productId);
@@ -6404,6 +6432,7 @@ function respondToOffer(offerId, action) {
     renderReceivedOffers();
   } else if (action === 'declined') {
     o.status = 'Declined';
+    if (o.dbId) sb.from('offers').update({ status: 'Declined' }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('offer decline persist:', error); });
     showToast('❌ Offer declined.');
     // v31: notify the buyer their offer was declined (best-effort, never blocks)
     const _decNotif = {
@@ -6443,6 +6472,8 @@ function submitSellerCounter() {
   if (!amt || amt <= 0) { showToast('Enter a counter amount!'); return; }
   o.status = 'Countered';
   o.sellerCounter = amt;
+  o.counterAmount = amt;
+  if (o.dbId) sb.from('offers').update({ status: 'Countered', counter_amount: amt }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('offer counter persist:', error); });
   document.getElementById('modal-seller-counter').style.display = 'none';
   showToast('🔄 Counter offer of ' + (o.currency==='USD'?'$'+amt:amt+' SB') + ' sent to @' + o.buyer + '!');
   // v31: notify the buyer of the counter offer (best-effort, never blocks)
