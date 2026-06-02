@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-14</title>
+<title>OneStopSwap v31-15</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-14';
+window._OSS_BUILD = 'v31-15';
 window._ossErrs = [];
 window.addEventListener('error', function (e) {
   try {
@@ -5929,6 +5929,13 @@ function showOfferResponse(offerId) {
   }
 
   document.getElementById('offer-response-content').innerHTML = content;
+  // v31-15 BLACK-SCREEN FIX: only open the modal if we actually built content. Statuses
+  // like 'Pending' (a buyer's counter-back, awaiting the seller) / 'Completing' have no
+  // branch above, so content was '' and the modal opened empty over a dark backdrop.
+  if (!content) {
+    showToast(offer.status === 'Pending' ? '⏳ Counter sent — waiting for the seller to respond' : 'Nothing to respond to on this offer right now');
+    return;
+  }
   document.getElementById('modal-offer-response').style.display = 'flex';
 }
 
