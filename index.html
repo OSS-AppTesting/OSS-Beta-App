@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-15</title>
+<title>OneStopSwap v31-16</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-15';
+window._OSS_BUILD = 'v31-16';
 window._ossErrs = [];
 window.addEventListener('error', function (e) {
   try {
@@ -7096,8 +7096,12 @@ async function saveListingEdits(title, desc, category, condition) {
 
 async function markAsSold(id) {
   if (!currentUser) return;
-  const { error } = await sb.from('listings').update({ sold: true }).eq('id', id).eq('seller_id', currentUser.id);
+  // v31-16: capture the updated row(s). A 0-row update (listing's seller_id null/mismatched,
+  // or blocked by RLS) previously returned no error — seller saw a false "Marked as sold!"
+  // while the DB stayed unsold, so the item came back in the feed on reload.
+  const { data, error } = await sb.from('listings').update({ sold: true }).eq('id', id).eq('seller_id', currentUser.id).select();
   if (error) { showToast('❌ ' + (error.message || 'Could not mark as sold')); return; }
+  if (!data || !data.length) { showToast('❌ Couldn\'t mark sold — this listing isn\'t linked to your account (seller_id mismatch)'); return; }
   const idx = PRODS.findIndex(x => String(x.id) === String(id));
   if (idx > -1) PRODS.splice(idx, 1);
   renderAll();
