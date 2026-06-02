@@ -13,6 +13,22 @@
 const SUPABASE_URL = 'https://ynbqsjwyloumqiwtyjsc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── v31-7 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
+window._OSS_BUILD = 'v31-7';
+window._ossErrs = [];
+window.addEventListener('error', function (e) {
+  try {
+    window._ossErrs.unshift((e.message || 'error') + ' @ ' + String(e.filename || '').split('/').pop() + ':' + (e.lineno || '?'));
+    window._ossErrs = window._ossErrs.slice(0, 6);
+  } catch (_) {}
+});
+window.addEventListener('unhandledrejection', function (e) {
+  try {
+    var r = e.reason; window._ossErrs.unshift('promise: ' + ((r && r.message) ? r.message : String(r)));
+    window._ossErrs = window._ossErrs.slice(0, 6);
+  } catch (_) {}
+});
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -3301,8 +3317,32 @@ function mapDbNotif(n) {
     title: n.title, body: n.body,
     time: notifTimeLabel(n.created_at),
     actionLabel: n.action_label || 'View',
-    action: () => go(n.action_target || 'home')
+    action: notifActionFor(n)
   };
+}
+
+// Decide what tapping a notification does. A "New offer on your listing" is an offer
+// you RECEIVED (you're the seller) → open the Inbox (received) tab, not the default
+// sent-offers tab. Handles both the explicit 'my-offers:received' target (new rows)
+// and older rows that only say 'my-offers' (matched by title).
+function notifActionFor(n) {
+  const target = n.action_target || n.actionTarget || '';
+  const title = (n.title || '').toLowerCase();
+  if (target === 'my-offers:received' || (target === 'my-offers' && title.includes('new offer on your listing'))) {
+    return () => openOffersInbox();
+  }
+  return () => go(target || 'home');
+}
+
+// Open My Offers on the 📬 Inbox (received) tab, refreshing from the DB first so a
+// just-arrived offer is present.
+async function openOffersInbox() {
+  go('my-offers');
+  try { await loadOffersFromDb(); } catch (e) { console.error('openOffersInbox refresh:', e); }
+  const inboxTab = Array.from(document.querySelectorAll('.offer-tab'))
+    .find(t => (t.getAttribute('onclick') || '').includes("'received'"));
+  if (inboxTab) filterOffers('received', inboxTab);
+  else renderOffers('received');
 }
 
 // username -> user uuid, cached. For recipients we only know by name (reviews, checkout).
@@ -3519,7 +3559,7 @@ const NOTIFICATIONS = [
     icon:'🏷️', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
     title:'New offer on your listing',
     body:'@sneakerhead_99 offered 20 SB on Metallic Gold Long-Sleeve Shirt',
-    time:'2 min ago', action:()=>go('my-offers'),
+    time:'2 min ago', action:()=>openOffersInbox(),
     actionLabel:'View Offer'
   },
   {
@@ -5699,6 +5739,7 @@ function submitOffer() {
   if (currentUser) {
     sb.from('offers').insert({
       buyer_id: currentUser.id,
+      seller_id: p.sellerId || null,
       buyer_username: currentProfile?.username || '',
       seller_username: p.seller,
       listing_id: String(p.id),
@@ -5721,7 +5762,7 @@ function submitOffer() {
       type: 'offer', icon: '🏷️',
       title: 'New offer on your listing',
       body: '@' + (currentProfile?.username || 'Someone') + ' offered ' + (chosenCurrency === 'USD' ? '$' + amount : amount + ' SB') + ' on ' + p.title,
-      actionLabel: 'View Offer', actionTarget: 'my-offers'
+      actionLabel: 'View Offer', actionTarget: 'my-offers:received'
     };
     if (p.sellerId) notifyUser(p.sellerId, _offerNotif); else notifyUsername(p.seller, _offerNotif);
   }
@@ -6263,7 +6304,7 @@ function renderReceivedOffers() {
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;">
         <div style="display:flex;gap:12px;padding:14px;">
           <div style="width:64px;height:64px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#111;">
-            <img src="${o.img||''}" style="width:100%;height:100%;object-fit:cover;">
+            <img src="${o.img||p?.img||''}" style="width:100%;height:100%;object-fit:cover;">
           </div>
           <div style="flex:1;min-width:0;">
             <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.title}</div>
@@ -7598,6 +7639,39 @@ window.addEventListener('load', () => {
     }
   }, 100);
 });
+
+// ── v31-7 TEMP DIAGNOSTICS — readout + tappable build badge ──────────────────
+function ossDebug() {
+  function cnt(x) { try { return x.length; } catch (_) { return '?'; } }
+  var lines = [
+    'BUILD: ' + (window._OSS_BUILD || '?'),
+    'logged in: ' + ((typeof currentUser !== 'undefined' && currentUser) ? 'yes' : 'NO'),
+    'username: ' + ((typeof currentProfile !== 'undefined' && currentProfile) ? (currentProfile.username || '(none)') : '(none)'),
+    'user id: ' + ((typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : '(none)'),
+    '',
+    'PRODS (listings): ' + cnt(PRODS),
+    'OFFERS (sent): ' + cnt(OFFERS),
+    'RECEIVED_OFFERS (inbox): ' + cnt(RECEIVED_OFFERS),
+    'ORDERS: ' + cnt(ORDERS),
+    'NOTIFICATIONS: ' + cnt(NOTIFICATIONS),
+    '',
+    'recent errors:',
+    (window._ossErrs && window._ossErrs.length ? window._ossErrs.join('\n') : '(none)')
+  ];
+  alert(lines.join('\n'));
+}
+(function injectDebugBadge() {
+  function add() {
+    if (document.getElementById('oss-debug-badge')) return;
+    var b = document.createElement('div');
+    b.id = 'oss-debug-badge';
+    b.textContent = (window._OSS_BUILD || 'build') + ' 🐞';
+    b.style.cssText = 'position:fixed;left:8px;bottom:150px;z-index:99999;background:rgba(255,59,48,.9);color:#fff;font:700 11px -apple-system,sans-serif;padding:5px 9px;border-radius:8px;opacity:.9;box-shadow:0 2px 8px rgba(0,0,0,.4);';
+    b.onclick = ossDebug;
+    document.body.appendChild(b);
+  }
+  if (document.body) add(); else document.addEventListener('DOMContentLoaded', add);
+})();
 </script>
 </body>
 </html>
