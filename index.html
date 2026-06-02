@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-11</title>
+<title>OneStopSwap v31-12</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-11';
+window._OSS_BUILD = 'v31-12';
 window._ossErrs = [];
 window.addEventListener('error', function (e) {
   try {
@@ -2008,7 +2008,11 @@ async function confirmSBCheckout() {
       window._offerCheckoutId = null;
       document.getElementById('modal-sb-checkout').style.display = 'none';
       if (currentUser) {
-        saveOrderToDb(offer.title, offer.offerAmount, 'SB', offer.seller);
+        // v31-12: capture the saved order and add it to local ORDERS so it shows on the
+        // purchased side (My Orders) immediately — mirrors the direct-buy branch below.
+        // Was fire-and-forget, so an accepted offer didn't appear until a full reload.
+        const dbOrder = await saveOrderToDb(offer.title, offer.offerAmount, 'SB', offer.seller);
+        if (dbOrder) ORDERS.unshift({ id: dbOrder.id, item: offer.title, price: offer.offerAmount, currency: 'SB', seller: offer.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') });
         sb.from('offers').update({ status: 'Completed' }).eq('id', offerId).then(() => {});
       }
       showToast('⚡ Purchased at offer price! ' + offer.offerAmount + ' SB spent.');
@@ -2875,7 +2879,10 @@ async function confirmCheckout() {
       document.getElementById('modal-checkout').style.display = 'none';
       // Save offer order to DB
       if (currentUser) {
-        saveOrderToDb(offer.title, offer.offerAmount, offer.currency || 'USD', offer.seller);
+        // v31-12: capture the saved order and add it to local ORDERS so the purchase
+        // shows on the purchased side (My Orders) immediately — mirrors direct-buy.
+        const dbOrder = await saveOrderToDb(offer.title, offer.offerAmount, offer.currency || 'USD', offer.seller);
+        if (dbOrder) ORDERS.unshift({ id: dbOrder.id, item: offer.title, price: offer.offerAmount, currency: offer.currency || 'USD', seller: offer.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') });
         // Update offer status in DB
         sb.from('offers').update({ status: 'Completed' }).eq('id', offerId).then(() => {});
         // v31: notify the seller of the sale (best-effort, never blocks the order)
@@ -6013,6 +6020,13 @@ function submitCounter() {
   if (!offer) return;
   const amount = parseFloat(document.getElementById('counter-amount').value);
   if (!amount || amount <= 0) { showToast('Enter a counter amount!'); return; }
+  // v31-12: must be able to afford an SB counter (mirrors submitOffer). Routes to the
+  // shortfall top-up sheet, which auto-resumes this counter on success. Checked before
+  // mutating offer state / hiding the modal so counter-amount is still readable on resume.
+  if (offer.currency === 'SB' && SB < amount) {
+    showSBShortfall(amount, () => submitCounter());
+    return;
+  }
   offer.offerAmount = amount;
   offer.counterAmount = null;
   offer.status = 'Pending';
