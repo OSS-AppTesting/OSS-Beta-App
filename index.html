@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-10</title>
+<title>OneStopSwap v31-11</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-10';
+window._OSS_BUILD = 'v31-11';
 window._ossErrs = [];
 window.addEventListener('error', function (e) {
   try {
@@ -6016,11 +6016,27 @@ function submitCounter() {
   offer.offerAmount = amount;
   offer.counterAmount = null;
   offer.status = 'Pending';
+  // v31-11: persist the buyer's counter-back so the SELLER sees a fresh Pending offer
+  // (mirrors the seller-side submitSellerCounter write path). 'Pending' = ball back to
+  // the seller — renderReceivedOffers shows Accept/Counter/Decline only on 'Pending'.
+  if (offer.dbId) sb.from('offers').update({ status: 'Pending', offer_amount: amount, counter_amount: null }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer counter persist:', error); });
   document.getElementById('modal-counter-offer').style.display = 'none';
   showToast('🔄 Counter offer sent!');
-  // Simulate response again
-  const pct = (amount / offer.listedPrice) * 100;
-  setTimeout(() => simulateSellerResponse(offer.id, pct), 4000 + Math.random() * 4000);
+  // v31-11: notify the seller of the buyer's counter-back (best-effort, never blocks).
+  // Buyer-side offers carry only the seller username (no sellerId), so notifyUsername.
+  notifyUsername(offer.seller, {
+    type: 'offer', icon: '🔄',
+    title: 'Counter offer received',
+    body: '@' + (currentProfile?.username || 'The buyer') + ' countered with ' + (offer.currency==='USD'?'$'+amount:amount+' SB') + ' on ' + offer.title,
+    actionLabel: 'Respond', actionTarget: 'my-offers:received'
+  });
+  // v31-11 BUG 1 FIX: only simulate a seller response for DEMO personas (consistent with
+  // submitOffer's v31-4 gate). Real sellers respond themselves — the unconditional
+  // simulateSellerResponse here was auto-accepting the buyer's counter (no seller turn).
+  if (isDemoSeller(offer.seller)) {
+    const pct = (amount / offer.listedPrice) * 100;
+    setTimeout(() => simulateSellerResponse(offer.id, pct), 4000 + Math.random() * 4000);
+  }
 }
 
 // ── ORDER TRACKING ────────────────────────────────────────────────────────────
