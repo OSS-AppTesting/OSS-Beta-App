@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-17</title>
+<title>OneStopSwap v31-18</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-17';
+window._OSS_BUILD = 'v31-18';
 window._ossErrs = [];
 window.addEventListener('error', function (e) {
   try {
@@ -5945,15 +5945,14 @@ function acceptAndCheckout(offerId) {
   document.getElementById('modal-offer-response').style.display = 'none';
   offer.status = 'Completing';
 
-  const p = PRODS.find(x => x.id === offer.productId);
-  if (!p) return;
+  // v31-18: don't require the listing in PRODS — once an offer is accepted the listing is
+  // marked sold (v31-17) and filtered out of PRODS, so this lookup returned null and
+  // Complete Purchase silently no-op'd. Use the offer's own listedPrice for the display.
+  const origPrice = offer.listedPrice;
 
   if (offer.currency === 'SB') {
     // Open SB checkout with offer price
     currentSBCheckoutId = offer.productId;
-    // Temporarily override price for checkout
-    const origPrice = p.price;
-    p.price = offer.offerAmount;
 
     document.getElementById('sb-checkout-item').innerHTML = `
       <div style="display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px;">
@@ -5975,13 +5974,10 @@ function acceptAndCheckout(offerId) {
     // Override confirm to use offer price and mark offer complete
     window._offerCheckoutId = offerId;
     document.getElementById('modal-sb-checkout').style.display = 'flex';
-    p.price = origPrice; // restore
 
   } else {
     // Open USD checkout with offer price
     currentCheckoutId = offer.productId;
-    const origPrice = p.price;
-    p.price = offer.offerAmount;
 
     document.getElementById('checkout-item-summary').innerHTML = `
       <div style="display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px;">
@@ -6002,7 +5998,6 @@ function acceptAndCheckout(offerId) {
     document.getElementById('checkout-total').textContent = '$' + (offer.offerAmount + shipping).toFixed(2);
     window._offerCheckoutId = offerId;
     document.getElementById('modal-checkout').style.display = 'flex';
-    p.price = origPrice; // restore
   }
 }
 
