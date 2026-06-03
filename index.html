@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-18</title>
+<title>OneStopSwap v31-19</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-18';
+window._OSS_BUILD = 'v31-19';
 window._ossErrs = [];
 window.addEventListener('error', function (e) {
   try {
@@ -3486,7 +3486,9 @@ async function loadOffersFromDb() {
   data.forEach(o => {
     const isReceived = o.seller_username === myUsername;
     const prod = PRODS.find(x => x.id === o.productId || x.id === o.listing_id);
-    const img = prod ? prod.img : null;
+    // v31-19: prefer the image stored on the offer row (survives the listing being sold &
+    // filtered out of PRODS); fall back to the live listing for legacy offers.
+    const img = o.image_url || (prod ? prod.img : null);
     if (isReceived) {
       const existing = RECEIVED_OFFERS.find(x => x.dbId === o.id);
       if (existing) {
@@ -5793,6 +5795,7 @@ function submitOffer() {
       seller_username: p.seller,
       listing_id: String(p.id),
       listing_title: p.title,
+      image_url: p.img,
       listed_price: p.price,
       listed_currency: p.currency,
       offer_amount: amount,
