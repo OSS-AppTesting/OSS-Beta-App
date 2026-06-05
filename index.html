@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-20</title>
+<title>OneStopSwap v31-21</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-20';
+window._OSS_BUILD = 'v31-21';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -6440,12 +6440,18 @@ function respondToOffer(offerId, action) {
   if (!o) return;
   if (action === 'accepted') {
     o.status = 'Accepted';
-    if (o.dbId) sb.from('offers').update({ status: 'Accepted' }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('offer accept persist:', error); });
-    // v31-17: accepting an offer takes the item off the market. The seller owns the
-    // listing, so this sold update is permitted (same gate as markAsSold). Persist +
-    // remove from the seller's local feed so a closed deal pulls the item like ✓ Sold.
+    // v31-21 TEMP DIAGNOSTIC: surface the real result of the seller's writes. The SQL editor
+    // runs as admin (bypasses RLS); the app runs as the seller, so an RLS block / 0-row
+    // update is invisible unless we report it. Remove once the Accept persistence is verified.
+    if (o.dbId) sb.from('offers').update({ status: 'Accepted' }).eq('id', o.dbId).select().then(({ data, error }) => {
+      if (error) showToast('⚠️ offer write: ' + error.message);
+      else if (!data || !data.length) showToast('⚠️ offer write: 0 rows (RLS blocked seller UPDATE on offers?)');
+    });
     if (currentUser && o.productId) {
-      sb.from('listings').update({ sold: true }).eq('id', o.productId).eq('seller_id', currentUser.id).then(({ error }) => { if (error) console.error('listing sold-on-accept persist:', error); });
+      sb.from('listings').update({ sold: true }).eq('id', o.productId).eq('seller_id', currentUser.id).select().then(({ data, error }) => {
+        if (error) showToast('⚠️ listing write: ' + error.message);
+        else if (!data || !data.length) showToast('⚠️ listing write: 0 rows (RLS/seller_id on listings?)');
+      });
       const _li = PRODS.findIndex(x => String(x.id) === String(o.productId));
       if (_li > -1) { PRODS.splice(_li, 1); renderAll(); }
     }
