@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-19</title>
+<title>OneStopSwap v31-20</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,11 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-19';
+window._OSS_BUILD = 'v31-20';
+// v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
+// listings don't auto-accept/counter during real two-account testing. Set to true
+// (or remove this gate) to restore solo-demo behavior before investor demos.
+window._OSS_SIM_SELLERS = false;
 window._ossErrs = [];
 window.addEventListener('error', function (e) {
   try {
@@ -5835,7 +5839,7 @@ function submitOffer() {
   // Simulate a seller response ONLY for demo personas (so solo demos still show the
   // accept/counter/decline flow). Real accounts respond themselves and get the v31
   // notification — no AI stand-in.
-  if (isDemoSeller(p.seller)) {
+  if (window._OSS_SIM_SELLERS && isDemoSeller(p.seller)) {
     const pct = (amount / p.price) * 100;
     const delay = 4000 + Math.random() * 4000;
     setTimeout(() => simulateSellerResponse(offer.id, pct), delay);
@@ -6068,7 +6072,7 @@ function submitCounter() {
   // v31-11 BUG 1 FIX: only simulate a seller response for DEMO personas (consistent with
   // submitOffer's v31-4 gate). Real sellers respond themselves — the unconditional
   // simulateSellerResponse here was auto-accepting the buyer's counter (no seller turn).
-  if (isDemoSeller(offer.seller)) {
+  if (window._OSS_SIM_SELLERS && isDemoSeller(offer.seller)) {
     const pct = (amount / offer.listedPrice) * 100;
     setTimeout(() => simulateSellerResponse(offer.id, pct), 4000 + Math.random() * 4000);
   }
