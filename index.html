@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-22</title>
+<title>OneStopSwap v31-23</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-22';
+window._OSS_BUILD = 'v31-23';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3544,7 +3544,7 @@ async function saveListingToDb(listing) {
     seller_id: currentUser.id, seller_username: currentProfile?.username || '',
     title: listing.title, description: listing.description,
     price: listing.price, currency: listing.currency, category: listing.category,
-    location: listing.location, image_url: listing.img, is_active: true
+    location: listing.location, image_url: listing.img, is_active: true, sold: false
   }).select().single();
   if (error) { console.error('Listing save error:', error); return null; }
   return data;
@@ -4371,7 +4371,7 @@ async function postListing() {
     seller: sellerName, location,
     img: aiPreviewDataUrl || I['gold_shirt'],
     category, likes: 0, views: 1,
-    hot: false, isNew: true, description: desc
+    hot: false, isNew: true, sold: false, description: desc
   };
 
   // Add to top of PRODS
