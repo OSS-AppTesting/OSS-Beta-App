@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-19</title>
+<title>OneStopSwap v32-20</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-19';
+window._OSS_BUILD = 'v32-20';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2545,19 +2545,14 @@ async function placeBid(auctionId, amount) {
     ? '🏆 You\'re the highest bidder! $' + amount + ' — your card is charged if you win.'
     : '🏆 You\'re the highest bidder! ' + amount + ' SB placed.');
 
-  // Save bid to Supabase
+  // Save bid to Supabase via the place_bid RPC (SECURITY DEFINER): records the bid AND bumps the
+  // auction's current_bid/bid_count past the owner-only auctions UPDATE RLS — a direct
+  // `auctions.update()` from a bidder is silently blocked (they're not the seller), which left
+  // bid_count/current_bid stale (My Listings "0 bids", BIN never hid, edit-lock never engaged).
   const dbId = a.dbId || a.id;
   if (currentUser && !String(dbId).startsWith('local-')) {
-    const { error: bidError } = await sb.from('auction_bids').insert({
-      auction_id: dbId,
-      bidder_id: currentUser.id,
-      bidder_username: myUsername,
-      amount
-    });
-    if (bidError) console.error('Bid save error:', bidError);
-
-    // Update auction current_bid in DB
-    await sb.from('auctions').update({ current_bid: amount, bid_count: a.bidCount }).eq('id', dbId);
+    const { error: bidError } = await sb.rpc('place_bid', { p_auction_id: dbId, p_amount: amount });
+    if (bidError) { console.error('place_bid RPC error:', bidError); showToast('❌ ' + (bidError.message || 'Bid failed')); }
 
     // v31: notify the auction seller of the new bid (best-effort, never blocks the bid)
     const _bidNotif = {
