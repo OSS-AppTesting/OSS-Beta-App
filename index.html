@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-6</title>
+<title>OneStopSwap v32-7</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-6';
+window._OSS_BUILD = 'v32-7';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -825,6 +825,11 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       </div>
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Size</div>
+        <div id="size-region-row" style="display:none;gap:8px;margin-bottom:8px;">
+          <div id="szreg-US" onclick="setShoeRegion('US')" style="flex:1;text-align:center;background:rgba(255,59,48,.2);border:2px solid rgba(255,59,48,.6);border-radius:12px;padding:8px;color:#FF3B30;font-weight:800;font-size:13px;cursor:pointer;">US</div>
+          <div id="szreg-UK" onclick="setShoeRegion('UK')" style="flex:1;text-align:center;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:12px;padding:8px;color:rgba(255,255,255,.6);font-weight:800;font-size:13px;cursor:pointer;">UK</div>
+          <div id="szreg-EU" onclick="setShoeRegion('EU')" style="flex:1;text-align:center;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:12px;padding:8px;color:rgba(255,255,255,.6);font-weight:800;font-size:13px;cursor:pointer;">EU</div>
+        </div>
         <select id="f-size" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
           <option>N/A / One size</option>
         </select>
@@ -7304,24 +7309,57 @@ async function deleteAuction(id, title, btn) {
 // ── OWNER LISTING CONTROLS (edit / sold / relist / remove) ────────────────────
 let editingListingId = null;
 
-// Item 3 (v32-6): category-aware size options. "N/A / One size" is always offered first
-// (covers items that don't need a size), then the category-specific set.
-const SIZE_OPTIONS = {
-  'Sneakers': ['US 4','US 4.5','US 5','US 5.5','US 6','US 6.5','US 7','US 7.5','US 8','US 8.5','US 9','US 9.5','US 10','US 10.5','US 11','US 11.5','US 12','US 12.5','US 13','US 14','US 15'],
-  'Streetwear': ['XS','S','M','L','XL','XXL','XXXL'],
-  'Kids & Baby': ['Newborn','0-3M','3-6M','6-12M','12-18M','18-24M','2T','3T','4T','5','6','7','8','10','12','14'],
-  'Vintage': ['XS','S','M','L','XL','XXL']
-};
+// Item 3 (v32-7): category-aware size options. "N/A / One size" is always first (covers
+// items that don't need a size). Shoe categories (Sneakers, Vintage) get a US/UK/EU region
+// toggle; the chosen system is baked into the stored value ("US 9" / "UK 8" / "EU 42") so it's
+// unambiguous everywhere. Vintage shows both a Clothing group and a Shoes group (e.g. a vintage
+// dress vs vintage sneakers).
+const _SZ_APPAREL = ['XS','S','M','L','XL','XXL','XXXL'];
+const _SZ_KIDS = ['Newborn','0-3M','3-6M','6-12M','12-18M','18-24M','2T','3T','4T','5','6','7','8','10','12','14'];
+function _shoeRange(prefix, lo, hi) {
+  const a = [];
+  for (let v = lo; v <= hi + 1e-9; v += 0.5) a.push(prefix + ' ' + (Number.isInteger(v) ? v : v.toFixed(1)));
+  return a;
+}
+const _SZ_SHOE = { US: _shoeRange('US', 4, 15), UK: _shoeRange('UK', 3, 14), EU: _shoeRange('EU', 36, 49) };
+let _shoeRegion = 'US';
+function categoryHasShoes(cat) { return cat === 'Sneakers' || cat === 'Vintage'; }
+function setShoeRegion(r) { _shoeRegion = r; updateSizeOptions(); }
 function updateSizeOptions() {
   const catEl = document.getElementById('f-category');
   const sizeEl = document.getElementById('f-size');
   if (!sizeEl) return;
   const cat = catEl ? catEl.value : '';
   const prev = sizeEl.value;
+  const hasShoes = categoryHasShoes(cat);
+  // region toggle: show only for shoe categories, and reflect the active region
+  const row = document.getElementById('size-region-row');
+  if (row) row.style.display = hasShoes ? 'flex' : 'none';
+  ['US','UK','EU'].forEach(r => {
+    const b = document.getElementById('szreg-' + r);
+    if (!b) return;
+    const on = r === _shoeRegion;
+    b.style.background = on ? 'rgba(255,59,48,.2)' : 'rgba(255,255,255,.04)';
+    b.style.border = on ? '2px solid rgba(255,59,48,.6)' : '2px solid rgba(255,255,255,.1)';
+    b.style.color = on ? '#FF3B30' : 'rgba(255,255,255,.6)';
+  });
+  // build options
   let html = '<option>N/A / One size</option>';
-  (SIZE_OPTIONS[cat] || []).forEach(s => { html += '<option>' + s + '</option>'; });
+  if (cat === 'Sneakers') {
+    _SZ_SHOE[_shoeRegion].forEach(s => { html += '<option>' + s + '</option>'; });
+  } else if (cat === 'Streetwear') {
+    _SZ_APPAREL.forEach(s => { html += '<option>' + s + '</option>'; });
+  } else if (cat === 'Kids & Baby') {
+    _SZ_KIDS.forEach(s => { html += '<option>' + s + '</option>'; });
+  } else if (cat === 'Vintage') {
+    html += '<optgroup label="Clothing">';
+    _SZ_APPAREL.forEach(s => { html += '<option>' + s + '</option>'; });
+    html += '</optgroup><optgroup label="Shoes (' + _shoeRegion + ')">';
+    _SZ_SHOE[_shoeRegion].forEach(s => { html += '<option>' + s + '</option>'; });
+    html += '</optgroup>';
+  }
   sizeEl.innerHTML = html;
-  // keep the prior selection if it's still a valid option for the new category
+  // keep the prior selection if it's still a valid option
   if (prev && Array.from(sizeEl.options).some(o => o.value === prev)) sizeEl.value = prev;
 }
 
@@ -7329,7 +7367,7 @@ function resetListingForm() {
   ['f-title', 'f-desc', 'f-price', 'f-location'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
   const cat = document.getElementById('f-category'); if (cat) cat.value = '';
   const cond = document.getElementById('f-condition'); if (cond) cond.value = '';
-  if (typeof updateSizeOptions === 'function') updateSizeOptions(); // Item 3 (v32-6): reset to N/A
+  _shoeRegion = 'US'; if (typeof updateSizeOptions === 'function') updateSizeOptions(); // Item 3 (v32-7): reset region + options
   aiPhotoBase64 = null; aiPhotoMime = null; aiPreviewDataUrl = null; peSourceDataUrl = null;
   const inp = document.getElementById('ai-photo-input'); if (inp) inp.value = '';
   const pv = document.getElementById('ai-photo-preview'); if (pv) pv.style.display = 'none';
@@ -7371,7 +7409,7 @@ function openEditListing(id) {
   const cat = document.getElementById('f-category'); if (cat) cat.value = p.category || '';
   const cond = document.getElementById('f-condition'); if (cond) cond.value = p.condition || '';
   const loc = document.getElementById('f-location'); if (loc) loc.value = p.location || '';
-  updateSizeOptions(); const szE = document.getElementById('f-size'); if (szE) szE.value = p.size || 'N/A / One size'; // Item 3 (v32-6)
+  { const sv = p.size || ''; if (/^UK/.test(sv)) _shoeRegion = 'UK'; else if (/^EU/.test(sv)) _shoeRegion = 'EU'; else if (/^US/.test(sv)) _shoeRegion = 'US'; updateSizeOptions(); const szE = document.getElementById('f-size'); if (szE) szE.value = sv || 'N/A / One size'; } // Item 3 (v32-7)
   selectedCurrency = p.currency || 'SB';
   if (typeof selectCurrency === 'function') selectCurrency(selectedCurrency);
   // Existing photo shows as preview; only re-uploads if the user picks a new one
@@ -7403,7 +7441,7 @@ async function relistEditListing(id) {
   const cat = document.getElementById('f-category'); if (cat) cat.value = p.category || '';
   const cond = document.getElementById('f-condition'); if (cond) cond.value = p.condition || '';
   const loc = document.getElementById('f-location'); if (loc) loc.value = p.location || '';
-  updateSizeOptions(); const szE = document.getElementById('f-size'); if (szE) szE.value = p.size || 'N/A / One size'; // Item 3 (v32-6)
+  { const sv = p.size || ''; if (/^UK/.test(sv)) _shoeRegion = 'UK'; else if (/^EU/.test(sv)) _shoeRegion = 'EU'; else if (/^US/.test(sv)) _shoeRegion = 'US'; updateSizeOptions(); const szE = document.getElementById('f-size'); if (szE) szE.value = sv || 'N/A / One size'; } // Item 3 (v32-7)
   selectedCurrency = p.currency || 'SB';
   if (typeof selectCurrency === 'function') selectCurrency(selectedCurrency);
   aiPreviewDataUrl = p.image_url || ''; aiPhotoBase64 = null; aiPhotoMime = null; peSourceDataUrl = null;
@@ -7431,7 +7469,7 @@ async function relistEditAuction(id) {
   document.getElementById('f-desc').value = a.description || '';
   const cat = document.getElementById('f-category'); if (cat) cat.value = a.category || '';
   const cond = document.getElementById('f-condition'); if (cond) cond.value = a.condition || '';
-  updateSizeOptions(); const szE = document.getElementById('f-size'); if (szE) szE.value = a.size || 'N/A / One size'; // Item 3 (v32-6)
+  { const sv = a.size || ''; if (/^UK/.test(sv)) _shoeRegion = 'UK'; else if (/^EU/.test(sv)) _shoeRegion = 'EU'; else if (/^US/.test(sv)) _shoeRegion = 'US'; updateSizeOptions(); const szE = document.getElementById('f-size'); if (szE) szE.value = sv || 'N/A / One size'; } // Item 3 (v32-7)
   const sbid = document.getElementById('f-start-bid'); if (sbid) sbid.value = (a.start_price ?? '');
   const rv = document.getElementById('f-reserve'); if (rv) rv.value = (a.reserve_price ?? 0);
   const al = document.getElementById('f-auction-location'); if (al) al.value = a.location || (currentProfile?.location || '');
