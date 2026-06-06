@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-24</title>
+<title>OneStopSwap v33-1</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-24';
+window._OSS_BUILD = 'v33-1';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -585,11 +585,6 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <h2 style="color:#fff;font-weight:900;font-size:28px;">Shop</h2>
-      <div style="display:flex;gap:6px;">
-        <div class="pay-tab pay-tab-active" onclick="filterPayment('all',this)" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:5px 12px;cursor:pointer;"><span style="color:#FF3B30;font-size:12px;font-weight:700;">All</span></div>
-        <div class="pay-tab" onclick="filterPayment('SB',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;cursor:pointer;"><span style="color:rgba(255,255,255,.5);font-size:12px;font-weight:700;">💰 SB</span></div>
-        <div class="pay-tab" onclick="filterPayment('USD',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;cursor:pointer;"><span style="color:rgba(255,255,255,.5);font-size:12px;font-weight:700;">💵 Cash</span></div>
-      </div>
     </div>
 
     <!-- Search bar -->
@@ -602,6 +597,25 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         onfocus="this.style.borderColor='rgba(255,59,48,.5)'"
         onblur="this.style.borderColor='rgba(255,255,255,.12)'">
       <button id="search-clear" onclick="clearSearch()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:none;border-radius:8px;width:26px;height:26px;color:#fff;font-size:14px;cursor:pointer;display:none;">✕</button>
+    </div>
+
+    <!-- Unified filter bar (v33-1): Type · Department · Payment — all compose with each other + search -->
+    <div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;margin-bottom:16px;-webkit-overflow-scrolling:touch;">
+      <div id="type-seg" style="display:flex;gap:5px;flex-shrink:0;">
+        <div class="seg" onclick="setType('all',this)" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:5px 12px;cursor:pointer;color:#FF3B30;font-size:12px;font-weight:700;white-space:nowrap;">All</div>
+        <div class="seg" onclick="setType('fixed',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;cursor:pointer;color:rgba(255,255,255,.5);font-size:12px;font-weight:700;white-space:nowrap;">🏷️ Fixed</div>
+        <div class="seg" onclick="setType('live',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;cursor:pointer;color:rgba(255,255,255,.5);font-size:12px;font-weight:700;white-space:nowrap;">🔨 Live</div>
+      </div>
+      <div id="gender-seg" style="display:flex;gap:5px;flex-shrink:0;">
+        <div class="seg" onclick="setGender('all',this)" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:5px 12px;cursor:pointer;color:#FF3B30;font-size:12px;font-weight:700;white-space:nowrap;">All</div>
+        <div class="seg" onclick="setGender('M',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;cursor:pointer;color:rgba(255,255,255,.5);font-size:12px;font-weight:700;white-space:nowrap;">Men's</div>
+        <div class="seg" onclick="setGender('W',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;cursor:pointer;color:rgba(255,255,255,.5);font-size:12px;font-weight:700;white-space:nowrap;">Women's</div>
+      </div>
+      <div id="pay-seg" style="display:flex;gap:5px;flex-shrink:0;">
+        <div class="seg" onclick="setPayment('all',this)" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:5px 12px;cursor:pointer;color:#FF3B30;font-size:12px;font-weight:700;white-space:nowrap;">All</div>
+        <div class="seg" onclick="setPayment('SB',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;cursor:pointer;color:rgba(255,255,255,.5);font-size:12px;font-weight:700;white-space:nowrap;">💰 SB</div>
+        <div class="seg" onclick="setPayment('USD',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;cursor:pointer;color:rgba(255,255,255,.5);font-size:12px;font-weight:700;white-space:nowrap;">💵 Cash</div>
+      </div>
     </div>
 
     <!-- Search results -->
@@ -631,7 +645,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <div style="display:flex;align-items:center;gap:10px;">
           <button onclick="clearFilter()" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:34px;height:34px;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
-          <span id="shop-cat-title" style="color:#fff;font-weight:900;font-size:18px;"></span>
+          <div><span id="shop-cat-title" style="color:#fff;font-weight:900;font-size:18px;"></span><div id="shop-result-count" style="color:rgba(255,255,255,.4);font-size:12px;font-weight:600;"></div></div>
         </div>
         <button onclick="clearFilter()" style="color:#FF3B30;font-weight:600;font-size:13px;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;">✕ Clear</button>
       </div>
@@ -1849,7 +1863,7 @@ const CHAT_DATA = {
   ],
 };
 
-let SB = 125, liked = {}, selCat = null, prevScreen = 'home';
+let SB = 125, liked = {}, prevScreen = 'home';
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
 
@@ -1857,6 +1871,85 @@ let SB = 125, liked = {}, selCat = null, prevScreen = 'home';
 function priceBadge(p) {
   if (p.currency === 'USD') return `<div class="pbadge" style="background:linear-gradient(135deg,#00A550,#007A3D);"><span class="pn">$${p.price}</span><span class="ps">USD</span></div>`;
   return `<div class="pbadge"><span class="pn">${p.price}</span><span class="ps">SB</span></div>`;
+}
+
+// ── BROWSE FILTERS (v33-1) ───────────────────────────────────────────────────
+// Single source of truth for every browse surface (Shop feed + search now; Live in v33-2).
+// Each dimension is an independent, pure predicate; itemMatchesFilters composes them so they
+// stack automatically, and a future dimension (size/brand/price) is one predicate + one control.
+const FILTERS = { type: 'all', gender: 'all', category: null, payment: 'all', query: '' };
+
+function matchType(item)     { return FILTERS.type === 'all' ? true : (FILTERS.type === 'live' ? !!item._isAuction : !item._isAuction); }
+function matchGender(item)   { if (FILTERS.gender === 'all') return true; const g = item.gender || ''; return g === FILTERS.gender || g === 'Unisex'; } // Unisex shows in both
+function matchCategory(item) { return !FILTERS.category || item.category === FILTERS.category; }
+function matchPayment(item)  { return FILTERS.payment === 'all' ? true : (item.currency || 'SB') === FILTERS.payment; }
+function matchQuery(item) {
+  const q = FILTERS.query; if (!q) return true;
+  const synTarget = (typeof SYNONYMS !== 'undefined') ? SYNONYMS[q] : null;
+  const catOnly = synTarget ? CATEGORY_MAP[synTarget] : null;
+  if (catOnly) return item.category === catOnly;
+  const itemTerms = (typeof ITEM_SYNONYMS !== 'undefined') ? ITEM_SYNONYMS[q] : null;
+  if (itemTerms) {
+    const clothingTerm = !['boots','heels','sandals','loafers','platforms','high tops'].includes(q);
+    if (clothingTerm && item.category === 'Sneakers') return false;
+    return itemTerms.some(t => wordMatch((item.title || '').toLowerCase(), t));
+  }
+  const hay = [item.title, item.seller, (item.seller || '').replace(/_/g, ' '), item.category, item.location || '', item.description || ''].join(' ').toLowerCase();
+  return fuzzyMatch(hay, q);
+}
+function itemMatchesFilters(item) {
+  return matchType(item) && matchGender(item) && matchCategory(item) && matchPayment(item) && matchQuery(item);
+}
+// Normalize live auctions into PRODS shape so one pass + one card renderer (pCard) handle both.
+function browsePool() {
+  const auctionItems = (typeof AUCTIONS !== 'undefined' ? AUCTIONS : [])
+    .filter(a => !a.ended && a.status !== 'ended')
+    .map(a => ({
+      id: a.id, title: a.title || '', seller: a.seller || '', category: a.category || 'Other',
+      location: a.location || '', description: a.description || '', img: a.img,
+      price: a.currentBid, currency: a.currency || 'SB', gender: a.gender || '', _isAuction: true
+    }));
+  return PRODS.concat(auctionItems);
+}
+function visibleItems(pool) { return (pool || browsePool()).filter(itemMatchesFilters); }
+function filtersActive() { return FILTERS.type !== 'all' || FILTERS.gender !== 'all' || !!FILTERS.category || FILTERS.payment !== 'all' || !!FILTERS.query; }
+
+// One re-render entry point for the Shop surface — every control mutates FILTERS then calls this.
+function applyFilters() { renderShop(); }
+function renderShop() {
+  const def = document.getElementById('shop-default');
+  const filt = document.getElementById('shop-filtered');
+  const sr = document.getElementById('search-results'); if (sr) sr.style.display = 'none'; // v33-1: collapsed into shop-filtered
+  if (!filtersActive()) {
+    if (def) def.style.display = 'block';
+    if (filt) filt.style.display = 'none';
+    return;
+  }
+  if (def) def.style.display = 'none';
+  if (filt) filt.style.display = 'block';
+  const items = visibleItems();
+  const bits = [];
+  if (FILTERS.query) bits.push('"' + FILTERS.query + '"');
+  if (FILTERS.type !== 'all') bits.push(FILTERS.type === 'live' ? '🔨 Live' : '🏷️ Fixed');
+  if (FILTERS.gender !== 'all') bits.push(FILTERS.gender);
+  if (FILTERS.category) bits.push(FILTERS.category);
+  if (FILTERS.payment !== 'all') bits.push(FILTERS.payment === 'USD' ? '💵 Cash' : '💰 SB');
+  const t = document.getElementById('shop-cat-title'); if (t) t.textContent = (bits.join(' · ') || 'Results') + ' ✦';
+  const cnt = document.getElementById('shop-result-count'); if (cnt) cnt.textContent = items.length + (items.length === 1 ? ' item' : ' items');
+  const grid = document.getElementById('shop-grid');
+  if (grid) grid.innerHTML = items.length
+    ? items.map((p, i) => pCard(p, i)).join('')
+    : '<div style="grid-column:1/-1;color:rgba(255,255,255,.4);text-align:center;padding:48px 0;font-size:14px;">No items match these filters.</div>';
+}
+
+// Filter-bar control setters — each mutates one dimension, restyles its own segment group, re-renders.
+function setType(v, el)    { FILTERS.type = v; _styleSeg('type-seg', el); applyFilters(); }
+function setGender(code, el) { FILTERS.gender = code === 'M' ? "Men's" : code === 'W' ? "Women's" : 'all'; _styleSeg('gender-seg', el); applyFilters(); }
+function setPayment(v, el) { FILTERS.payment = v; _styleSeg('pay-seg', el); applyFilters(); }
+function _styleSeg(groupId, activeEl) {
+  const g = document.getElementById(groupId); if (!g) return;
+  g.querySelectorAll('.seg').forEach(s => { s.style.background = 'rgba(255,255,255,.06)'; s.style.border = '1px solid rgba(255,255,255,.1)'; s.style.color = 'rgba(255,255,255,.5)'; });
+  if (activeEl) { activeEl.style.background = 'rgba(255,59,48,.2)'; activeEl.style.border = '1px solid rgba(255,59,48,.4)'; activeEl.style.color = '#FF3B30'; }
 }
 
 function pCard(p, i) {
@@ -1884,7 +1977,7 @@ function pCard(p, i) {
 
 function catTileHome(cat) {
   if (cat.locked) return `<div class="cs-tile" style="width:90px;height:100px;flex-shrink:0;"><div class="cs-shimmer"></div><span class="cs-lock">🔒</span><span class="cs-lbl">COMING</span><span class="cs-sub"><span class="cs-dot"></span>SOON</span></div>`;
-  const s = CS[cat.name], sel = selCat === cat.name;
+  const s = CS[cat.name], sel = FILTERS.category === cat.name;
   return `<div class="ctile${sel?' sel':''}" style="width:90px;height:100px;flex-shrink:0;background:${s.grad};" onclick="filterCat('${cat.name}')">
     <div class="ct-glow" style="background:radial-gradient(circle at 50% 30%,${s.accent}55,transparent 70%);"></div>
     <div class="ct-glass"></div><div class="ct-shine"></div>
@@ -1894,7 +1987,7 @@ function catTileHome(cat) {
 
 function catTileShop(cat) {
   if (cat.locked) return `<div class="cs-tile cs-tile-shop" style="height:110px;"><div class="cs-shimmer"></div><span style="font-size:28px;position:relative;z-index:1;filter:drop-shadow(0 0 8px rgba(255,255,255,.3));">🔒</span><span class="cs-lbl">COMING</span><span class="cs-sub"><span class="cs-dot"></span>SOON</span></div>`;
-  const s = CS[cat.name], sel = selCat === cat.name;
+  const s = CS[cat.name], sel = FILTERS.category === cat.name;
   return `<div class="ctile${sel?' sel':''}" style="height:110px;background:${s.grad};" onclick="filterCat('${cat.name}')">
     <div class="ct-glow" style="background:radial-gradient(circle at 50% 25%,${s.accent}66,transparent 65%);"></div>
     <div class="ct-glass"></div><div class="ct-shine"></div>
@@ -1957,7 +2050,7 @@ function renderAll() {
   document.getElementById('shop-cats').innerHTML = CATS.map(catTileShop).join('');
 
   // Grids
-  const filtered = selCat ? PRODS.filter(p=>p.category===selCat) : PRODS;
+  const filtered = FILTERS.category ? PRODS.filter(p=>p.category===FILTERS.category) : PRODS;
   document.getElementById('grid-count').textContent = filtered.length + ' items';
   document.getElementById('home-grid').innerHTML = filtered.map((p,i)=>pCard(p,i)).join('');
   document.getElementById('all-grid').innerHTML = PRODS.map((p,i)=>pCard(p,i)).join('');
@@ -1974,14 +2067,9 @@ function renderAll() {
 }
 
 function filterCat(name) {
-  selCat = selCat===name ? null : name;
-  renderAll();
-  if (selCat && prevScreen==='shop') {
-    document.getElementById('shop-default').style.display = 'none';
-    document.getElementById('shop-filtered').style.display = 'block';
-    document.getElementById('shop-cat-title').textContent = selCat + ' ✦';
-    document.getElementById('shop-grid').innerHTML = PRODS.filter(p=>p.category===selCat).map((p,i)=>pCard(p,i)).join('');
-  }
+  FILTERS.category = FILTERS.category === name ? null : name;
+  renderAll();      // refresh home grid + category-tile highlights
+  applyFilters();   // refresh the Shop results surface (if visible)
 }
 
 function toggleLike(id) {
@@ -2624,7 +2712,6 @@ async function placeBid(auctionId, amount) {
 
 // ── SEARCH ────────────────────────────────────────────────────────────────────
 
-let searchQuery = '';
 let searchTimer = null;
 
 const SYNONYMS = {
@@ -2723,90 +2810,19 @@ function fuzzyMatch(hay, needle) {
 }
 
 function handleSearch(val) {
-  searchQuery = val.trim().toLowerCase();
-  document.getElementById('search-clear').style.display = searchQuery ? 'block' : 'none';
+  FILTERS.query = val.trim().toLowerCase();
+  const sc = document.getElementById('search-clear'); if (sc) sc.style.display = FILTERS.query ? 'block' : 'none';
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(runSearch, 150);
+  searchTimer = setTimeout(applyFilters, 150);
 }
 
-function runSearch() {
-  const resultsEl = document.getElementById('search-results');
-  const defaultEl = document.getElementById('shop-default');
-
-  if (!searchQuery) {
-    resultsEl.style.display = 'none';
-    defaultEl.style.display = selCat ? 'none' : 'block';
-    return;
-  }
-
-  resultsEl.style.display = 'block';
-  defaultEl.style.display = 'none';
-  document.getElementById('shop-filtered').style.display = 'none';
-
-  // Build a combined pool: fixed-price listings + live auctions (tagged so cards/taps route correctly)
-  const auctionItems = (typeof AUCTIONS !== 'undefined' ? AUCTIONS : [])
-    .filter(a => !a.ended)
-    .map(a => ({
-      id: a.id, title: a.title || '', seller: a.seller || '', category: a.category || 'Other',
-      location: a.location || '', description: a.description || '', img: a.img,
-      price: a.currentBid, currency: a.currency || 'SB', gender: a.gender || '', _isAuction: true
-    }));
-  let basePool = PRODS.concat(auctionItems);
-  let pool = payFilter === 'all' ? basePool : basePool.filter(p => p.currency === payFilter || p._isAuction);
-
-  // Check if query is a category synonym — if so restrict to that category only
-  const synonymTarget = SYNONYMS[searchQuery];
-  const categoryOnly = synonymTarget ? CATEGORY_MAP[synonymTarget] : null;
-
-  // Check if query maps to item synonyms (e.g. "shirt" → search for tee, top, blouse etc)
-  const itemTerms = ITEM_SYNONYMS[searchQuery] || null;
-
-  let results;
-  if (categoryOnly) {
-    results = pool.filter(p => p.category === categoryOnly);
-  } else if (itemTerms) {
-    // Item search — use word match and exclude Sneakers to avoid "top" matching "High Top"
-    const isClothingTerm = !['boots','heels','sandals','loafers','platforms','high tops'].includes(searchQuery);
-    results = pool.filter(p => {
-      if (isClothingTerm && p.category === 'Sneakers') return false;
-      const hay = p.title.toLowerCase();
-      return itemTerms.some(t => wordMatch(hay, t));
-    });
-  } else {
-    results = pool.filter(p => {
-      const hay = [p.title, p.seller, p.seller.replace(/_/g,' '), p.category, p.location||'', p.description||''].join(' ').toLowerCase();
-      return fuzzyMatch(hay, searchQuery);
-    });
-  }
-
-  const countEl = document.getElementById('search-count');
-  const gridEl  = document.getElementById('search-grid');
-  const emptyEl = document.getElementById('search-empty');
-
-  if (results.length) {
-    countEl.innerHTML = `<span style="color:#fff;font-weight:700;">${results.length}</span> result${results.length!==1?'s':''} for "<span style="color:#FF3B30;">${searchQuery}</span>"${categoryOnly?' in '+categoryOnly:''}`;
-    emptyEl.style.display = 'none';
-    gridEl.style.display  = 'grid';
-    gridEl.innerHTML = results.map((p,i) => pCard(p,i)).join('');
-  } else {
-    countEl.innerHTML = `No results for "<span style="color:#FF3B30;">${searchQuery}</span>"`;
-    gridEl.style.display  = 'none';
-    emptyEl.style.display = 'block';
-    const sugs = ['Sneakers','Vintage','Streetwear','Kids & Baby','Nike','Adidas','Y2K'];
-    document.getElementById('search-suggestions').innerHTML = sugs.map(s =>
-      `<div onclick="document.getElementById('search-input').value='${s}';handleSearch('${s}')"
-        style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:6px 16px;cursor:pointer;">
-        <span style="color:rgba(255,255,255,.7);font-size:13px;font-weight:600;">${s}</span>
-      </div>`).join('');
-  }
-}
+// v33-1: search now flows through the unified filter pipeline (FILTERS.query → applyFilters).
 
 function clearSearch() {
-  searchQuery = '';
-  document.getElementById('search-input').value = '';
-  document.getElementById('search-clear').style.display = 'none';
-  document.getElementById('search-results').style.display = 'none';
-  document.getElementById('shop-default').style.display = 'block';
+  FILTERS.query = '';
+  const si = document.getElementById('search-input'); if (si) si.value = '';
+  const sc = document.getElementById('search-clear'); if (sc) sc.style.display = 'none';
+  applyFilters();
 }
 
 // ── CURRENCY & PAYMENT SYSTEM ────────────────────────────────────────────────
@@ -2894,7 +2910,6 @@ function setAuctionCurrency(type) {
 }
 
 let currentCheckoutId = null;
-let payFilter = 'all';
 
 function selectCurrency(type) {
   selectedCurrency = type;
@@ -2923,52 +2938,16 @@ function selectCurrency(type) {
   }
 }
 
-function filterPayment(type, el) {
-  payFilter = type;
-  document.querySelectorAll('.pay-tab').forEach(t => {
-    t.style.background = 'rgba(255,255,255,.06)';
-    t.style.border = '1px solid rgba(255,255,255,.1)';
-    t.querySelector('span').style.color = 'rgba(255,255,255,.5)';
-  });
-  el.style.background = 'rgba(255,59,48,.2)';
-  el.style.border = '1px solid rgba(255,59,48,.4)';
-  el.querySelector('span').style.color = '#FF3B30';
-
-  if (searchQuery) { runSearch(); return; }
-
-  if (type === 'all') {
-    if (selCat) {
-      // Stay in category, show all currency types
-      document.getElementById('shop-default').style.display = 'none';
-      document.getElementById('shop-filtered').style.display = 'block';
-      document.getElementById('shop-cat-title').textContent = selCat + ' ✦';
-      document.getElementById('shop-grid').innerHTML = PRODS.filter(p => p.category === selCat).map((p,i) => pCard(p,i)).join('');
-    } else {
-      // No category — show category tiles
-      document.getElementById('shop-default').style.display = 'block';
-      document.getElementById('shop-filtered').style.display = 'none';
-    }
-  } else {
-    const filtered = PRODS.filter(p => p.currency === type && (!selCat || p.category === selCat));
-    document.getElementById('shop-default').style.display = 'none';
-    document.getElementById('shop-filtered').style.display = 'block';
-    document.getElementById('shop-cat-title').textContent = (selCat ? selCat + ' · ' : '') + (type === 'USD' ? '💵 Cash' : '💰 SwapBucks') + ' ✦';
-    document.getElementById('shop-grid').innerHTML = filtered.length
-      ? filtered.map((p,i) => pCard(p,i)).join('')
-      : '<div style="color:rgba(255,255,255,.3);text-align:center;padding:40px 0;font-size:14px;">No ' + (type==='USD'?'Cash':'SB') + ' listings in ' + (selCat||'this category') + '</div>';
-  }
-}
+// filterPayment superseded by setPayment (v33-1 unified filter bar).
 
 function clearFilter() {
-  payFilter = 'all';
-  document.getElementById('shop-default').style.display = 'block';
-  document.getElementById('shop-filtered').style.display = 'none';
-  // Reset pay tabs
-  document.querySelectorAll('.pay-tab').forEach((t,i) => {
-    t.style.background = i===0 ? 'rgba(255,59,48,.2)' : 'rgba(255,255,255,.06)';
-    t.style.border = i===0 ? '1px solid rgba(255,59,48,.4)' : '1px solid rgba(255,255,255,.1)';
-    t.querySelector('span').style.color = i===0 ? '#FF3B30' : 'rgba(255,255,255,.5)';
-  });
+  // Reset every browse dimension + the controls, then re-render.
+  FILTERS.type = 'all'; FILTERS.gender = 'all'; FILTERS.category = null; FILTERS.payment = 'all'; FILTERS.query = '';
+  const si = document.getElementById('search-input'); if (si) si.value = '';
+  const sc = document.getElementById('search-clear'); if (sc) sc.style.display = 'none';
+  ['type-seg', 'gender-seg', 'pay-seg'].forEach(gid => { const g = document.getElementById(gid); if (g) _styleSeg(gid, g.querySelector('.seg')); });
+  renderAll();
+  applyFilters();
 }
 
 function openCheckout(id) {
