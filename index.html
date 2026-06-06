@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-14</title>
+<title>OneStopSwap v32-15</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-14';
+window._OSS_BUILD = 'v32-15';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -1869,6 +1869,7 @@ function pCard(p, i) {
       <div class="ctitle">${p.title}</div>
       ${p.size && p.size !== 'N/A / One size' ? `<div style="color:rgba(255,255,255,.45);font-size:11px;font-weight:600;margin-top:1px;">Size ${p.size}</div>` : ''}
       <div class="cmeta"><span class="cseller">@${p.seller}</span><div class="cstats">${p._isAuction ? '<span class="cstat">🔨 bid</span>' : `<span class="cstat">👁 ${p.views}</span><span class="cstat">♥ ${p.likes}</span>`}</div></div>
+      ${!p._isAuction && p.createdTs ? `<div style="color:rgba(255,255,255,.32);font-size:10px;font-weight:600;margin-top:3px;">🕒 ${notifTimeLabel(p.createdTs)}</div>` : ''}
     </div>
   </div>`;
 }
@@ -3312,6 +3313,7 @@ function setupRealtimeSubscriptions(myUsername) {
         seller: l.seller_username || 'user', location: l.location || '',
         img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
         likes: 0, views: 0, hot: false,
+        createdTs: l.created_at ? new Date(l.created_at).getTime() : Date.now(),
         isNew: true, description: l.description || '', size: l.size || ''
       };
       // Only add if not already in list
@@ -3367,6 +3369,7 @@ async function loadListings() {
     img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
     condition: l.condition || '', sold: !!l.sold, size: l.size || '',
     likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || '',
+    createdTs: l.created_at ? new Date(l.created_at).getTime() : 0,
     isNew: l.created_at ? (now - new Date(l.created_at).getTime()) < 86400000 : false
   }));
   // Logged in: show DB listings only (no demo data mixed in)
@@ -3388,7 +3391,9 @@ async function loadOrders() {
       id: o.id, item: o.title, img: o.image_url, price: o.price, currency: o.currency || 'SB',
       seller: o.seller_username, status: o.status, date: new Date(o.created_at).toLocaleDateString(),
       tracking: o.tracking_number, carrier: o.carrier || 'USPS',
-      shipFrom: o.ship_from, shipTo: o.ship_to, timeline: buildTimeline(o.status)
+      shipFrom: o.ship_from, shipTo: o.ship_to,
+      shippedAt: o.shipped_at, deliveredAt: o.delivered_at, // v32-15: real stage times
+      timeline: buildTimeline(o) // v32-15: pass the row so Shipped/Delivered show actual timestamps
     }));
   ORDERS.unshift(...mapped);
 }
@@ -3533,14 +3538,21 @@ async function notifyUsername(username, n) {
   if (id) await notifyUser(id, n);
 }
 
-function buildTimeline(status) {
+function buildTimeline(orderOrStatus) {
+  // v32-15: accept either a status string (fresh local orders) or a DB order row (carries real stage times).
+  const o = (typeof orderOrStatus === 'string') ? { status: orderOrStatus } : (orderOrStatus || {});
+  const status = o.status || 'Processing';
+  const fmt = (ts) => ts ? new Date(ts).toLocaleString([], { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : null;
+  const placed = fmt(o.created_at) || 'Ordered';
+  const shipped = fmt(o.shipped_at);
+  const delivered = fmt(o.delivered_at);
   return [
-    {status:'Order Placed',      done:true, icon:'🛍️', date:'Ordered'},
-    {status:'Payment Confirmed', done:true, icon:'✅', date:'Confirmed'},
-    {status:'Seller Packaged',   done:status!=='Processing', icon:'📦', date:'Pending'},
-    {status:'Shipped',           done:['Shipped','Out for Delivery','Delivered'].includes(status), icon:'🚚', date:'Pending'},
-    {status:'Out for Delivery',  done:['Out for Delivery','Delivered'].includes(status), icon:'🏃', date:'Pending'},
-    {status:'Delivered',         done:status==='Delivered', icon:'🎉', date:'Pending'},
+    {status:'Order Placed',      done:true, icon:'🛍️', date: placed},
+    {status:'Payment Confirmed', done:true, icon:'✅', date: placed},
+    {status:'Seller Packaged',   done:status!=='Processing', icon:'📦', date: shipped || 'Pending'},
+    {status:'Shipped',           done:['Shipped','Out for Delivery','Delivered'].includes(status), icon:'🚚', date: shipped || 'Pending'},
+    {status:'Out for Delivery',  done:['Out for Delivery','Delivered'].includes(status), icon:'🏃', date: 'Pending'},
+    {status:'Delivered',         done:status==='Delivered', icon:'🎉', date: delivered || 'Pending'},
   ];
 }
 
@@ -3749,7 +3761,7 @@ function renderSaleManage(order, title) {
 
 async function sellerShipOrder(orderId) {
   const tracking = '9400' + Math.floor(1e11 + Math.random() * 9e11);
-  const { error } = await sb.from('orders').update({ status: 'Shipped', tracking_number: tracking, carrier: 'USPS' }).eq('id', orderId);
+  const { error } = await sb.from('orders').update({ status: 'Shipped', tracking_number: tracking, carrier: 'USPS', shipped_at: new Date().toISOString() }).eq('id', orderId);
   if (error) { showToast('❌ ' + (error.message || 'Could not create label')); return; }
   showToast('📦 Shipping label created — buyer notified!');
   try {
@@ -3761,7 +3773,7 @@ async function sellerShipOrder(orderId) {
 }
 
 async function sellerDeliverOrder(orderId) {
-  const { error } = await sb.from('orders').update({ status: 'Delivered' }).eq('id', orderId);
+  const { error } = await sb.from('orders').update({ status: 'Delivered', delivered_at: new Date().toISOString() }).eq('id', orderId);
   if (error) { showToast('❌ ' + (error.message || 'Could not update')); return; }
   showToast('🎉 Marked as delivered!');
   try {
@@ -5535,7 +5547,7 @@ async function confirmDelivery(orderId) {
   // Shipped → Delivered, and notify the seller that the buyer confirmed receipt. Real orders
   // only (seed orders like OSS-1042 aren't uuids — skip the DB write + notify for those).
   if (/^[0-9a-f-]{36}$/i.test(String(orderId))) {
-    try { await sb.from('orders').update({ status: 'Delivered' }).eq('id', orderId); }
+    try { await sb.from('orders').update({ status: 'Delivered', delivered_at: new Date().toISOString() }).eq('id', orderId); }
     catch (e) { console.error('confirmDelivery persist:', e); }
     if (o.seller) notifyUsername(o.seller, { type:'order', icon:'🎉', title:'Delivery confirmed!',
       body:'@' + (currentProfile?.username || 'The buyer') + ' confirmed delivery of "' + o.item + '". Nice sale!',
@@ -7268,6 +7280,7 @@ async function renderMyListings() {
   const view = (window._myListingsView || 'active'); // v32-13: 'active' | 'sold' | 'shipped' | 'delivered' | 'removed'
   const wantActive = view === 'active', wantSold = view === 'sold', wantShipped = view === 'shipped', wantDelivered = view === 'delivered', wantRemoved = view === 'removed';
   const soldFamily = wantSold || wantShipped || wantDelivered; // all three pull the same sold set, then split by linked-order status
+  let orderByListing = {}; // v32-15: listing_id → {status, created_at, shipped_at, delivered_at} for sold-family stage times
 
   // Fetch the seller's listings + auctions scoped per view, then refine in JS:
   //  active = live & not sold · sold-family = sold (fixed) / ended-with-winner (auction), split by order fulfillment stage · removed = taken down, not sold.
@@ -7285,20 +7298,20 @@ async function renderMyListings() {
   else if (soldFamily) {
     // Only auctions with a winner are sales; expired-no-winner belong in Removed.
     auctions = auctions.filter(a => a.winner_username);
-    // Map each item to its fulfillment stage via the linked order's status (newest order wins).
-    let statusByListing = {};
+    // Map each item to its linked order (newest wins) — status + stage timestamps for display.
     try {
       const { data: myOrders } = await sb.from('orders')
-        .select('listing_id,status,created_at')
+        .select('listing_id,status,created_at,shipped_at,delivered_at')
         .eq('seller_id', currentUser.id)
         .order('created_at', { ascending: false });
       (myOrders || []).forEach(o => {
         const k = o.listing_id ? String(o.listing_id) : null;
-        if (k && !(k in statusByListing)) statusByListing[k] = o.status; // first = newest
+        if (k && !(k in orderByListing)) orderByListing[k] = o; // first = newest
       });
     } catch (e) { console.error('renderMyListings order lookup:', e); }
     const stageOf = (id) => {
-      const st = statusByListing[String(id)];
+      const ord = orderByListing[String(id)];
+      const st = ord && ord.status;
       if (st === 'Delivered' || st === 'Completed') return 'delivered';
       if (st === 'Shipped' || st === 'Out for Delivery') return 'shipped';
       return 'sold'; // no order (manual mark-sold) or pre-ship (Processing/Paid/Accepted) → awaiting shipment
@@ -7351,6 +7364,18 @@ async function renderMyListings() {
   const countEl = document.getElementById('my-listings-count');
   if (countEl) countEl.textContent = (wantActive ? 'Active' : wantSold ? 'Sold' : wantShipped ? 'Shipped' : wantDelivered ? 'Delivered' : 'Removed') + ' · ' + total + ' listing' + (total !== 1 ? 's' : '');
 
+  // v32-15: per-card stage timestamp. active/removed → listing date; sold → order/listing date; shipped/delivered → real stage time.
+  const stampLine = (id, createdAt) => {
+    const ord = orderByListing[String(id)];
+    let label, ts;
+    if (wantShipped)        { label = 'Shipped';   ts = ord && ord.shipped_at; }
+    else if (wantDelivered) { label = 'Delivered'; ts = ord && ord.delivered_at; }
+    else if (wantSold)      { label = 'Sold';      ts = (ord && ord.created_at) || createdAt; }
+    else                    { label = 'Listed';    ts = createdAt; } // active + removed
+    if (!ts) return '';
+    return `<div style="color:rgba(255,255,255,.35);font-size:11px;font-weight:600;margin-top:6px;">🕒 ${label} ${notifTimeLabel(new Date(ts).getTime())}</div>`;
+  };
+
   // Render fixed-price listings
   const listingsHTML = listings.map(l => `
     <div style="background:#1A1A1A;border-radius:18px;overflow:hidden;border:1px solid ${l.sold ? 'rgba(0,200,100,.25)' : 'rgba(255,255,255,.08)'};display:flex;align-items:stretch;">
@@ -7376,6 +7401,7 @@ async function renderMyListings() {
             ? '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:3px 8px;"><span style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;">🚫 Removed</span></div>'
             : '<div style="background:rgba(0,200,100,.1);border:1px solid rgba(0,200,100,.2);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">● Fixed Price</span></div>'}
         </div>
+        ${stampLine(l.id, l.created_at)}
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;padding:12px;justify-content:center;flex-shrink:0;">
         ${soldFamily
@@ -7413,6 +7439,7 @@ async function renderMyListings() {
             : `<div style="background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.3);border-radius:8px;padding:3px 10px;"><span style="color:#FFB347;font-weight:800;font-size:12px;">⚡ Auction</span></div>`}
           <span style="color:rgba(255,255,255,.4);font-size:11px;">${sold ? 'Sold for' : 'Final:'} ${a.current_bid || a.start_price} ${a.currency || 'SB'}</span>
         </div>
+        ${sold ? stampLine(a.id, a.created_at) : ''}
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;padding:12px;justify-content:center;flex-shrink:0;max-width:104px;">
         ${sold
