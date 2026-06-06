@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-10</title>
+<title>OneStopSwap v33-11</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-10';
+window._OSS_BUILD = 'v33-11';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -6777,9 +6777,12 @@ function renderOffers(filter) {
     : [];
 
   // v33-10: in-account offer search is TAB-SPECIFIC — filter the current tab's offers (sent + received).
+  // v33-11: the landing "My Offers" (all) tab is sent-only by design, so for a SELLER it's empty and search
+  // found nothing. On 'all' (and the Inbox), search now also covers received offers — so "My Offers" search
+  // finds ALL your offers. Status tabs (Pending/Accepted/…) stay scoped to that status.
   if (oq) {
     list = list.filter(o => myMatch({ title: o.title, seller: o.seller || '', category: '', location: '', description: o.message || '' }, oq));
-    const recvPool = (filter === 'received') ? RECEIVED_OFFERS.slice() : recvForTab;
+    const recvPool = (filter === 'received' || filter === 'all') ? RECEIVED_OFFERS.slice() : recvForTab;
     recvForTab = recvPool.filter(o => myMatch({ title: o.title, seller: o.buyer || '', category: '', location: '', description: o.message || '' }, oq));
   }
 
