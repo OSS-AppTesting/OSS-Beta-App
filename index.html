@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-11</title>
+<title>OneStopSwap v33-12</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-11';
+window._OSS_BUILD = 'v33-12';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2891,6 +2891,13 @@ const ITEM_SYNONYMS = {
   'dress':['dress','gown','frock'],
   'jumpsuit':['jumpsuit','romper','playsuit'],
   'suit':['suit','blazer','formal'],
+  // Electronics (v33-12): test data has laptops titled "laptop" — let "computer" and the cluster find them (both ways).
+  'computer':['computer','laptop','pc','desktop','macbook','notebook','chromebook','ultrabook','imac'],
+  'laptop':['laptop','computer','pc','notebook','macbook','chromebook','ultrabook'],
+  'pc':['pc','computer','laptop','desktop'],
+  'desktop':['desktop','computer','pc','imac'],
+  'macbook':['macbook','laptop','computer'],
+  'notebook':['notebook','laptop','computer'],
 };
 
 // Only these trigger a full category restriction
