@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-31</title>
+<title>OneStopSwap v31-33</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-31';
+window._OSS_BUILD = 'v31-33';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3523,6 +3523,7 @@ async function loadOffersFromDb() {
       if (existing) {
         existing.status = o.status;
         existing.counterAmount = o.counter_amount;
+        existing.offerAmount = o.offer_amount; // v31-32: keep buyer's amount in sync (counter-backs change it)
         if (img && !existing.img) existing.img = img;
       } else {
         OFFERS.unshift({
@@ -6066,11 +6067,12 @@ function submitCounter() {
   }
   offer.offerAmount = amount;
   offer.counterAmount = null;
-  offer.status = 'Pending';
-  // v31-11: persist the buyer's counter-back so the SELLER sees a fresh Pending offer
-  // (mirrors the seller-side submitSellerCounter write path). 'Pending' = ball back to
-  // the seller — renderReceivedOffers shows Accept/Counter/Decline only on 'Pending'.
-  if (offer.dbId) sb.from('offers').update({ status: 'Pending', offer_amount: amount, counter_amount: null }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer counter persist:', error); });
+  offer.status = 'Countered'; // v31-32: stay in the Countered negotiation (was 'Pending')
+  // v31-32: keep the offer in the 'Countered' lane through the whole back-and-forth so it stays
+  // in BOTH sides' Countered tab until it's Accepted/Declined (was 'Pending', which bounced it
+  // out into the Pending tab). counter_amount=null = ball back to the seller; the seller's
+  // Countered card renders Accept/Counter/Decline on that condition.
+  if (offer.dbId) sb.from('offers').update({ status: 'Countered', offer_amount: amount, counter_amount: null }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer counter persist:', error); });
   document.getElementById('modal-counter-offer').style.display = 'none';
   showToast('🔄 Counter offer sent!');
   // v31-11: notify the seller of the buyer's counter-back (best-effort, never blocks).
@@ -6293,8 +6295,11 @@ function renderOffers(filter) {
   if (!el) return;
 
   // Update badge
-  const pending = OFFERS.filter(o => o.status === 'Pending' || o.status === 'Countered').length
-                + RECEIVED_OFFERS.filter(o => o.status === 'Pending').length;
+  // v31-32: under the sticky-counter model, count only items awaiting THIS side's action:
+  // buyer = a pending offer or a seller counter to respond to (counterAmount != null);
+  // seller = a pending offer or a buyer counter-back to respond to (sellerCounter == null).
+  const pending = OFFERS.filter(o => o.status === 'Pending' || (o.status === 'Countered' && o.counterAmount != null)).length
+                + RECEIVED_OFFERS.filter(o => o.status === 'Pending' || (o.status === 'Countered' && o.sellerCounter == null)).length;
   const badge = document.getElementById('offers-badge');
   if (badge) { badge.style.display = pending > 0 ? 'inline-block' : 'none'; badge.textContent = pending; }
 
@@ -6316,7 +6321,12 @@ function renderOffers(filter) {
   // shows under that status tab. (The Inbox still lists all received offers.) Generalizes
   // the v31-26 Countered-only handling. 'all' is intentionally excluded (that's the Inbox's job).
   const recvForTab = ['Pending', 'Countered', 'Accepted', 'Declined', 'Completed'].includes(filter)
-    ? RECEIVED_OFFERS.filter(o => o.status === filter || (filter === 'Accepted' && o.status === 'Paid'))
+    ? RECEIVED_OFFERS.filter(o => o.status === filter
+        || (filter === 'Accepted' && o.status === 'Paid')
+        // v31-33: a buyer counter-back (status 'Countered' with no seller counter outstanding) is
+        // genuinely pending the SELLER's action, so it ALSO shows in the Pending tab — while still
+        // living in the Countered tab (the "what's still open" tracker). Dual visibility, on purpose.
+        || (filter === 'Pending' && o.status === 'Countered' && o.sellerCounter == null))
         .slice().sort((a, b) => (b.createdAtTs || 0) - (a.createdAtTs || 0))
     : [];
 
@@ -6387,11 +6397,12 @@ function sentOfferCard(o) {
         </div>
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
           <span style="background:${sc.bg};border:1px solid ${sc.border};border-radius:8px;padding:3px 10px;color:${sc.color};font-size:11px;font-weight:700;">${sc.icon} ${o.status}</span>
-          ${o.status === 'Countered' ? `
+          ${o.status === 'Countered' ? (o.counterAmount != null ? `
             <div style="display:flex;align-items:center;gap:6px;">
               <span style="color:#4FC3F7;font-size:12px;font-weight:700;">Counter: ${isUSD?'$'+o.counterAmount:o.counterAmount+' SB'}</span>
               <button onclick="showOfferResponse('${o.id}')" style="background:rgba(79,195,247,.15);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:4px 10px;color:#4FC3F7;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
-            </div>` :
+            </div>` : `
+            <span style="color:rgba(255,255,255,.3);font-size:12px;">🔄 Countered ${fmt(o.offerAmount)} — waiting for seller...</span>`) :
           o.status === 'Accepted' ? `
             <button onclick="acceptAndCheckout('${o.id}')" style="background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Complete Purchase →</button>` :
           o.status === 'Pending' ? `
@@ -6475,11 +6486,19 @@ function receivedOfferCard(o) {
             <button onclick="showToast('Shipping label generator coming soon!')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.6);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">📦 Prep Shipment</button>
           </div>
         </div>` :
-        o.status === 'Countered' ? `
+        o.status === 'Countered' ? (o.sellerCounter != null ? `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
           <span style="background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:3px 10px;color:#4FC3F7;font-size:11px;font-weight:700;">🔄 Counter Sent: ${o.currency==='USD'?'$'+o.sellerCounter:o.sellerCounter+' SB'}</span>
           <span style="color:rgba(255,255,255,.3);font-size:12px;">Waiting for buyer...</span>
-        </div>` :
+        </div>` : `
+        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;">
+          <div style="background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);border-radius:10px;padding:8px 12px;margin-bottom:10px;color:#4FC3F7;font-size:12px;font-weight:700;">🔄 @${o.buyer} countered back: ${fmt(o.offerAmount)}</div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="respondToOffer('${o.id}','declined')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.6);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Decline</button>
+            <button onclick="respondToOffer('${o.id}','countered')" style="flex:1;background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.3);border-radius:10px;padding:8px;color:#FFB347;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
+            <button onclick="respondToOffer('${o.id}','accepted')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:10px;padding:8px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;">Accept ✓</button>
+          </div>
+        </div>`) :
         o.status === 'Paid' ? `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;">
           <div style="background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
