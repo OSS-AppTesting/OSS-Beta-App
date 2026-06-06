@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-13</title>
+<title>OneStopSwap v32-14</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-13';
+window._OSS_BUILD = 'v32-14';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3469,7 +3469,11 @@ function notifActionFor(n) {
   // refresh from the DB first so the seller's persisted response actually shows.
   if (target === 'my-offers') return () => openMyOffersFresh();
   // BIN / sale (v32-10): a sale lands the seller on My Listings → Sold where the SOLD card shows.
-  if (target === 'my-listings:sold') return () => { go('my-listings'); setMyListingsView('sold'); };
+  // v32-14: generalized — any `my-listings:<tab>` target routes to that tab (sold/shipped/delivered/removed/active).
+  if (target.indexOf('my-listings:') === 0) {
+    const v = target.split(':')[1] || 'active';
+    return () => { go('my-listings'); setMyListingsView(v); };
+  }
   return () => go(target || 'home');
 }
 
@@ -5519,7 +5523,7 @@ function ratingBreakdown(reviews, fallback) {
   return buckets.map(b => Math.round((b / total) * 100));
 }
 
-function confirmDelivery(orderId) {
+async function confirmDelivery(orderId) {
   const o = ORDERS.find(x => x.id === orderId);
   if (!o) return;
   o.status = 'Delivered';
@@ -5527,6 +5531,16 @@ function confirmDelivery(orderId) {
   o.timeline[o.timeline.length-1].date = 'Just now';
   addTransaction('earned', '✅', 'Delivery confirmed: ' + o.item, '@' + o.seller, 0);
   showToast('✅ Delivery confirmed! You can now leave a review.');
+  // v32-14: persist to the DB (was local-only) so the SELLER's My Listings bucketing flips
+  // Shipped → Delivered, and notify the seller that the buyer confirmed receipt. Real orders
+  // only (seed orders like OSS-1042 aren't uuids — skip the DB write + notify for those).
+  if (/^[0-9a-f-]{36}$/i.test(String(orderId))) {
+    try { await sb.from('orders').update({ status: 'Delivered' }).eq('id', orderId); }
+    catch (e) { console.error('confirmDelivery persist:', e); }
+    if (o.seller) notifyUsername(o.seller, { type:'order', icon:'🎉', title:'Delivery confirmed!',
+      body:'@' + (currentProfile?.username || 'The buyer') + ' confirmed delivery of "' + o.item + '". Nice sale!',
+      actionLabel:'View', actionTarget:'my-listings:delivered' });
+  }
   openOrderTracking(orderId);
 }
 
