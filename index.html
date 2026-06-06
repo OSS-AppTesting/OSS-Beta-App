@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-24</title>
+<title>OneStopSwap v31-25</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-24';
+window._OSS_BUILD = 'v31-25';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -5792,26 +5792,35 @@ function submitOffer() {
 
   // Save offer to Supabase
   if (currentUser) {
-    sb.from('offers').insert({
-      buyer_id: currentUser.id,
-      seller_id: p.sellerId || null,
-      buyer_username: currentProfile?.username || '',
-      seller_username: p.seller,
-      listing_id: String(p.id),
-      listing_title: p.title,
-      image_url: p.img,
-      listed_price: p.price,
-      listed_currency: p.currency,
-      offer_amount: amount,
-      offer_currency: chosenCurrency,
-      currency_changed: currencyChanged,
-      message: message,
-      status: 'Pending',
-      expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
-    }).select().single().then(({ data, error }) => {
+    // v31-25: the offers SELECT RLS gates on seller_id (auth.uid()=buyer_id OR seller_id),
+    // NOT seller_username. If the listing reached the buyer via the Realtime feed (which
+    // omits sellerId), p.sellerId is undefined and the offer would save with seller_id=null
+    // → the SELLER can never read the row (it's invisible in their Inbox). Resolve the
+    // seller's uuid from the username when it's missing, mirroring saveOrderToDb, so the
+    // row always carries a non-null seller_id.
+    (async () => {
+      let sid = p.sellerId || null;
+      if (!sid && p.seller) { try { sid = await resolveUserId(p.seller); } catch (e) { sid = null; } }
+      const { data, error } = await sb.from('offers').insert({
+        buyer_id: currentUser.id,
+        seller_id: sid,
+        buyer_username: currentProfile?.username || '',
+        seller_username: p.seller,
+        listing_id: String(p.id),
+        listing_title: p.title,
+        image_url: p.img,
+        listed_price: p.price,
+        listed_currency: p.currency,
+        offer_amount: amount,
+        offer_currency: chosenCurrency,
+        currency_changed: currencyChanged,
+        message: message,
+        status: 'Pending',
+        expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+      }).select().single();
       if (data) offer.dbId = data.id; // store DB id for later updates
       if (error) console.error('Offer save error:', error);
-    });
+    })();
 
     // v31: notify the seller of the new offer (best-effort, never blocks the offer)
     const _offerNotif = {
