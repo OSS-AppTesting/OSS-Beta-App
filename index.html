@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-33</title>
+<title>OneStopSwap v31-34</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-33';
+window._OSS_BUILD = 'v31-34';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3496,6 +3496,10 @@ async function loadOffersFromDb() {
     // v31-19: prefer the image stored on the offer row (survives the listing being sold &
     // filtered out of PRODS); fall back to the live listing for legacy offers.
     const img = o.image_url || (prod ? prod.img : null);
+    // v31-34: activity timestamp for "newest activity first" sorting. updated_at auto-bumps on
+    // every offers UPDATE (DB trigger), so a just-actioned offer sorts to the top after refresh.
+    // Falls back to created_at when the column/value is absent (e.g. before the SQL is run).
+    const actTs = o.updated_at ? new Date(o.updated_at).getTime() : (o.created_at ? new Date(o.created_at).getTime() : 0);
     if (isReceived) {
       const existing = RECEIVED_OFFERS.find(x => x.dbId === o.id);
       if (existing) {
@@ -3503,10 +3507,12 @@ async function loadOffersFromDb() {
         existing.counterAmount = o.counter_amount;
         existing.sellerCounter = o.counter_amount;
         existing.offerAmount = o.offer_amount;
+        existing.lastActivityTs = actTs;
         if (img && !existing.img) existing.img = img;
       } else {
         RECEIVED_OFFERS.unshift({
           id: 'RDBO-' + o.id, dbId: o.id, createdAtTs: o.created_at ? new Date(o.created_at).getTime() : 0,
+          lastActivityTs: actTs,
           productId: o.listing_id, title: o.listing_title, img: img,
           buyer: o.buyer_username, buyerId: o.buyer_id,
           buyerInitials: (o.buyer_username||'').substring(0,2).toUpperCase(),
@@ -3524,10 +3530,12 @@ async function loadOffersFromDb() {
         existing.status = o.status;
         existing.counterAmount = o.counter_amount;
         existing.offerAmount = o.offer_amount; // v31-32: keep buyer's amount in sync (counter-backs change it)
+        existing.lastActivityTs = actTs;
         if (img && !existing.img) existing.img = img;
       } else {
         OFFERS.unshift({
           id: 'DB-' + o.id, dbId: o.id, createdAtTs: o.created_at ? new Date(o.created_at).getTime() : 0,
+          lastActivityTs: actTs,
           productId: o.listing_id, title: o.listing_title, img: img,
           seller: o.seller_username, listedPrice: o.listed_price,
           listedCurrency: o.listed_currency, offerAmount: o.offer_amount,
@@ -5788,6 +5796,7 @@ function submitOffer() {
     message: message,
     status: 'Pending',
     date: nowTime(),
+    createdAtTs: Date.now(), lastActivityTs: Date.now(), // v31-34: sort a fresh offer to the top
     expiresAt: Date.now() + 48 * 60 * 60 * 1000, // 48 hours
   };
   OFFERS.unshift(offer);
@@ -6068,6 +6077,7 @@ function submitCounter() {
   offer.offerAmount = amount;
   offer.counterAmount = null;
   offer.status = 'Countered'; // v31-32: stay in the Countered negotiation (was 'Pending')
+  offer.lastActivityTs = Date.now(); // v31-34: bump to top of its tab on action
   // v31-32: keep the offer in the 'Countered' lane through the whole back-and-forth so it stays
   // in BOTH sides' Countered tab until it's Accepted/Declined (was 'Pending', which bounced it
   // out into the Pending tab). counter_amount=null = ball back to the seller; the seller's
@@ -6314,7 +6324,7 @@ function renderOffers(filter) {
                filter === 'Completed' ? OFFERS.filter(o => o.status === 'Completed' || o.status === 'Paid') :
                filter === 'Expired' ? OFFERS.filter(o => o.status === 'Expired' || (o.expiresAt && o.expiresAt < Date.now() && o.status === 'Pending')) :
                OFFERS.filter(o => o.status === filter);
-  list.sort((a, b) => (b.createdAtTs || 0) - (a.createdAtTs || 0)); // v31-26: newest first
+  list.sort((a, b) => (b.lastActivityTs || b.createdAtTs || 0) - (a.lastActivityTs || a.createdAtTs || 0)); // v31-34: newest ACTIVITY first
 
   // v31-27: received offers (the seller's side) belong in their matching status tab, not
   // only the 📬 Inbox — so an Accepted / Countered / Declined / Pending received offer also
@@ -6327,7 +6337,7 @@ function renderOffers(filter) {
         // genuinely pending the SELLER's action, so it ALSO shows in the Pending tab — while still
         // living in the Countered tab (the "what's still open" tracker). Dual visibility, on purpose.
         || (filter === 'Pending' && o.status === 'Countered' && o.sellerCounter == null))
-        .slice().sort((a, b) => (b.createdAtTs || 0) - (a.createdAtTs || 0))
+        .slice().sort((a, b) => (b.lastActivityTs || b.createdAtTs || 0) - (a.lastActivityTs || a.createdAtTs || 0))
     : [];
 
   if (!list.length && !recvForTab.length) {
@@ -6357,7 +6367,7 @@ function renderOffers(filter) {
   const combined = [
     ...list.map(o => ({ o, recv: false })),
     ...recvForTab.map(o => ({ o, recv: true }))
-  ].sort((a, b) => (b.o.createdAtTs || 0) - (a.o.createdAtTs || 0));
+  ].sort((a, b) => (b.o.lastActivityTs || b.o.createdAtTs || 0) - (a.o.lastActivityTs || a.o.createdAtTs || 0)); // v31-34: newest ACTIVITY first
   el.innerHTML = combined.map(x => x.recv ? receivedOfferCard(x.o) : sentOfferCard(x.o)).join('');
 }
 
@@ -6428,7 +6438,7 @@ function renderReceivedOffers() {
   // v31-26: render newest-first (loadOffersFromDb leaves the array oldest-first after its
   // unshift loop), reusing the shared receivedOfferCard helper.
   el.innerHTML = RECEIVED_OFFERS.slice()
-    .sort((a, b) => (b.createdAtTs || 0) - (a.createdAtTs || 0))
+    .sort((a, b) => (b.lastActivityTs || b.createdAtTs || 0) - (a.lastActivityTs || a.createdAtTs || 0)) // v31-34: newest ACTIVITY first
     .map(receivedOfferCard).join('');
 }
 
@@ -6635,6 +6645,7 @@ function submitSellerCounter() {
   o.status = 'Countered';
   o.sellerCounter = amt;
   o.counterAmount = amt;
+  o.lastActivityTs = Date.now(); // v31-34: bump to top of its tab on action
   if (o.dbId) sb.from('offers').update({ status: 'Countered', counter_amount: amt }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('offer counter persist:', error); });
   document.getElementById('modal-seller-counter').style.display = 'none';
   showToast('🔄 Counter offer of ' + (o.currency==='USD'?'$'+amt:amt+' SB') + ' sent to @' + o.buyer + '!');
