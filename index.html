@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-7</title>
+<title>OneStopSwap v32-8</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-7';
+window._OSS_BUILD = 'v32-8';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -910,6 +910,11 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
             <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Reserve (optional)</div>
             <input id="f-reserve" type="number" placeholder="Min to sell" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
           </div>
+        </div>
+        <div>
+          <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Buy It Now (optional)</div>
+          <input id="f-buy-now" type="number" placeholder="Instant-sale price" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
+          <div style="color:rgba(255,255,255,.3);font-size:11px;margin-top:5px;">Lets a buyer skip the auction and buy instantly. Must beat the starting bid; disappears after the first bid.</div>
         </div>
         <div>
           <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Auction Duration</div>
@@ -2371,6 +2376,12 @@ async function openAuction(id) {
       ` : cd.ended ? `
         <div style="background:rgba(255,255,255,.06);border-radius:16px;padding:16px;text-align:center;color:rgba(255,255,255,.4);font-weight:700;">Auction Ended</div>
       ` : `
+        ${a.buyNowPrice > 0 && a.bidCount === 0 ? `
+        <div id="bin-wrap-${a.id}">
+        <button onclick="buyNowAuction('${a.id}')" style="width:100%;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:16px;padding:14px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;">⚡ Buy It Now — ${a.currency === 'USD' ? '$' + a.buyNowPrice : a.buyNowPrice + ' SB'}</button>
+        <div style="text-align:center;color:rgba(255,255,255,.25);font-size:11px;margin-bottom:10px;letter-spacing:.5px;">— or place a bid —</div>
+        </div>
+        ` : ''}
         <div style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch;">
           <div style="flex:0 0 118px;position:relative;">
             <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:12px;font-weight:700;pointer-events:none;">SB</span>
@@ -2387,6 +2398,44 @@ async function openAuction(id) {
       `}
     </div>`;
   go('auction');
+}
+
+// BIN (v32-8): instant-buy an auction at its Buy It Now price. Two-tap confirm (matches the
+// End/Remove patterns). Ends the auction via the buy_now_auction RPC — the buyer can't update the
+// seller's auction row directly (auctions UPDATE RLS = seller_id), so the SECURITY DEFINER function
+// does it and re-checks the BIN rules server-side. Then deducts SB (SB auctions) + creates an order,
+// mirroring confirmSBCheckout. BIN is gated to bidCount===0 both in the UI and in the RPC.
+async function buyNowAuction(auctionId) {
+  if (!requirePayment('buy now')) return;
+  const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
+  if (!a || !a.buyNowPrice) return;
+  if (a.bidCount > 0) { showToast('Buy It Now is no longer available — bidding has started'); return; }
+  const price = a.buyNowPrice;
+  const isUSD = a.currency === 'USD';
+  if (!isUSD && SB < price) { showSBShortfall(price, () => buyNowAuction(auctionId)); return; }
+  if (window._binConfirm !== auctionId) {
+    window._binConfirm = auctionId;
+    showToast('Tap Buy It Now again to confirm — ' + (isUSD ? '$' + price : price + ' SB'));
+    setTimeout(() => { if (window._binConfirm === auctionId) window._binConfirm = null; }, 3000);
+    return;
+  }
+  window._binConfirm = null;
+  if (a.dbId) {
+    const { error } = await sb.rpc('buy_now_auction', { p_auction_id: a.dbId });
+    if (error) { showToast('❌ ' + error.message); return; }
+  }
+  const fee = Math.round(price * 0.06);
+  if (!isUSD) { SB -= price; updateAllSBDisplays(); }
+  addTransaction('spent', '⚡', 'Bought Now: ' + a.title, '@' + a.seller + (isUSD ? ' · USD' : ''), -price);
+  if (currentUser) {
+    const dbOrder = await saveOrderToDb(a.title, price, isUSD ? 'USD' : 'SB', a.location || a.seller, a.seller, a.sellerId || null, a.img);
+    if (dbOrder) ORDERS.unshift({ id: dbOrder.id, item: a.title, img: a.img, price, currency: isUSD ? 'USD' : 'SB', seller: a.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') });
+  }
+  const idx = AUCTIONS.findIndex(x => x.id === auctionId || x.dbId === auctionId);
+  if (idx > -1) AUCTIONS.splice(idx, 1);
+  renderAuctionList();
+  showToast('⚡ Bought now for ' + (isUSD ? '$' + price : price + ' SB') + '! 6% fee: ' + fee + '. Check My Orders.');
+  go('my-orders');
 }
 
 // Item 1 (v32-3): read the seller-/buyer-entered custom bid amount, validate against the
@@ -2423,6 +2472,7 @@ async function placeBid(auctionId, amount) {
   a.currentBid = amount;
   a.bidCount += 1;
   a.bids.unshift({user: myUsername, initials: myUsername.substring(0,2).toUpperCase(), color:'#FF3B30', amt:amount, ts:'Just now'});
+  { const bw = document.getElementById('bin-wrap-' + auctionId); if (bw) bw.style.display = 'none'; } // BIN (v32-8): gone after first bid
 
 
   // Update UI
@@ -2500,6 +2550,7 @@ async function placeBid(auctionId, amount) {
       a.currentBid = compBid;
       a.bidCount += 1;
       a.bids.unshift({...comp, amt:compBid, ts:'Just now'});
+      { const bw = document.getElementById('bin-wrap-' + auctionId); if (bw) bw.style.display = 'none'; } // BIN (v32-8)
 
       const bidEl2 = document.getElementById('auction-current-bid');
       if (bidEl2) {
@@ -4501,6 +4552,8 @@ async function postAuction(title, desc, category, condition) {
   const reserve = parseInt(document.getElementById('f-reserve').value) || 0;
   const location = document.getElementById('f-auction-location').value.trim() || currentProfile?.location || 'USA';
   const size = (document.getElementById('f-size') || {}).value || '';
+  const buyNow = parseInt((document.getElementById('f-buy-now') || {}).value) || 0; // BIN (v32-8): optional
+  if (buyNow > 0 && buyNow <= startBid) { showToast('Buy It Now must be higher than the starting bid'); return; }
   const sellerName = currentProfile?.username || 'user';
 
   // Calculate end time from duration
@@ -4526,6 +4579,7 @@ async function postAuction(title, desc, category, condition) {
     currentBid: startBid,
     reservePrice: reserve,
     size,
+    buyNowPrice: buyNow || 0,
     bidCount: 0,
     watchers: 0,
     endTime: endsAt.getTime(),
@@ -4547,6 +4601,7 @@ async function postAuction(title, desc, category, condition) {
       reserve_price: reserve || null,
       currency: auctionCurrency,
       size: size || null,
+      buy_now_price: buyNow || null,
       ends_at: endsAt.toISOString(),
       status: 'live'
     }).select().single();
@@ -4578,6 +4633,7 @@ async function postAuction(title, desc, category, condition) {
     document.getElementById('f-desc').value = '';
     document.getElementById('f-start-bid').value = '';
     document.getElementById('f-reserve').value = '';
+    { const bn = document.getElementById('f-buy-now'); if (bn) bn.value = ''; } // BIN (v32-8)
     document.getElementById('f-auction-location').value = '';
     document.getElementById('f-category').value = '';
     auctionCurrency = 'SB'; setAuctionCurrency('SB');
@@ -4621,6 +4677,7 @@ async function loadAuctionsFromDb() {
       startPrice: a.start_price,
       currentBid: a.current_bid || a.start_price,
       reservePrice: a.reserve_price,
+      buyNowPrice: a.buy_now_price || 0,
       bidCount: a.bid_count || 0,
       watchers: a.watchers || 0,
       endTime: new Date(a.ends_at).getTime(),
@@ -4667,6 +4724,7 @@ function subscribeToAuction(auctionId) {
       a.currentBid = b.amount;
       a.bidCount += 1;
       a.bids.unshift({ user: b.bidder_username, initials: (b.bidder_username||'').substring(0,2).toUpperCase(), color: '#1a0000', amt: b.amount, ts: 'Just now' });
+      { const bw = document.getElementById('bin-wrap-' + auctionId); if (bw) bw.style.display = 'none'; } // BIN (v32-8)
 
       // Update UI if auction detail is open
       if (currentAuctionId === auctionId) {
@@ -7472,6 +7530,7 @@ async function relistEditAuction(id) {
   { const sv = a.size || ''; if (/^UK/.test(sv)) _shoeRegion = 'UK'; else if (/^EU/.test(sv)) _shoeRegion = 'EU'; else if (/^US/.test(sv)) _shoeRegion = 'US'; updateSizeOptions(); const szE = document.getElementById('f-size'); if (szE) szE.value = sv || 'N/A / One size'; } // Item 3 (v32-7)
   const sbid = document.getElementById('f-start-bid'); if (sbid) sbid.value = (a.start_price ?? '');
   const rv = document.getElementById('f-reserve'); if (rv) rv.value = (a.reserve_price ?? 0);
+  { const bn = document.getElementById('f-buy-now'); if (bn) bn.value = (a.buy_now_price ?? ''); } // BIN (v32-8)
   const al = document.getElementById('f-auction-location'); if (al) al.value = a.location || (currentProfile?.location || '');
   auctionCurrency = a.currency || 'SB';
   const fp = document.getElementById('f-price'); if (fp) fp.value = (a.start_price ?? ''); // sensible price if they switch to fixed
