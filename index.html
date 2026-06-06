@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-23</title>
+<title>OneStopSwap v32-24</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-23';
+window._OSS_BUILD = 'v32-24';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -824,6 +824,14 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
             <option value="">Select...</option>
             <option>New with tags</option><option>Like New</option><option>Good</option><option>Fair</option>
           </select>
+        </div>
+      </div>
+      <div id="gender-block" style="display:none;">
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Department</div>
+        <div id="gender-row" style="display:flex;gap:8px;margin-bottom:8px;">
+          <div id="gen-Mens" onclick="setListingGender('M')" style="flex:1;text-align:center;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:12px;padding:8px;color:rgba(255,255,255,.6);font-weight:800;font-size:13px;cursor:pointer;">Men's</div>
+          <div id="gen-Womens" onclick="setListingGender('W')" style="flex:1;text-align:center;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:12px;padding:8px;color:rgba(255,255,255,.6);font-weight:800;font-size:13px;cursor:pointer;">Women's</div>
+          <div id="gen-Unisex" onclick="setListingGender('U')" style="flex:1;text-align:center;background:rgba(255,59,48,.2);border:2px solid rgba(255,59,48,.6);border-radius:12px;padding:8px;color:#FF3B30;font-weight:800;font-size:13px;cursor:pointer;">Unisex</div>
         </div>
       </div>
       <div>
@@ -1867,7 +1875,7 @@ function pCard(p, i) {
     </div>
     <div class="cinfo">
       <div class="ctitle">${p.title}</div>
-      ${p.size && p.size !== 'N/A / One size' ? `<div style="color:rgba(255,255,255,.45);font-size:11px;font-weight:600;margin-top:1px;">Size ${p.size}</div>` : ''}
+      ${(() => { const L = genderSizeLabel(p); return L.combined ? `<div style="color:rgba(255,255,255,.45);font-size:11px;font-weight:600;margin-top:1px;">${L.combined}</div>` : ''; })()}
       <div class="cmeta"><span class="cseller">@${p.seller}</span><div class="cstats">${p._isAuction ? '<span class="cstat">🔨 bid</span>' : `<span class="cstat">👁 ${p.views}</span><span class="cstat">♥ ${p.likes}</span>`}</div></div>
       ${!p._isAuction && p.createdTs ? `<div style="color:rgba(255,255,255,.32);font-size:10px;font-weight:600;margin-top:3px;">🕒 ${notifTimeLabel(p.createdTs)}</div>` : ''}
     </div>
@@ -2158,6 +2166,7 @@ function showDetail(id) {
         <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:12px;display:flex;gap:20px;">
           <div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Ships from</div><div style="color:#fff;font-weight:600;font-size:13px;">${p.location}</div></div>
           <div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Category</div><div style="color:#fff;font-weight:600;font-size:13px;">${p.category}</div></div>
+          ${p.gender && p.gender !== 'Unisex' ? `<div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Department</div><div style="color:#fff;font-weight:600;font-size:13px;">${p.gender}</div></div>` : ''}
           ${p.size && p.size !== 'N/A / One size' ? `<div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Size</div><div style="color:#fff;font-weight:600;font-size:13px;">${p.size}</div></div>` : ''}
           <div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Payment</div><div style="color:#fff;font-weight:600;font-size:13px;">${isUSD ? '💵 USD' : '💰 SB'}</div></div>
         </div>
@@ -2740,7 +2749,7 @@ function runSearch() {
     .map(a => ({
       id: a.id, title: a.title || '', seller: a.seller || '', category: a.category || 'Other',
       location: a.location || '', description: a.description || '', img: a.img,
-      price: a.currentBid, currency: a.currency || 'SB', _isAuction: true
+      price: a.currentBid, currency: a.currency || 'SB', gender: a.gender || '', _isAuction: true
     }));
   let basePool = PRODS.concat(auctionItems);
   let pool = payFilter === 'all' ? basePool : basePool.filter(p => p.currency === payFilter || p._isAuction);
@@ -3317,7 +3326,7 @@ function setupRealtimeSubscriptions(myUsername) {
         img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
         likes: 0, views: 0, hot: false,
         createdTs: l.created_at ? new Date(l.created_at).getTime() : Date.now(),
-        isNew: true, description: l.description || '', size: l.size || ''
+        isNew: true, description: l.description || '', size: l.size || '', gender: l.gender || ''
       };
       // Only add if not already in list
       if (!PRODS.find(x => x.id === l.id)) {
@@ -3370,7 +3379,7 @@ async function loadListings() {
     id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
     seller: l.seller_username || 'user', sellerId: l.seller_id, location: l.location || '',
     img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
-    condition: l.condition || '', sold: !!l.sold, size: l.size || '',
+    condition: l.condition || '', sold: !!l.sold, size: l.size || '', gender: l.gender || '',
     likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || '',
     createdTs: l.created_at ? new Date(l.created_at).getTime() : 0,
     isNew: l.created_at ? (now - new Date(l.created_at).getTime()) < 86400000 : false
@@ -3689,7 +3698,7 @@ async function saveListingToDb(listing) {
     seller_id: currentUser.id, seller_username: currentProfile?.username || '',
     title: listing.title, description: listing.description,
     price: listing.price, currency: listing.currency, category: listing.category,
-    location: listing.location, image_url: listing.img, size: listing.size || null, is_active: true, sold: false
+    location: listing.location, image_url: listing.img, size: listing.size || null, gender: listing.gender || null, is_active: true, sold: false
   }).select().single();
   if (error) { console.error('Listing save error:', error); return null; }
   return data;
@@ -4449,6 +4458,7 @@ Analyze the photo and return ONLY a JSON object with these exact fields:
 {
   "title": "Short punchy product title (brand + item name + key detail, max 8 words)",
   "category": "One of: Sneakers, Streetwear, Vintage, Kids & Baby",
+  "gender": "One of: Men's, Women's, Unisex (use Unisex if unclear or not applicable, e.g. Kids & Baby)",
   "condition": "One of: New with tags, Like New, Good, Fair",
   "description": "2-3 sentences. Mention brand, style, key features, condition details. Resale-style, enthusiastic but honest.",
   "price": number (suggested SwapBucks price based on resale market value — be realistic),
@@ -4502,6 +4512,8 @@ Return ONLY the JSON. No markdown, no explanation, no backticks.`;
     const condEl = document.getElementById('f-condition');
     for (let opt of catEl.options) { if (opt.text === parsed.category) { catEl.value = opt.value || opt.text; break; } }
     for (let opt of condEl.options) { if (opt.text === parsed.condition) { condEl.value = opt.value || opt.text; break; } }
+    // v32-24: reflect the AI's department on the pills (updateSizeOptions renders pills + toggles the block).
+    { const pg = parsed.gender; _listingGender = (pg === "Men's" || pg === "Women's") ? pg : 'Unisex'; }
     // v32-23: setting catEl.value programmatically does NOT fire its onchange, so the
     // size dropdown stayed on the lone "N/A" option (no shoe sizes / region row) when the
     // AI picked Sneakers/Vintage. Refresh size options explicitly to match the chosen category.
@@ -4594,6 +4606,7 @@ async function postListing() {
   const location = document.getElementById('f-location').value.trim() || 'Nashville, TN';
   const currency = selectedCurrency || 'SB';
   const size = (document.getElementById('f-size') || {}).value || '';
+  const gender = categoryHasGender(category) ? _listingGender : null; // v32-24
   const sellerName = currentProfile?.username || 'dinobravo';
 
   // Build new product object
@@ -4602,7 +4615,7 @@ async function postListing() {
     id: newId, title, price, currency,
     seller: sellerName, location,
     img: aiPreviewDataUrl || I['gold_shirt'],
-    category, size, likes: 0, views: 1,
+    category, size, gender, likes: 0, views: 1,
     hot: false, isNew: true, sold: false, description: desc
   };
 
@@ -4671,6 +4684,7 @@ async function postAuction(title, desc, category, condition) {
   const reserve = parseInt(document.getElementById('f-reserve').value) || 0;
   const location = document.getElementById('f-auction-location').value.trim() || currentProfile?.location || 'USA';
   const size = (document.getElementById('f-size') || {}).value || '';
+  const gender = categoryHasGender(category) ? _listingGender : null; // v32-24
   const buyNow = parseInt((document.getElementById('f-buy-now') || {}).value) || 0; // BIN (v32-8): optional
   if (buyNow > 0 && buyNow <= startBid) { showToast('Buy It Now must be higher than the starting bid'); return; }
   const sellerName = currentProfile?.username || 'user';
@@ -4698,6 +4712,7 @@ async function postAuction(title, desc, category, condition) {
     currentBid: startBid,
     reservePrice: reserve,
     size,
+    gender,
     buyNowPrice: buyNow || 0,
     bidCount: 0,
     watchers: 0,
@@ -4721,6 +4736,7 @@ async function postAuction(title, desc, category, condition) {
       reserve_price: reserve || null,
       currency: auctionCurrency,
       size: size || null,
+      gender: gender || null,
       buy_now_price: buyNow || null,
       ends_at: endsAt.toISOString(),
       status: 'live'
@@ -4794,6 +4810,7 @@ async function loadAuctionsFromDb() {
       sellerColor: '#FF3B30',
       category: a.category, condition: a.condition,
       size: a.size || '',
+      gender: a.gender || '',
       startPrice: a.start_price,
       currentBid: a.current_bid || a.start_price,
       reservePrice: a.reserve_price,
@@ -7595,6 +7612,26 @@ function _shoeRange(prefix, lo, hi) {
 }
 const _SZ_SHOE = { US: _shoeRange('US', 4, 15), UK: _shoeRange('UK', 3, 14), EU: _shoeRange('EU', 36, 49) };
 let _shoeRegion = 'US';
+// v32-24: Department (Men's/Women's/Unisex) — its own attribute (not baked into size) so the
+// upcoming feed filter can do a clean .eq('gender', …). Shown for genderable categories only.
+let _listingGender = 'Unisex';
+function categoryHasGender(cat) { return cat === 'Sneakers' || cat === 'Streetwear' || cat === 'Vintage'; }
+function setListingGender(code) { _listingGender = code === 'M' ? "Men's" : code === 'W' ? "Women's" : 'Unisex'; _renderGenderPills(); }
+function _renderGenderPills() {
+  [['gen-Mens', "Men's"], ['gen-Womens', "Women's"], ['gen-Unisex', 'Unisex']].forEach(([idp, val]) => {
+    const b = document.getElementById(idp); if (!b) return;
+    const on = _listingGender === val;
+    b.style.background = on ? 'rgba(255,59,48,.2)' : 'rgba(255,255,255,.04)';
+    b.style.border = on ? '2px solid rgba(255,59,48,.6)' : '2px solid rgba(255,255,255,.1)';
+    b.style.color = on ? '#FF3B30' : 'rgba(255,255,255,.6)';
+  });
+}
+// Combined "Men's · Size US 9" label for cards/detail (omits Unisex + N/A).
+function genderSizeLabel(p) {
+  const g = (p && p.gender && p.gender !== 'Unisex') ? p.gender : '';
+  const s = (p && p.size && p.size !== 'N/A / One size') ? p.size : '';
+  return { g, s, combined: [g, s ? ('Size ' + s) : ''].filter(Boolean).join(' · ') };
+}
 function categoryHasShoes(cat) { return cat === 'Sneakers' || cat === 'Vintage'; }
 function setShoeRegion(r) { _shoeRegion = r; updateSizeOptions(); }
 function updateSizeOptions() {
@@ -7607,6 +7644,10 @@ function updateSizeOptions() {
   // region toggle: show only for shoe categories, and reflect the active region
   const row = document.getElementById('size-region-row');
   if (row) row.style.display = hasShoes ? 'flex' : 'none';
+  // v32-24: Department block visibility tracks the category (genderable cats only); reflect pills.
+  const gblock = document.getElementById('gender-block');
+  if (gblock) gblock.style.display = categoryHasGender(cat) ? 'block' : 'none';
+  if (typeof _renderGenderPills === 'function') _renderGenderPills();
   ['US','UK','EU'].forEach(r => {
     const b = document.getElementById('szreg-' + r);
     if (!b) return;
@@ -7639,7 +7680,7 @@ function resetListingForm() {
   ['f-title', 'f-desc', 'f-price', 'f-location'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
   const cat = document.getElementById('f-category'); if (cat) cat.value = '';
   const cond = document.getElementById('f-condition'); if (cond) cond.value = '';
-  _shoeRegion = 'US'; if (typeof updateSizeOptions === 'function') updateSizeOptions(); // Item 3 (v32-7): reset region + options
+  _shoeRegion = 'US'; _listingGender = 'Unisex'; if (typeof updateSizeOptions === 'function') updateSizeOptions(); // Item 3 (v32-7): reset region + options; v32-24: reset department
   aiPhotoBase64 = null; aiPhotoMime = null; aiPreviewDataUrl = null; peSourceDataUrl = null;
   const inp = document.getElementById('ai-photo-input'); if (inp) inp.value = '';
   const pv = document.getElementById('ai-photo-preview'); if (pv) pv.style.display = 'none';
@@ -7685,6 +7726,7 @@ function openEditListing(id) {
   selectedCurrency = p.currency || 'SB';
   if (typeof selectCurrency === 'function') selectCurrency(selectedCurrency);
   // Existing photo shows as preview; only re-uploads if the user picks a new one
+  _listingGender = p.gender || 'Unisex'; _renderGenderPills(); // v32-24 department prefill
   aiPreviewDataUrl = p.img || ''; aiPhotoBase64 = null; aiPhotoMime = null; peSourceDataUrl = null;
   const pi = document.getElementById('ai-preview-img'); if (pi) pi.src = p.img || '';
   document.getElementById('ai-photo-preview').style.display = p.img ? 'block' : 'none';
@@ -7716,6 +7758,7 @@ async function relistEditListing(id) {
   { const sv = p.size || ''; if (/^UK/.test(sv)) _shoeRegion = 'UK'; else if (/^EU/.test(sv)) _shoeRegion = 'EU'; else if (/^US/.test(sv)) _shoeRegion = 'US'; updateSizeOptions(); const szE = document.getElementById('f-size'); if (szE) szE.value = sv || 'N/A / One size'; } // Item 3 (v32-7)
   selectedCurrency = p.currency || 'SB';
   if (typeof selectCurrency === 'function') selectCurrency(selectedCurrency);
+  _listingGender = p.gender || 'Unisex'; _renderGenderPills(); // v32-24 department prefill
   aiPreviewDataUrl = p.image_url || ''; aiPhotoBase64 = null; aiPhotoMime = null; peSourceDataUrl = null;
   const pi = document.getElementById('ai-preview-img'); if (pi) pi.src = p.image_url || '';
   document.getElementById('ai-photo-preview').style.display = p.image_url ? 'block' : 'none';
@@ -7752,6 +7795,7 @@ async function relistEditAuction(id) {
   // fresh end-time required — default to 24h and highlight that button
   selectedDuration = '24h';
   document.querySelectorAll('.dur-btn').forEach(b => { if ((b.getAttribute('onclick') || '').includes("'24h'")) selectDuration('24h', b); });
+  _listingGender = a.gender || 'Unisex'; _renderGenderPills(); // v32-24 department prefill
   aiPreviewDataUrl = a.image_url || ''; aiPhotoBase64 = null; aiPhotoMime = null; peSourceDataUrl = null;
   const pi = document.getElementById('ai-preview-img'); if (pi) pi.src = a.image_url || '';
   document.getElementById('ai-photo-preview').style.display = a.image_url ? 'block' : 'none';
