@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-1</title>
+<title>OneStopSwap v33-2</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-1';
+window._OSS_BUILD = 'v33-2';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -1903,7 +1903,7 @@ function itemMatchesFilters(item) {
 // Normalize live auctions into PRODS shape so one pass + one card renderer (pCard) handle both.
 function browsePool() {
   const auctionItems = (typeof AUCTIONS !== 'undefined' ? AUCTIONS : [])
-    .filter(a => !a.ended && a.status !== 'ended')
+    .filter(a => !a.ended && a.status !== 'ended' && (a.endTime || 0) > Date.now())
     .map(a => ({
       id: a.id, title: a.title || '', seller: a.seller || '', category: a.category || 'Other',
       location: a.location || '', description: a.description || '', img: a.img,
@@ -2317,11 +2317,12 @@ function aucMoney(n, a) { return (a && a.currency === 'USD') ? ('$' + n) : (n + 
 function renderAuctionList() {
   const el = document.getElementById('auction-list');
   if (!el) return;
-  if (!AUCTIONS.length) {
+  const liveList = AUCTIONS.filter(a => (a.endTime || 0) > Date.now()); // v33-2: ended/expired drop out of Live
+  if (!liveList.length) {
     el.innerHTML = '<div style="text-align:center;padding:60px 20px;"><div style="font-size:56px;margin-bottom:16px;">⚡</div><div style="color:#fff;font-weight:800;font-size:20px;margin-bottom:8px;">No Live Auctions</div><div style="color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;">Be the first to list something for auction!</div><button onclick=\'go(\'new-listing\');setTimeout(()=>setSellMode(\'auction\'),300)\' style=\"background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px 28px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;\">⚡ Start an Auction</button></div>';
     return;
   }
-  el.innerHTML = AUCTIONS.map(a => {
+  el.innerHTML = liveList.map(a => {
     const cd = formatCountdown(a.endTime - Date.now());
     return `<div onclick="openAuction('${a.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;overflow:hidden;cursor:pointer;transition:transform .15s;" onmousedown="this.style.transform='scale(.98)'" onmouseup="this.style.transform=''">
       <div style="display:flex;gap:0;">
@@ -2381,12 +2382,62 @@ function startAuctionTimers() {
         }
       }
 
-      if (cd.ended) clearInterval(auctionTimers[a.id]);
+      if (cd.ended) {
+        clearInterval(auctionTimers[a.id]);
+        renderAuctionList(); // v33-2: the just-expired auction drops out of Live for everyone
+        settleExpiredOwnAuctions(); // if it's the viewer's own, settle it → lands in their tab
+      }
     }, 1000);
   });
 }
 
 let _auctionOpening = false;
+
+// v33-2: settle the CURRENT user's own auctions whose timer expired while nobody ended them.
+// Has bids → settle_auction (winner charged, order created → seller's Sold tab; winner notified).
+// No bids → status='ended' (→ seller's Removed tab). Buyers just see expired ones vanish from Live
+// (renderAuctionList/browsePool already filter by endTime). Idempotent + in-flight guarded.
+async function settleExpiredOwnAuctions() {
+  if (!currentUser || window._settlingExpired) return;
+  const now = Date.now();
+  const mine = AUCTIONS.filter(a =>
+    (a.endTime || 0) <= now &&
+    a.sellerId === currentUser.id &&
+    /^[0-9a-f-]{36}$/i.test(String(a.dbId || a.id))
+  );
+  if (!mine.length) return;
+  window._settlingExpired = true;
+  let changed = false;
+  for (const a of mine) {
+    const id = a.dbId || a.id;
+    try {
+      if ((a.bidCount || 0) > 0) {
+        const { data, error } = await sb.rpc('settle_auction', { p_auction_id: id });
+        if (!error) {
+          const row = Array.isArray(data) ? data[0] : data;
+          if (row && row.winner_id) {
+            const money = (a.currency === 'USD') ? ('$' + (row.final_amount ?? a.currentBid)) : ((row.final_amount ?? a.currentBid) + ' SB');
+            notifyUser(row.winner_id, { type:'auction', icon:'🎉', title:'You won the auction!',
+              body:'You won "' + a.title + '" for ' + money + '. Head to My Orders to track it.',
+              actionLabel:'View order', actionTarget:'my-orders' });
+          }
+          changed = true;
+        } else { console.error('settleExpired settle_auction:', error); }
+      } else {
+        const { error } = await sb.from('auctions').update({ status: 'ended' }).eq('id', id).eq('seller_id', currentUser.id);
+        if (!error) changed = true; else console.error('settleExpired end-no-bids:', error);
+      }
+    } catch (e) { console.error('settleExpired:', e); }
+  }
+  // Drop the now-settled auctions from the local list either way + refresh Live.
+  for (let i = AUCTIONS.length - 1; i >= 0; i--) {
+    const a = AUCTIONS[i];
+    if ((a.endTime || 0) <= now && a.sellerId === currentUser.id) AUCTIONS.splice(i, 1);
+  }
+  window._settlingExpired = false;
+  if (changed) { renderAuctionList(); showToast('🏁 An expired auction was settled — check My Listings.'); }
+}
+
 async function openAuction(id) {
   if (_auctionOpening) return;
   _auctionOpening = true;
@@ -4805,6 +4856,7 @@ async function loadAuctionsFromDb() {
 
   startAuctionTimers();
   renderAuctionList(); // always render after load
+  settleExpiredOwnAuctions(); // v33-2: settle any of the viewer's own auctions that expired while away
   primeAvatars(AUCTIONS.map(a => a.seller));
 }
 
@@ -8540,7 +8592,7 @@ function doSrch(q) {
   const v = q.toLowerCase();
   document.getElementById('srch-lbl').textContent = v ? 'Results' : 'Popular Right Now';
   const auctionItems = (typeof AUCTIONS !== 'undefined' ? AUCTIONS : [])
-    .filter(a => !a.ended)
+    .filter(a => !a.ended && (a.endTime || 0) > Date.now())
     .map(a => ({ id: a.id, title: a.title || '', seller: a.seller || '', category: a.category || 'Other',
                  description: a.description || '', img: a.img, price: a.currentBid, currency: a.currency || 'SB', _isAuction: true, views: 0 }));
   const all = PRODS.concat(auctionItems);
