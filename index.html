@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-2</title>
+<title>OneStopSwap v32-5</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-2';
+window._OSS_BUILD = 'v32-5';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2110,7 +2110,7 @@ function showDetail(id) {
     <div style="position:relative;height:360px;overflow:hidden;background:#111;flex-shrink:0;">
       <img src="${p.img}" style="width:100%;height:100%;object-fit:cover;display:block;">
       <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.2),rgba(10,10,10,.95) 100%);"></div>
-      <button onclick="go('${prevScreen}')" style="position:absolute;top:52px;left:16px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.15);border-radius:12px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#fff;">←</button>
+      <button onclick="go('${isOwner ? 'my-listings' : prevScreen}')" style="position:absolute;top:52px;left:16px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.15);border-radius:12px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#fff;">←</button>
       ${isUSD ? '<div style="position:absolute;top:52px;right:16px;background:linear-gradient(135deg,#00A550,#007A3D);border-radius:10px;padding:4px 10px;"><span style="color:#fff;font-size:11px;font-weight:800;">💵 Cash Sale</span></div>' : ''}
     </div>
     <div style="padding:20px;background:#0A0A0A;padding-bottom:140px;">
@@ -2356,18 +2356,35 @@ async function openAuction(id) {
       ` : cd.ended ? `
         <div style="background:rgba(255,255,255,.06);border-radius:16px;padding:16px;text-align:center;color:rgba(255,255,255,.4);font-weight:700;">Auction Ended</div>
       ` : `
-        <div style="display:flex;gap:10px;margin-bottom:10px;">
-          <button onclick="${canBid ? `placeBid('${a.id}', ${nextBid})` : `showSBShortfall(${nextBid}, () => placeBid('${a.id}', ${nextBid}))`}" id="bid-btn-${a.id}" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:transform .1s;">
-            ${canBid ? '⚡ Bid ' + nextBid + ' SB' : '💰 Get SB to Bid'}
+        <div style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch;">
+          <div style="flex:0 0 118px;position:relative;">
+            <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:12px;font-weight:700;pointer-events:none;">SB</span>
+            <input id="bid-amount-input" type="number" inputmode="numeric" min="${nextBid}" step="5" value="${nextBid}" onfocus="this.select()" style="width:100%;height:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px 10px 14px 36px;color:#fff;font-size:16px;font-weight:800;font-family:'Space Grotesk',sans-serif;outline:none;">
+          </div>
+          <button onclick="placeBidFromInput('${a.id}')" id="bid-btn-${a.id}" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:transform .1s;">
+            ⚡ Place Bid
           </button>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="color:rgba(255,255,255,.3);font-size:12px;">Min next bid: <span style="color:#FF3B30;font-weight:700;">${nextBid} SB</span></span>
+          <span style="color:rgba(255,255,255,.3);font-size:12px;">Min next bid: <span id="bid-min-label" style="color:#FF3B30;font-weight:700;">${nextBid} SB</span></span>
           <span style="color:rgba(255,255,255,.3);font-size:12px;">Your balance: <span style="color:#fff;font-weight:700;">${SB} SB</span></span>
         </div>
       `}
     </div>`;
   go('auction');
+}
+
+// Item 1 (v32-3): read the seller-/buyer-entered custom bid amount, validate against the
+// minimum (current high bid + 5), then delegate to placeBid (which handles the SB shortfall).
+function placeBidFromInput(auctionId) {
+  const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
+  if (!a) return;
+  const inp = document.getElementById('bid-amount-input');
+  const minBid = a.currentBid + 5;
+  const amount = parseInt(inp ? inp.value : '', 10);
+  if (!amount || isNaN(amount)) { showToast('Enter a bid amount!'); return; }
+  if (amount < minBid) { showToast('Bid must be at least ' + minBid + ' SB'); return; }
+  placeBid(auctionId, amount);
 }
 
 async function placeBid(auctionId, amount) {
@@ -2412,19 +2429,20 @@ async function placeBid(auctionId, amount) {
       </div>`).join('');
   }
 
-  // Update bid button
+  // Update bid button + reset the custom-amount input to the new minimum (Item 1, v32-3)
   const nextBid = amount + 5;
-  const canBid = SB >= nextBid;
   const btnEl = document.getElementById('bid-btn-' + auctionId);
   if (btnEl) {
-    btnEl.textContent = canBid ? '⚡ Bid ' + nextBid + ' SB' : '💰 Get SB to Bid';
+    btnEl.textContent = '⚡ Place Bid';
     btnEl.style.background = 'linear-gradient(135deg,#FF3B30,#C0392B)';
     btnEl.style.color = '#fff';
     btnEl.disabled = false;
-    btnEl.onclick = canBid
-      ? () => placeBid(auctionId, nextBid)
-      : () => showSBShortfall(nextBid, () => placeBid(auctionId, nextBid));
+    btnEl.onclick = () => placeBidFromInput(auctionId);
   }
+  const inpEl = document.getElementById('bid-amount-input');
+  if (inpEl) { inpEl.min = nextBid; inpEl.value = nextBid; }
+  const minLbl = document.getElementById('bid-min-label');
+  if (minLbl) minLbl.textContent = nextBid + ' SB';
 
   // Update live-sb display
   const liveEl = document.getElementById('live-sb-display');
@@ -2486,17 +2504,18 @@ async function placeBid(auctionId, amount) {
       }
 
       const nextBid2 = compBid + 5;
-      const canBid2 = SB >= nextBid2;
       const btnEl2 = document.getElementById('bid-btn-' + auctionId);
       if (btnEl2) {
-        btnEl2.textContent = canBid2 ? '⚡ Bid ' + nextBid2 + ' SB' : '💰 Get SB to Bid';
+        btnEl2.textContent = '⚡ Place Bid';
         btnEl2.style.background = 'linear-gradient(135deg,#FF3B30,#C0392B)';
         btnEl2.style.color = '#fff';
         btnEl2.disabled = false;
-        btnEl2.onclick = canBid2
-          ? () => placeBid(auctionId, nextBid2)
-          : () => showSBShortfall(nextBid2, () => placeBid(auctionId, nextBid2));
+        btnEl2.onclick = () => placeBidFromInput(auctionId);
       }
+      const inpEl2 = document.getElementById('bid-amount-input');
+      if (inpEl2) { inpEl2.min = nextBid2; inpEl2.value = nextBid2; }
+      const minLbl2 = document.getElementById('bid-min-label');
+      if (minLbl2) minLbl2.textContent = nextBid2 + ' SB';
 
       showToast('🔥 @' + comp.user + ' outbid you! ' + compBid + ' SB');
       addNotification('auction','⚡','rgba(255,179,71,.15)','rgba(255,179,71,.3)',
@@ -3511,6 +3530,7 @@ async function loadOffersFromDb() {
         existing.counterAmount = o.counter_amount;
         existing.sellerCounter = o.counter_amount;
         existing.offerAmount = o.offer_amount;
+        existing.sellerPrevCounter = o.seller_prev_counter; // Item 4 (v32-4): seller's last ask, for the monotonic-down floor
         existing.lastActivityTs = actTs;
         if (img && !existing.img) existing.img = img;
       } else {
@@ -3523,6 +3543,7 @@ async function loadOffersFromDb() {
           buyerColor: '#1a0000', listedPrice: o.listed_price,
           offerAmount: o.offer_amount, currency: o.offer_currency,
           counterAmount: o.counter_amount, sellerCounter: o.counter_amount,
+          sellerPrevCounter: o.seller_prev_counter,
           currencyChanged: o.currency_changed, message: o.message,
           status: o.status, date: new Date(o.created_at).toLocaleDateString(),
           expiresAt: o.expires_at ? new Date(o.expires_at).getTime() : null
@@ -6092,6 +6113,12 @@ function submitCounter() {
   if (!offer) return;
   const amount = parseFloat(document.getElementById('counter-amount').value);
   if (!amount || amount <= 0) { showToast('Enter a counter amount!'); return; }
+  // Item 4 (v32-4): a buyer can't counter LOWER than their own previous offer (no re-lowballing).
+  // offer.offerAmount is the buyer's last number, always preserved in offer_amount — robust across refresh.
+  if (offer.offerAmount != null && amount <= offer.offerAmount) {
+    showToast('Counter must be higher than your previous offer of ' + (offer.currency === 'USD' ? '$' + offer.offerAmount : offer.offerAmount + ' SB'));
+    return;
+  }
   // v31-12: must be able to afford an SB counter (mirrors submitOffer). Routes to the
   // shortfall top-up sheet, which auto-resumes this counter on success. Checked before
   // mutating offer state / hiding the modal so counter-amount is still readable on resume.
@@ -6679,11 +6706,22 @@ function submitSellerCounter() {
   if (!o) return;
   const amt = parseFloat(document.getElementById('seller-counter-amount').value);
   if (!amt || amt <= 0) { showToast('Enter a counter amount!'); return; }
+  // Item 4 (v32-4): a seller can't counter HIGHER than their own previous counter (no walking the
+  // ask back up). o.sellerPrevCounter survives refresh via the seller_prev_counter column (counter_amount
+  // itself gets nulled when the buyer counters back, so it can't hold the prior ask). Null = first counter, no floor.
+  if (o.sellerPrevCounter != null && amt >= o.sellerPrevCounter) {
+    showToast('Counter must be lower than your previous counter of ' + (o.currency === 'USD' ? '$' + o.sellerPrevCounter : o.sellerPrevCounter + ' SB'));
+    return;
+  }
   o.status = 'Countered';
   o.sellerCounter = amt;
   o.counterAmount = amt;
+  o.sellerPrevCounter = amt; // Item 4 (v32-4): remember this ask for the next-round floor
   o.lastActivityTs = Date.now(); // v31-34: bump to top of its tab on action
   if (o.dbId) sb.from('offers').update({ status: 'Countered', counter_amount: amt }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('offer counter persist:', error); });
+  // Item 4 (v32-4): persist the seller's ask separately so a missing column can't break the counter
+  // above. Survives hard-refresh once the one-time ALTER (offers.seller_prev_counter) is run.
+  if (o.dbId) sb.from('offers').update({ seller_prev_counter: amt }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('seller_prev_counter persist (run the v32-4 ALTER?):', error); });
   document.getElementById('modal-seller-counter').style.display = 'none';
   showToast('🔄 Counter offer of ' + (o.currency==='USD'?'$'+amt:amt+' SB') + ' sent to @' + o.buyer + '!');
   // v31: notify the buyer of the counter offer (best-effort, never blocks)
