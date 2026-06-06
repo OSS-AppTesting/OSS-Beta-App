@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-12</title>
+<title>OneStopSwap v32-13</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-12';
+window._OSS_BUILD = 'v32-13';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -748,10 +748,12 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       </div>
       <span style="color:#FF3B30;font-size:20px;">›</span>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <button id="ml-tab-active" onclick="setMyListingsView('active')" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:6px 18px;color:#FF3B30;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Active</button>
-      <button id="ml-tab-sold" onclick="setMyListingsView('sold')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 18px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">✓ Sold</button>
-      <button id="ml-tab-removed" onclick="setMyListingsView('removed')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 18px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">🚫 Removed</button>
+    <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;">
+      <button id="ml-tab-active" onclick="setMyListingsView('active')" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:6px 16px;color:#FF3B30;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;white-space:nowrap;">Active</button>
+      <button id="ml-tab-sold" onclick="setMyListingsView('sold')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;white-space:nowrap;">✓ Sold</button>
+      <button id="ml-tab-shipped" onclick="setMyListingsView('shipped')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;white-space:nowrap;">📦 Shipped</button>
+      <button id="ml-tab-delivered" onclick="setMyListingsView('delivered')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;white-space:nowrap;">🎉 Delivered</button>
+      <button id="ml-tab-removed" onclick="setMyListingsView('removed')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;white-space:nowrap;">🚫 Removed</button>
     </div>
     <div id="my-listings-count" style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Your Listings</div>
     <div id="my-listings-list" style="display:flex;flex-direction:column;gap:12px;"></div>
@@ -3750,6 +3752,7 @@ async function sellerShipOrder(orderId) {
     const { data } = await sb.from('orders').select('*').eq('id', orderId).single();
     if (data?.buyer_id) notifyUser(data.buyer_id, { type:'order', icon:'📦', title:'Your order shipped!', body:'@' + (currentProfile?.username || 'The seller') + ' shipped "' + (data.title || 'your order') + '". Tracking: ' + tracking, actionLabel:'Track', actionTarget:'my-orders' });
     renderSaleManage(data, data?.title);
+    renderMyListings(); // v32-13: card moves Sold → Shipped behind the sheet
   } catch (e) { console.error('sellerShipOrder refresh:', e); }
 }
 
@@ -3761,6 +3764,7 @@ async function sellerDeliverOrder(orderId) {
     const { data } = await sb.from('orders').select('*').eq('id', orderId).single();
     if (data?.buyer_id) notifyUser(data.buyer_id, { type:'order', icon:'🎉', title:'Order delivered!', body:'@' + (currentProfile?.username || 'The seller') + ' marked "' + (data.title || 'your order') + '" as delivered.', actionLabel:'View', actionTarget:'my-orders' });
     renderSaleManage(data, data?.title);
+    renderMyListings(); // v32-13: card moves Shipped → Delivered behind the sheet
   } catch (e) { console.error('sellerDeliverOrder refresh:', e); }
 }
 
@@ -7221,13 +7225,17 @@ function setMyListingsView(view) {
   window._myListingsView = view;
   const a = document.getElementById('ml-tab-active');
   const s = document.getElementById('ml-tab-sold');
+  const sh = document.getElementById('ml-tab-shipped');
+  const d = document.getElementById('ml-tab-delivered');
   const r = document.getElementById('ml-tab-removed');
   const on  = 'background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);color:#FF3B30;';
   const off = 'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);';
-  const base = 'border-radius:20px;padding:6px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
-  if (a) a.style.cssText = base + (view === 'active'  ? on : off);
-  if (s) s.style.cssText = base + (view === 'sold'    ? on : off);
-  if (r) r.style.cssText = base + (view === 'removed' ? on : off);
+  const base = 'flex-shrink:0;white-space:nowrap;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+  if (a)  a.style.cssText  = base + (view === 'active'    ? on : off);
+  if (s)  s.style.cssText  = base + (view === 'sold'      ? on : off);
+  if (sh) sh.style.cssText = base + (view === 'shipped'   ? on : off);
+  if (d)  d.style.cssText  = base + (view === 'delivered' ? on : off);
+  if (r)  r.style.cssText  = base + (view === 'removed'   ? on : off);
   renderMyListings();
 }
 
@@ -7243,14 +7251,15 @@ async function renderMyListings() {
   }
 
   const myUsername = currentProfile?.username || '';
-  const view = (window._myListingsView || 'active'); // v32-10: 'active' | 'sold' | 'removed'
-  const wantActive = view === 'active', wantSold = view === 'sold', wantRemoved = view === 'removed';
+  const view = (window._myListingsView || 'active'); // v32-13: 'active' | 'sold' | 'shipped' | 'delivered' | 'removed'
+  const wantActive = view === 'active', wantSold = view === 'sold', wantShipped = view === 'shipped', wantDelivered = view === 'delivered', wantRemoved = view === 'removed';
+  const soldFamily = wantSold || wantShipped || wantDelivered; // all three pull the same sold set, then split by linked-order status
 
   // Fetch the seller's listings + auctions scoped per view, then refine in JS:
-  //  active  = live & not sold · sold = sold (fixed) / ended-with-winner (auction) · removed = taken down, not sold.
+  //  active = live & not sold · sold-family = sold (fixed) / ended-with-winner (auction), split by order fulfillment stage · removed = taken down, not sold.
   const baseL = sb.from('listings').select('*').or(`seller_id.eq.${currentUser.id},seller_username.eq.${myUsername}`).order('created_at', { ascending: false });
   const baseA = sb.from('auctions').select('*').or(`seller_id.eq.${currentUser.id},seller_username.eq.${myUsername}`).order('created_at', { ascending: false });
-  const listingsQ = wantActive ? baseL.eq('is_active', true) : wantSold ? baseL.eq('sold', true) : baseL.eq('is_active', false);
+  const listingsQ = wantActive ? baseL.eq('is_active', true) : soldFamily ? baseL.eq('sold', true) : baseL.eq('is_active', false);
   const auctionsQ = wantActive ? baseA.eq('status', 'live') : baseA.eq('status', 'ended');
   const [listingsRes, auctionsRes] = await Promise.all([listingsQ, auctionsQ]);
 
@@ -7259,7 +7268,30 @@ async function renderMyListings() {
   const error = listingsRes.error || auctionsRes.error;
   // Keep sold items out of Active/Removed; split ended auctions by winner (sold vs expired).
   if (wantActive)      { listings = listings.filter(l => !l.sold); }
-  else if (wantSold)   { auctions = auctions.filter(a => a.winner_username); }
+  else if (soldFamily) {
+    // Only auctions with a winner are sales; expired-no-winner belong in Removed.
+    auctions = auctions.filter(a => a.winner_username);
+    // Map each item to its fulfillment stage via the linked order's status (newest order wins).
+    let statusByListing = {};
+    try {
+      const { data: myOrders } = await sb.from('orders')
+        .select('listing_id,status,created_at')
+        .eq('seller_id', currentUser.id)
+        .order('created_at', { ascending: false });
+      (myOrders || []).forEach(o => {
+        const k = o.listing_id ? String(o.listing_id) : null;
+        if (k && !(k in statusByListing)) statusByListing[k] = o.status; // first = newest
+      });
+    } catch (e) { console.error('renderMyListings order lookup:', e); }
+    const stageOf = (id) => {
+      const st = statusByListing[String(id)];
+      if (st === 'Delivered' || st === 'Completed') return 'delivered';
+      if (st === 'Shipped' || st === 'Out for Delivery') return 'shipped';
+      return 'sold'; // no order (manual mark-sold) or pre-ship (Processing/Paid/Accepted) → awaiting shipment
+    };
+    listings = listings.filter(l => stageOf(l.id) === view);
+    auctions = auctions.filter(a => stageOf(a.id) === view);
+  }
   else /* removed */   { listings = listings.filter(l => !l.sold); auctions = auctions.filter(a => !a.winner_username); }
 
   console.log('My listings:', listings.length, 'auctions:', auctions.length, 'error:', error?.message);
@@ -7282,7 +7314,17 @@ async function renderMyListings() {
       <div style="text-align:center;padding:60px 20px;">
         <div style="font-size:48px;margin-bottom:16px;">🎉</div>
         <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:8px;">No sales yet</div>
-        <div style="color:rgba(255,255,255,.4);font-size:14px;">Items you sell show up here.</div>
+        <div style="color:rgba(255,255,255,.4);font-size:14px;">Items you sell show up here, ready to ship.</div>
+      </div>` : wantShipped ? `
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="font-size:48px;margin-bottom:16px;">📦</div>
+        <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:8px;">Nothing shipped yet</div>
+        <div style="color:rgba(255,255,255,.4);font-size:14px;">Create a shipping label from a Sold item and it'll appear here.</div>
+      </div>` : wantDelivered ? `
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="font-size:48px;margin-bottom:16px;">🎉</div>
+        <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:8px;">No deliveries yet</div>
+        <div style="color:rgba(255,255,255,.4);font-size:14px;">Items you've marked delivered show up here.</div>
       </div>` : `
       <div style="text-align:center;padding:60px 20px;">
         <div style="font-size:48px;margin-bottom:16px;">🗑️</div>
@@ -7293,7 +7335,7 @@ async function renderMyListings() {
   }
 
   const countEl = document.getElementById('my-listings-count');
-  if (countEl) countEl.textContent = (wantActive ? 'Active' : wantSold ? 'Sold' : 'Removed') + ' · ' + total + ' listing' + (total !== 1 ? 's' : '');
+  if (countEl) countEl.textContent = (wantActive ? 'Active' : wantSold ? 'Sold' : wantShipped ? 'Shipped' : wantDelivered ? 'Delivered' : 'Removed') + ' · ' + total + ' listing' + (total !== 1 ? 's' : '');
 
   // Render fixed-price listings
   const listingsHTML = listings.map(l => `
@@ -7312,15 +7354,19 @@ async function renderMyListings() {
           </div>
           ${wantSold
             ? '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">✓ Sold</span></div>'
+            : wantShipped
+            ? '<div style="background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:3px 8px;"><span style="color:#4FC3F7;font-size:11px;font-weight:700;">📦 Shipped</span></div>'
+            : wantDelivered
+            ? '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">🎉 Delivered</span></div>'
             : wantRemoved
             ? '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:3px 8px;"><span style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;">🚫 Removed</span></div>'
             : '<div style="background:rgba(0,200,100,.1);border:1px solid rgba(0,200,100,.2);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">● Fixed Price</span></div>'}
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;padding:12px;justify-content:center;flex-shrink:0;">
-        ${wantSold
-          ? `<button onclick="openSaleManage('${l.id}','${l.title.replace(/'/g,"\\'")}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:10px;padding:7px 12px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">📦 Manage</button>
-             <button onclick="relistEditListing('${l.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 12px;color:#00C864;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Relist</button>`
+        ${soldFamily
+          ? `<button onclick="openSaleManage('${l.id}','${l.title.replace(/'/g,"\\'")}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:10px;padding:7px 12px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">📦 Manage</button>${wantSold ? `
+             <button onclick="relistEditListing('${l.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 12px;color:#00C864;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Relist</button>` : ''}`
           : wantRemoved
           ? `<button onclick="relistEditListing('${l.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 14px;color:#00C864;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩︎ Relist</button>`
           : `<button onclick="showDetail('${l.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View</button>
@@ -7349,7 +7395,7 @@ async function renderMyListings() {
         <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:8px;">${a.category} · ${a.bid_count || 0} bids</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           ${sold
-            ? `<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:8px;padding:3px 10px;"><span style="color:#00C864;font-weight:800;font-size:12px;">✓ Sold to @${a.winner_username}</span></div>`
+            ? `<div style="background:${wantShipped?'rgba(79,195,247,.12)':'rgba(0,200,100,.12)'};border:1px solid ${wantShipped?'rgba(79,195,247,.3)':'rgba(0,200,100,.3)'};border-radius:8px;padding:3px 10px;"><span style="color:${wantShipped?'#4FC3F7':'#00C864'};font-weight:800;font-size:12px;">${wantShipped?'📦 Shipped':wantDelivered?'🎉 Delivered':'✓ Sold'} to @${a.winner_username}</span></div>`
             : `<div style="background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.3);border-radius:8px;padding:3px 10px;"><span style="color:#FFB347;font-weight:800;font-size:12px;">⚡ Auction</span></div>`}
           <span style="color:rgba(255,255,255,.4);font-size:11px;">${sold ? 'Sold for' : 'Final:'} ${a.current_bid || a.start_price} ${a.currency || 'SB'}</span>
         </div>
