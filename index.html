@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-17</title>
+<title>OneStopSwap v32-18</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-17';
+window._OSS_BUILD = 'v32-18';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2478,17 +2478,23 @@ async function placeBid(auctionId, amount) {
   const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
   if (!a) return;
   if (!currentUser) { showToast('Sign in to place bids!'); return; }
-  if (SB < amount) {
+  const isUSD = a.currency === 'USD';
+  // SB auctions hold SwapBucks at bid time; USD auctions authorize the card on file — no SB removed.
+  if (!isUSD && SB < amount) {
     showSBShortfall(amount, () => placeBid(auctionId, amount));
     return;
   }
 
   const myUsername = currentProfile?.username || 'user';
 
-  // Deduct SB (hold)
-  SB -= amount;
-  updateAllSBDisplays();
-  addTransaction('pending', '⚡', 'Bid on: ' + a.title, '@' + a.seller + ' auction', -amount);
+  if (!isUSD) {
+    // Deduct SB (hold)
+    SB -= amount;
+    updateAllSBDisplays();
+    addTransaction('pending', '⚡', 'Bid on: ' + a.title, '@' + a.seller + ' auction', -amount);
+  }
+  // USD auction: no SwapBucks touched — the card on file is authorized (captured if you win).
+  // No SB-ledger entry (the ledger is SwapBucks-only); conveyed in the confirmation toast below.
 
   // Update local auction immediately
   a.currentBid = amount;
@@ -2535,7 +2541,9 @@ async function placeBid(auctionId, amount) {
   const liveEl = document.getElementById('live-sb-display');
   if (liveEl) liveEl.textContent = '💰 ' + SB + ' SB';
 
-  showToast('🏆 You\'re the highest bidder! ' + amount + ' SB placed.');
+  showToast(isUSD
+    ? '🏆 You\'re the highest bidder! $' + amount + ' — your card is charged if you win.'
+    : '🏆 You\'re the highest bidder! ' + amount + ' SB placed.');
 
   // Save bid to Supabase
   const dbId = a.dbId || a.id;
@@ -2555,7 +2563,7 @@ async function placeBid(auctionId, amount) {
     const _bidNotif = {
       type: 'auction', icon: '⚡',
       title: 'New bid on your auction',
-      body: '@' + myUsername + ' bid ' + amount + ' SB on ' + a.title,
+      body: '@' + myUsername + ' bid ' + aucMoney(amount, a) + ' on ' + a.title,
       actionLabel: 'View Auction', actionTarget: 'my-listings'
     };
     if (a.sellerId) notifyUser(a.sellerId, _bidNotif); else notifyUsername(a.seller, _bidNotif);
