@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-35</title>
+<title>OneStopSwap v31-37</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-35';
+window._OSS_BUILD = 'v31-37';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -6041,7 +6041,19 @@ function acceptCounter(offerId) {
 
 function declineCounter(offerId) {
   const offer = OFFERS.find(o => o.id === offerId);
-  if (offer) offer.status = 'Declined';
+  if (!offer) return;
+  offer.status = 'Declined';
+  offer.lastActivityTs = Date.now();
+  // v31-36: persist the decline so the SELLER's row leaves 'Countered' (was local-only → the
+  // seller was stuck on "waiting for buyer" forever). The buyer can UPDATE their own offer row
+  // (offers UPDATE RLS allows buyer_id). Then on the seller's refresh it moves to Declined.
+  if (offer.dbId) sb.from('offers').update({ status: 'Declined' }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('decline counter persist:', error); });
+  notifyUsername(offer.seller, {
+    type: 'offer', icon: '❌',
+    title: 'Counter declined',
+    body: '@' + (currentProfile?.username || 'The buyer') + ' declined your counter on ' + offer.title + '.',
+    actionLabel: 'View', actionTarget: 'my-offers:received'
+  });
   document.getElementById('modal-offer-response').style.display = 'none';
   showToast('Offer declined.');
 }
@@ -6328,6 +6340,7 @@ function renderOffers(filter) {
                // mirror of the seller's Pending rule. Without this the buyer's Pending went empty the
                // moment the seller countered (the offer flips to 'Countered'). Still in Countered too.
                filter === 'Pending' ? OFFERS.filter(o => o.status === 'Pending' || (o.status === 'Countered' && o.counterAmount != null)) :
+               filter === 'Declined' ? OFFERS.filter(o => o.status === 'Declined' || o.status === 'Withdrawn') : // v31-37: removed-listing offers land in Declined
                OFFERS.filter(o => o.status === filter);
   list.sort((a, b) => (b.lastActivityTs || b.createdAtTs || 0) - (a.lastActivityTs || a.createdAtTs || 0)); // v31-34: newest ACTIVITY first
 
@@ -6338,6 +6351,7 @@ function renderOffers(filter) {
   const recvForTab = ['Pending', 'Countered', 'Accepted', 'Declined', 'Completed'].includes(filter)
     ? RECEIVED_OFFERS.filter(o => o.status === filter
         || (filter === 'Accepted' && o.status === 'Paid')
+        || (filter === 'Declined' && o.status === 'Withdrawn') // v31-37: removed-listing offers land in Declined
         // v31-33: a buyer counter-back (status 'Countered' with no seller counter outstanding) is
         // genuinely pending the SELLER's action, so it ALSO shows in the Pending tab — while still
         // living in the Countered tab (the "what's still open" tracker). Dual visibility, on purpose.
@@ -6363,6 +6377,7 @@ function renderOffers(filter) {
     'Declined':  {bg:'rgba(255,59,48,.12)',  border:'rgba(255,59,48,.3)',   color:'#FF3B30', icon:'❌'},
     'Completed': {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'🎉'},
     'Paid':      {bg:'rgba(79,195,247,.12)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'💰'},
+    'Withdrawn': {bg:'rgba(255,255,255,.06)', border:'rgba(255,255,255,.15)', color:'rgba(255,255,255,.5)', icon:'🚫'},
   };
 
   // v31-30: merge the buyer's sent offers (list) and the seller's received offers (recvForTab)
@@ -6386,6 +6401,7 @@ function sentOfferCard(o) {
     'Declined':  {bg:'rgba(255,59,48,.12)',  border:'rgba(255,59,48,.3)',   color:'#FF3B30', icon:'❌'},
     'Completed': {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'🎉'},
     'Paid':      {bg:'rgba(79,195,247,.12)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'💰'},
+    'Withdrawn': {bg:'rgba(255,255,255,.06)', border:'rgba(255,255,255,.15)', color:'rgba(255,255,255,.5)', icon:'🚫'},
   };
   const sc = STATUS_CONFIG[o.status] || STATUS_CONFIG['Pending'];
     const isUSD = o.currency === 'USD';
@@ -6426,6 +6442,8 @@ function sentOfferCard(o) {
             <span style="color:#00C864;font-size:12px;font-weight:600;">Purchase completed ✓</span>` :
           o.status === 'Declined' ? `
             <button onclick="reOffer('${o.id}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer Again</button>` :
+          o.status === 'Withdrawn' ? `
+            <span style="color:rgba(255,255,255,.4);font-size:12px;font-weight:600;">🚫 Listing removed by seller</span>` :
           `<span style="color:rgba(255,255,255,.3);font-size:12px;">No action needed</span>`}
         </div>
       </div>`;
@@ -6454,6 +6472,7 @@ function receivedOfferCard(o) {
     'Pending':  {bg:'rgba(255,179,71,.12)', border:'rgba(255,179,71,.3)', color:'#FFB347', icon:'⏳'},
     'Accepted': {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',  color:'#00C864', icon:'✅'},
     'Declined': {bg:'rgba(255,59,48,.12)',  border:'rgba(255,59,48,.3)',  color:'#FF3B30', icon:'❌'},
+    'Withdrawn': {bg:'rgba(255,255,255,.06)', border:'rgba(255,255,255,.15)', color:'rgba(255,255,255,.5)', icon:'🚫'},
   };
   const sc = STATUS_CONFIG[o.status] || STATUS_CONFIG['Pending'];
     const isUSD = o.currency === 'USD';
@@ -7091,11 +7110,49 @@ async function renderMyListings() {
   el.innerHTML = auctionsHTML + listingsHTML;
 }
 
+// v31-37: when a seller removes a listing, resolve open offers on it.
+// Returns 'blocked' if an Accepted/Paid offer exists (a deal is consummated — removal not allowed),
+// otherwise withdraws all Pending/Countered offers → 'Withdrawn', notifies each affected buyer,
+// reflects it on the seller's local RECEIVED_OFFERS, and returns 'ok'.
+async function withdrawOffersForRemovedListing(listingId, listingTitle) {
+  try {
+    const { data: rows, error: selErr } = await sb.from('offers')
+      .select('id,status,buyer_id,buyer_username')
+      .eq('listing_id', String(listingId));
+    if (selErr) { console.error('withdraw: offer lookup', selErr); }
+    if (rows && rows.some(r => r.status === 'Accepted' || r.status === 'Paid')) return 'blocked';
+    const { data: withdrawn, error: updErr } = await sb.from('offers')
+      .update({ status: 'Withdrawn' })
+      .eq('listing_id', String(listingId))
+      .in('status', ['Pending', 'Countered'])
+      .select();
+    if (updErr) console.error('withdraw: offer update', updErr);
+    (withdrawn || []).forEach(r => {
+      const note = { type:'offer', icon:'🚫', title:'Listing removed',
+        body:'@' + (currentProfile?.username || 'The seller') + ' removed "' + (listingTitle || 'a listing') + '". Your offer was withdrawn.',
+        actionLabel:'View', actionTarget:'my-offers' };
+      if (r.buyer_id) notifyUser(r.buyer_id, note); else if (r.buyer_username) notifyUsername(r.buyer_username, note);
+    });
+    RECEIVED_OFFERS.forEach(o => {
+      if (String(o.productId) === String(listingId) && (o.status === 'Pending' || o.status === 'Countered')) o.status = 'Withdrawn';
+    });
+    return 'ok';
+  } catch (e) { console.error('withdrawOffersForRemovedListing:', e); return 'ok'; }
+}
+
 async function deleteListing(id, title, btn) {
   showToast('Tap Remove again to confirm deletion');
   if (btn.dataset.confirming === 'true') {
     btn.textContent = '...';
     btn.disabled = true;
+    // v31-37: resolve open offers first. If a deal is consummated (Accepted/Paid), block removal.
+    const res = await withdrawOffersForRemovedListing(id, title);
+    if (res === 'blocked') {
+      showToast("Can't remove — you've accepted an offer on this. Complete or cancel the order first.");
+      btn.dataset.confirming = ''; btn.textContent = 'Remove'; btn.disabled = false;
+      btn.style.background = 'rgba(255,59,48,.1)';
+      return;
+    }
     const { error } = await sb.from('listings').update({ is_active: false }).eq('id', id).eq('seller_id', currentUser.id);
     if (error) { showToast('❌ ' + error.message); btn.textContent = 'Remove'; btn.disabled = false; return; }
     const idx = PRODS.findIndex(x => String(x.id) === String(id));
@@ -7252,6 +7309,13 @@ async function removeListingFromDetail(id) {
     return;
   }
   window._removeConfirmId = null;
+  // v31-37: resolve open offers first; block removal if a deal is consummated (Accepted/Paid).
+  const p0 = PRODS.find(x => String(x.id) === String(id));
+  const res = await withdrawOffersForRemovedListing(id, p0 ? p0.title : '');
+  if (res === 'blocked') {
+    showToast("Can't remove — you've accepted an offer on this. Complete or cancel the order first.");
+    return;
+  }
   const { error } = await sb.from('listings').update({ is_active: false }).eq('id', id).eq('seller_id', currentUser.id);
   if (error) { showToast('❌ ' + error.message); return; }
   const idx = PRODS.findIndex(x => String(x.id) === String(id));
