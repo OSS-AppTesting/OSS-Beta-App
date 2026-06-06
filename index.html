@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-26</title>
+<title>OneStopSwap v31-27</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-26';
+window._OSS_BUILD = 'v31-27';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -6307,14 +6307,16 @@ function renderOffers(filter) {
                OFFERS.filter(o => o.status === filter);
   list.sort((a, b) => (b.createdAtTs || 0) - (a.createdAtTs || 0)); // v31-26: newest first
 
-  // v31-26: a seller's countered offers live in RECEIVED_OFFERS (status 'Countered'), so the
-  // Countered tab also surfaces them — "anything in the counter stage is in the Countered box".
-  const recvCountered = (filter === 'Countered')
-    ? RECEIVED_OFFERS.filter(o => o.status === 'Countered')
+  // v31-27: received offers (the seller's side) belong in their matching status tab, not
+  // only the 📬 Inbox — so an Accepted / Countered / Declined / Pending received offer also
+  // shows under that status tab. (The Inbox still lists all received offers.) Generalizes
+  // the v31-26 Countered-only handling. 'all' is intentionally excluded (that's the Inbox's job).
+  const recvForTab = ['Pending', 'Countered', 'Accepted', 'Declined', 'Completed'].includes(filter)
+    ? RECEIVED_OFFERS.filter(o => o.status === filter)
         .slice().sort((a, b) => (b.createdAtTs || 0) - (a.createdAtTs || 0))
     : [];
 
-  if (!list.length && !recvCountered.length) {
+  if (!list.length && !recvForTab.length) {
     el.innerHTML = `
       <div style="text-align:center;padding:60px 20px;">
         <div style="font-size:48px;margin-bottom:16px;">🏷️</div>
@@ -6375,7 +6377,7 @@ function renderOffers(filter) {
           `<span style="color:rgba(255,255,255,.3);font-size:12px;">No action needed</span>`}
         </div>
       </div>`;
-  }).join('') + recvCountered.map(receivedOfferCard).join('');
+  }).join('') + recvForTab.map(receivedOfferCard).join('');
 }
 
 function renderReceivedOffers() {
