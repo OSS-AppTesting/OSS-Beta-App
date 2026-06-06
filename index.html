@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-18</title>
+<title>OneStopSwap v32-19</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-18';
+window._OSS_BUILD = 'v32-19';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -7871,7 +7871,7 @@ function aeCustomDur() {
   }
 }
 
-function openEditAuction(id) {
+async function openEditAuction(id) {
   const a = AUCTIONS.find(x => x.id === id || x.dbId === id);
   if (!a) { showToast('Auction not found'); return; }
   editingAuctionId = a.dbId || a.id;
@@ -7880,8 +7880,17 @@ function openEditAuction(id) {
   const cat = document.getElementById('ae-category'); if (cat) cat.value = a.category || 'Other';
   const cond = document.getElementById('ae-condition'); if (cond) cond.value = a.condition || 'Good';
   const aep = document.getElementById('ae-photo'); if (aep) aep.src = a.img || '';
-  // Bid-aware: price/reserve editable only before the first bid (fair to bidders)
-  const hasBids = (a.bidCount || 0) > 0;
+  // Bid-aware: price/reserve editable only before the first bid (fair to bidders).
+  // v32-19: trust the DB bid_count, not the (possibly stale) local copy — a bid placed while the
+  // seller was elsewhere wouldn't have updated the in-memory object, which let locked fields show.
+  let bidCount = a.bidCount || 0;
+  if (/^[0-9a-f-]{36}$/i.test(String(editingAuctionId))) {
+    try {
+      const { data: fresh } = await sb.from('auctions').select('bid_count,current_bid').eq('id', editingAuctionId).single();
+      if (fresh) { bidCount = fresh.bid_count || 0; a.bidCount = bidCount; if (fresh.current_bid != null) a.currentBid = fresh.current_bid; }
+    } catch (e) { console.error('openEditAuction bid_count:', e); }
+  }
+  const hasBids = bidCount > 0;
   const priceFields = document.getElementById('ae-price-fields');
   const durFields = document.getElementById('ae-duration-fields');
   const preNote = document.getElementById('ae-prebid-note');
@@ -7939,9 +7948,17 @@ async function saveAuctionEdits() {
   const update = { title, description: desc, category, condition };
   if (newImgUrl) update.image_url = newImgUrl;
 
-  // Price/reserve editable only before the first bid
+  // Price/reserve editable only before the first bid — re-checked against the DB (authoritative),
+  // so a stale local count can't slip a locked-field change through (v32-19).
   const la0 = AUCTIONS.find(x => x.id === id || x.dbId === id);
-  const hasBids = (la0?.bidCount || 0) > 0;
+  let bidCount = (la0?.bidCount || 0);
+  if (/^[0-9a-f-]{36}$/i.test(String(id))) {
+    try {
+      const { data: fr } = await sb.from('auctions').select('bid_count').eq('id', id).single();
+      if (fr) bidCount = fr.bid_count || 0;
+    } catch (e) { console.error('saveAuctionEdits bid_count:', e); }
+  }
+  const hasBids = bidCount > 0;
   if (!hasBids) {
     const startEl = document.getElementById('ae-start');
     const resEl = document.getElementById('ae-reserve');
