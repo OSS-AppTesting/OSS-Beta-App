@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32</title>
+<title>OneStopSwap v32-1</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32';
+window._OSS_BUILD = 'v32-1';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -4363,14 +4363,23 @@ async function postListing() {
   const condition = document.getElementById('f-condition').value || 'Good';
   if (!title) { showToast('Please add a title first!'); return; }
 
-  // Edit mode → save changes to existing listing instead of creating new
-  if (editingListingId) {
+  // Edit/relist a FIXED listing → save in place. But if the seller switched the toggle to
+  // auction during a relist/edit, fall through to the auction path below (v32-1).
+  if (editingListingId && sellMode !== 'auction') {
     await saveListingEdits(title, desc, category, condition);
     return;
   }
 
   // Route to auction or fixed price
   if (sellMode === 'auction') {
+    // v32-1: covers brand-new auctions AND relisting/converting a fixed listing → auction.
+    const convertId = editingListingId; // set = converting an existing (removed or active) fixed listing
+    editingListingId = null; window._relistMode = false;
+    if (convertId && currentUser) {
+      // retire the fixed row so it isn't duplicated or left live alongside the new auction
+      sb.from('listings').update({ is_active: false }).eq('id', convertId).eq('seller_id', currentUser.id)
+        .then(({ error }) => { if (error) console.error('convert-to-auction retire listing:', error); });
+    }
     await postAuction(title, desc, category, condition);
     return;
   }
@@ -4493,7 +4502,7 @@ async function postAuction(title, desc, category, condition) {
       seller_id: currentUser.id,
       seller_username: sellerName,
       title, description: desc, category, condition,
-      image_url: imgUrl,
+      image_url: imgUrl || aiPreviewDataUrl || '', // v32-1: carry existing image when relisting a listing → auction
       start_price: startBid,
       current_bid: startBid,
       reserve_price: reserve || null,
