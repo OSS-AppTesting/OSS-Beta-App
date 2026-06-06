@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-5</title>
+<title>OneStopSwap v32-6</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-5';
+window._OSS_BUILD = 'v32-6';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -810,7 +810,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
           <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Category</div>
-          <select id="f-category" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
+          <select id="f-category" onchange="updateSizeOptions()" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
             <option value="">Select...</option>
             <option>Sneakers</option><option>Streetwear</option><option>Vintage</option><option>Kids & Baby</option>
           </select>
@@ -822,6 +822,12 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
             <option>New with tags</option><option>Like New</option><option>Good</option><option>Fair</option>
           </select>
         </div>
+      </div>
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Size</div>
+        <select id="f-size" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;">
+          <option>N/A / One size</option>
+        </select>
       </div>
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Description</div>
@@ -1848,6 +1854,7 @@ function pCard(p, i) {
     </div>
     <div class="cinfo">
       <div class="ctitle">${p.title}</div>
+      ${p.size && p.size !== 'N/A / One size' ? `<div style="color:rgba(255,255,255,.45);font-size:11px;font-weight:600;margin-top:1px;">Size ${p.size}</div>` : ''}
       <div class="cmeta"><span class="cseller">@${p.seller}</span><div class="cstats">${p._isAuction ? '<span class="cstat">🔨 bid</span>' : `<span class="cstat">👁 ${p.views}</span><span class="cstat">♥ ${p.likes}</span>`}</div></div>
     </div>
   </div>`;
@@ -2131,6 +2138,7 @@ function showDetail(id) {
         <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:12px;display:flex;gap:20px;">
           <div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Ships from</div><div style="color:#fff;font-weight:600;font-size:13px;">${p.location}</div></div>
           <div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Category</div><div style="color:#fff;font-weight:600;font-size:13px;">${p.category}</div></div>
+          ${p.size && p.size !== 'N/A / One size' ? `<div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Size</div><div style="color:#fff;font-weight:600;font-size:13px;">${p.size}</div></div>` : ''}
           <div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:2px;">Payment</div><div style="color:#fff;font-weight:600;font-size:13px;">${isUSD ? '💵 USD' : '💰 SB'}</div></div>
         </div>
       </div>
@@ -2203,6 +2211,7 @@ function renderAuctionList() {
         <div style="flex:1;padding:12px 14px;min-width:0;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
             <span style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:2px 8px;color:#FF3B30;font-size:10px;font-weight:800;">${a.category}</span>
+            ${a.size && a.size !== 'N/A / One size' ? `<span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:2px 8px;color:rgba(255,255,255,.6);font-size:10px;font-weight:700;">${a.size}</span>` : ''}
             <span style="color:rgba(255,255,255,.3);font-size:10px;">👁 ${a.watchers}</span>
           </div>
           <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.title}</div>
@@ -2329,6 +2338,7 @@ async function openAuction(id) {
         <div style="display:flex;gap:8px;margin-bottom:10px;">
           <span style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.2);border-radius:8px;padding:3px 10px;color:#FF3B30;font-size:12px;font-weight:700;">${a.category}</span>
           <span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:3px 10px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;">${a.condition}</span>
+          ${a.size && a.size !== 'N/A / One size' ? `<span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:3px 10px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;">Size ${a.size}</span>` : ''}
         </div>
         <div style="color:rgba(255,255,255,.55);font-size:14px;line-height:1.6;">${a.description}</div>
       </div>
@@ -3225,7 +3235,7 @@ function setupRealtimeSubscriptions(myUsername) {
         seller: l.seller_username || 'user', location: l.location || '',
         img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
         likes: 0, views: 0, hot: false,
-        isNew: true, description: l.description || ''
+        isNew: true, description: l.description || '', size: l.size || ''
       };
       // Only add if not already in list
       if (!PRODS.find(x => x.id === l.id)) {
@@ -3278,7 +3288,7 @@ async function loadListings() {
     id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
     seller: l.seller_username || 'user', sellerId: l.seller_id, location: l.location || '',
     img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
-    condition: l.condition || '', sold: !!l.sold,
+    condition: l.condition || '', sold: !!l.sold, size: l.size || '',
     likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || '',
     isNew: l.created_at ? (now - new Date(l.created_at).getTime()) < 86400000 : false
   }));
@@ -3581,7 +3591,7 @@ async function saveListingToDb(listing) {
     seller_id: currentUser.id, seller_username: currentProfile?.username || '',
     title: listing.title, description: listing.description,
     price: listing.price, currency: listing.currency, category: listing.category,
-    location: listing.location, image_url: listing.img, is_active: true, sold: false
+    location: listing.location, image_url: listing.img, size: listing.size || null, is_active: true, sold: false
   }).select().single();
   if (error) { console.error('Listing save error:', error); return null; }
   return data;
@@ -4408,6 +4418,7 @@ async function postListing() {
   const price = parseInt(document.getElementById('f-price').value) || 25;
   const location = document.getElementById('f-location').value.trim() || 'Nashville, TN';
   const currency = selectedCurrency || 'SB';
+  const size = (document.getElementById('f-size') || {}).value || '';
   const sellerName = currentProfile?.username || 'dinobravo';
 
   // Build new product object
@@ -4416,7 +4427,7 @@ async function postListing() {
     id: newId, title, price, currency,
     seller: sellerName, location,
     img: aiPreviewDataUrl || I['gold_shirt'],
-    category, likes: 0, views: 1,
+    category, size, likes: 0, views: 1,
     hot: false, isNew: true, sold: false, description: desc
   };
 
@@ -4484,6 +4495,7 @@ async function postAuction(title, desc, category, condition) {
   const startBid = parseInt(document.getElementById('f-start-bid').value) || 10;
   const reserve = parseInt(document.getElementById('f-reserve').value) || 0;
   const location = document.getElementById('f-auction-location').value.trim() || currentProfile?.location || 'USA';
+  const size = (document.getElementById('f-size') || {}).value || '';
   const sellerName = currentProfile?.username || 'user';
 
   // Calculate end time from duration
@@ -4508,6 +4520,7 @@ async function postAuction(title, desc, category, condition) {
     startPrice: startBid,
     currentBid: startBid,
     reservePrice: reserve,
+    size,
     bidCount: 0,
     watchers: 0,
     endTime: endsAt.getTime(),
@@ -4528,6 +4541,7 @@ async function postAuction(title, desc, category, condition) {
       current_bid: startBid,
       reserve_price: reserve || null,
       currency: auctionCurrency,
+      size: size || null,
       ends_at: endsAt.toISOString(),
       status: 'live'
     }).select().single();
@@ -4598,6 +4612,7 @@ async function loadAuctionsFromDb() {
       sellerInitials: (a.seller_username||'').substring(0,2).toUpperCase(),
       sellerColor: '#FF3B30',
       category: a.category, condition: a.condition,
+      size: a.size || '',
       startPrice: a.start_price,
       currentBid: a.current_bid || a.start_price,
       reservePrice: a.reserve_price,
@@ -7289,10 +7304,32 @@ async function deleteAuction(id, title, btn) {
 // ── OWNER LISTING CONTROLS (edit / sold / relist / remove) ────────────────────
 let editingListingId = null;
 
+// Item 3 (v32-6): category-aware size options. "N/A / One size" is always offered first
+// (covers items that don't need a size), then the category-specific set.
+const SIZE_OPTIONS = {
+  'Sneakers': ['US 4','US 4.5','US 5','US 5.5','US 6','US 6.5','US 7','US 7.5','US 8','US 8.5','US 9','US 9.5','US 10','US 10.5','US 11','US 11.5','US 12','US 12.5','US 13','US 14','US 15'],
+  'Streetwear': ['XS','S','M','L','XL','XXL','XXXL'],
+  'Kids & Baby': ['Newborn','0-3M','3-6M','6-12M','12-18M','18-24M','2T','3T','4T','5','6','7','8','10','12','14'],
+  'Vintage': ['XS','S','M','L','XL','XXL']
+};
+function updateSizeOptions() {
+  const catEl = document.getElementById('f-category');
+  const sizeEl = document.getElementById('f-size');
+  if (!sizeEl) return;
+  const cat = catEl ? catEl.value : '';
+  const prev = sizeEl.value;
+  let html = '<option>N/A / One size</option>';
+  (SIZE_OPTIONS[cat] || []).forEach(s => { html += '<option>' + s + '</option>'; });
+  sizeEl.innerHTML = html;
+  // keep the prior selection if it's still a valid option for the new category
+  if (prev && Array.from(sizeEl.options).some(o => o.value === prev)) sizeEl.value = prev;
+}
+
 function resetListingForm() {
   ['f-title', 'f-desc', 'f-price', 'f-location'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
   const cat = document.getElementById('f-category'); if (cat) cat.value = '';
   const cond = document.getElementById('f-condition'); if (cond) cond.value = '';
+  if (typeof updateSizeOptions === 'function') updateSizeOptions(); // Item 3 (v32-6): reset to N/A
   aiPhotoBase64 = null; aiPhotoMime = null; aiPreviewDataUrl = null; peSourceDataUrl = null;
   const inp = document.getElementById('ai-photo-input'); if (inp) inp.value = '';
   const pv = document.getElementById('ai-photo-preview'); if (pv) pv.style.display = 'none';
@@ -7334,6 +7371,7 @@ function openEditListing(id) {
   const cat = document.getElementById('f-category'); if (cat) cat.value = p.category || '';
   const cond = document.getElementById('f-condition'); if (cond) cond.value = p.condition || '';
   const loc = document.getElementById('f-location'); if (loc) loc.value = p.location || '';
+  updateSizeOptions(); const szE = document.getElementById('f-size'); if (szE) szE.value = p.size || 'N/A / One size'; // Item 3 (v32-6)
   selectedCurrency = p.currency || 'SB';
   if (typeof selectCurrency === 'function') selectCurrency(selectedCurrency);
   // Existing photo shows as preview; only re-uploads if the user picks a new one
@@ -7365,6 +7403,7 @@ async function relistEditListing(id) {
   const cat = document.getElementById('f-category'); if (cat) cat.value = p.category || '';
   const cond = document.getElementById('f-condition'); if (cond) cond.value = p.condition || '';
   const loc = document.getElementById('f-location'); if (loc) loc.value = p.location || '';
+  updateSizeOptions(); const szE = document.getElementById('f-size'); if (szE) szE.value = p.size || 'N/A / One size'; // Item 3 (v32-6)
   selectedCurrency = p.currency || 'SB';
   if (typeof selectCurrency === 'function') selectCurrency(selectedCurrency);
   aiPreviewDataUrl = p.image_url || ''; aiPhotoBase64 = null; aiPhotoMime = null; peSourceDataUrl = null;
@@ -7392,6 +7431,7 @@ async function relistEditAuction(id) {
   document.getElementById('f-desc').value = a.description || '';
   const cat = document.getElementById('f-category'); if (cat) cat.value = a.category || '';
   const cond = document.getElementById('f-condition'); if (cond) cond.value = a.condition || '';
+  updateSizeOptions(); const szE = document.getElementById('f-size'); if (szE) szE.value = a.size || 'N/A / One size'; // Item 3 (v32-6)
   const sbid = document.getElementById('f-start-bid'); if (sbid) sbid.value = (a.start_price ?? '');
   const rv = document.getElementById('f-reserve'); if (rv) rv.value = (a.reserve_price ?? 0);
   const al = document.getElementById('f-auction-location'); if (al) al.value = a.location || (currentProfile?.location || '');
@@ -7423,6 +7463,8 @@ async function saveListingEdits(title, desc, category, condition) {
     newImgUrl = await uploadToCloudinary(aiPhotoBase64, aiPhotoMime, bgRemovalEnabled);
   }
   const update = { title, description: desc, price, currency, category, condition, location };
+  const editSize = (document.getElementById('f-size') || {}).value || '';
+  update.size = editSize || null;
   if (newImgUrl) update.image_url = newImgUrl;
   if (window._relistMode) { update.is_active = true; update.sold = false; } // v31-39: relisting republishes the item live
 
@@ -7431,7 +7473,7 @@ async function saveListingEdits(title, desc, category, condition) {
   if (error) { showToast('❌ ' + error.message); if (btn) btn.textContent = window._relistMode ? '🚀 Relist' : '💾 Save Changes'; return; }
 
   const lp = PRODS.find(x => String(x.id) === String(id));
-  if (lp) { lp.title = title; lp.description = desc; lp.price = price; lp.currency = currency; lp.category = category; lp.condition = condition; lp.location = location; if (newImgUrl) lp.img = newImgUrl; }
+  if (lp) { lp.title = title; lp.description = desc; lp.price = price; lp.currency = currency; lp.category = category; lp.condition = condition; lp.location = location; lp.size = editSize; if (newImgUrl) lp.img = newImgUrl; }
   if (window._relistMode) await loadListings(); // pull the now-active listing back into PRODS/feed
   renderAll();
   showToast(window._relistMode ? '🚀 Relisted — live in the shop again!' : '✅ Listing updated');
