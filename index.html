@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-6</title>
+<title>OneStopSwap v33-7</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-6';
+window._OSS_BUILD = 'v33-7';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -1991,6 +1991,7 @@ function renderChips() {
 function removeChip(dim, val) {
   if (dim === 'query') { clearSearch(); return; }
   const arr = FILTERS[dim]; const i = arr.indexOf(val); if (i > -1) arr.splice(i, 1);
+  if (SMART_APPLIED[dim]) { const j = SMART_APPLIED[dim].indexOf(val); if (j > -1) SMART_APPLIED[dim].splice(j, 1); } // v33-7
   applyFilters(); renderFilterPanel();
 }
 // Sync the Filters button badge(s) + active-chip row(s) on every surface (Shop + Live).
@@ -2909,16 +2910,61 @@ function fuzzyMatch(hay, needle) {
   return mismatches <= 1;
 }
 
-function handleSearch(val) {
-  FILTERS.query = val.trim().toLowerCase();
-  const sc = document.getElementById('search-clear'); if (sc) sc.style.display = FILTERS.query ? 'block' : 'none';
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(applyFilters, 150);
+// ── SMART SEARCH (v33-7): typed intent words flip the matching facets; the rest stays free text.
+// FILTERS stays the single source of truth — we write into the same arrays the panel uses, then
+// the checkboxes + chips light up. SMART_APPLIED tracks only what the parser added, so a manually
+// ticked facet is never clobbered, and erasing the word removes the facet it created.
+const SMART_TOKENS = [
+  ["\\bwomen'?s?\\b",   'gender',   "Women's"],
+  ["\\bmen'?s?\\b",     'gender',   "Men's"],
+  ["\\bauctions?\\b",   'type',     'live'],
+  ["\\blive\\b",        'type',     'live'],
+  ["\\bbuy ?now\\b",    'type',     'fixed'],
+  ["\\bfixed\\b",       'type',     'fixed'],
+  ["\\bswap ?bucks\\b", 'payment',  'SB'],
+  ["\\bsb\\b",          'payment',  'SB', 'sb'],   // guarded: skipped when "nike"/"dunk" present (Nike SB)
+  ["\\bcash\\b",        'payment',  'USD'],
+  ["\\busd\\b",         'payment',  'USD'],
+  ["\\bdollars?\\b",    'payment',  'USD'],
+  ["\\bsneakers?\\b",   'category', 'Sneakers'],
+  ["\\bkicks\\b",       'category', 'Sneakers'],
+  ["\\bstreet ?wear\\b",'category', 'Streetwear'],
+  ["\\bvintage\\b",     'category', 'Vintage'],
+  ["\\bkids\\b",        'category', 'Kids & Baby'],   // "baby" alone omitted on purpose (baby tee / Baby Phat)
+];
+let SMART_APPLIED = { gender: [], type: [], category: [], payment: [] };
+function clearSmartApplied() {
+  for (const dim in SMART_APPLIED) {
+    SMART_APPLIED[dim].forEach(v => { const a = FILTERS[dim], i = a.indexOf(v); if (i > -1) a.splice(i, 1); });
+    SMART_APPLIED[dim] = [];
+  }
+}
+function smartParse(raw) {
+  clearSmartApplied(); // undo the previous keystroke's auto-facets (manual ticks untouched)
+  let text = ' ' + raw.toLowerCase().replace(/[^a-z0-9'&\s]/g, ' ') + ' ';
+  const nikeCtx = /\bnike\b/.test(text) || /\bdunk\b/.test(text);
+  for (const [pattern, dim, val, opt] of SMART_TOKENS) {
+    if (opt === 'sb' && nikeCtx) continue;
+    const next = text.replace(new RegExp(pattern, 'g'), ' ');
+    if (next !== text) {
+      text = next;
+      if (!FILTERS[dim].includes(val)) { FILTERS[dim].push(val); SMART_APPLIED[dim].push(val); }
+    }
+  }
+  return text.replace(/\s+/g, ' ').trim(); // residual free text
 }
 
-// v33-1: search now flows through the unified filter pipeline (FILTERS.query → applyFilters).
+function handleSearch(val) {
+  FILTERS.query = smartParse(val); // lifts intent words into facets, returns residual text
+  const sc = document.getElementById('search-clear'); if (sc) sc.style.display = val.trim() ? 'block' : 'none';
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applyFilters, 150); // applyFilters → renderShop + updateFilterUI (chips/checkboxes light up)
+}
+
+// v33-1: search flows through the unified filter pipeline. v33-7: + smart-search facet parsing.
 
 function clearSearch() {
+  clearSmartApplied();
   FILTERS.query = '';
   const si = document.getElementById('search-input'); if (si) si.value = '';
   const sc = document.getElementById('search-clear'); if (sc) sc.style.display = 'none';
@@ -3044,6 +3090,7 @@ function selectCurrency(type) {
 function clearFilter() {
   // Reset every browse dimension + the controls, then re-render.
   FILTERS.type = []; FILTERS.gender = []; FILTERS.category = []; FILTERS.payment = []; FILTERS.query = '';
+  SMART_APPLIED = { gender: [], type: [], category: [], payment: [] }; // v33-7
   const si = document.getElementById('search-input'); if (si) si.value = '';
   const sc = document.getElementById('search-clear'); if (sc) sc.style.display = 'none';
   renderAll();
