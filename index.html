@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-27</title>
+<title>OneStopSwap v31-30</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-27';
+window._OSS_BUILD = 'v31-30';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2008,7 +2008,7 @@ async function confirmSBCheckout() {
       SB -= offer.offerAmount;
       updateAllSBDisplays();
       addTransaction('spent', '🏷️', 'Offer: ' + offer.title, '@' + offer.seller, -offer.offerAmount);
-      offer.status = 'Completed';
+      offer.status = 'Paid'; // v31-29: ship-gate — buyer payment = Paid; seller ships → Completed
       window._offerCheckoutId = null;
       document.getElementById('modal-sb-checkout').style.display = 'none';
       if (currentUser) {
@@ -2017,7 +2017,9 @@ async function confirmSBCheckout() {
         // Was fire-and-forget, so an accepted offer didn't appear until a full reload.
         const dbOrder = await saveOrderToDb(offer.title, offer.offerAmount, 'SB', offer.seller, offer.seller, null, offer.img);
         if (dbOrder) ORDERS.unshift({ id: dbOrder.id, item: offer.title, img: offer.img, price: offer.offerAmount, currency: 'SB', seller: offer.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') });
-        sb.from('offers').update({ status: 'Completed' }).eq('id', offerId).then(() => {});
+        // v31-29: ship-gate — persist Paid (seller must mark shipped to reach Completed).
+        if (offer.dbId) sb.from('offers').update({ status: 'Paid' }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('offer paid persist:', error); });
+        notifyUsername(offer.seller, { type:'order', icon:'💰', title:'Paid — ship it!', body:'@' + (currentProfile?.username || 'A buyer') + ' paid for ' + offer.title + '. Mark it shipped when it\'s on the way.', actionLabel:'View', actionTarget:'my-offers:received' });
       }
       showToast('⚡ Purchased at offer price! ' + offer.offerAmount + ' SB spent.');
       go('home');
@@ -2881,7 +2883,7 @@ async function confirmCheckout() {
   if (offerId) {
     const offer = OFFERS.find(o => o.id === offerId);
     if (offer) {
-      offer.status = 'Completed';
+      offer.status = 'Paid'; // v31-29: ship-gate
       const fee = Math.round(offer.offerAmount * 0.06 * 100) / 100;
       addTransaction('spent', '🏷️', 'Offer: ' + offer.title, '@' + offer.seller, -offer.offerAmount);
       window._offerCheckoutId = null;
@@ -2893,13 +2895,14 @@ async function confirmCheckout() {
         const dbOrder = await saveOrderToDb(offer.title, offer.offerAmount, offer.currency || 'USD', offer.seller, offer.seller, null, offer.img);
         if (dbOrder) ORDERS.unshift({ id: dbOrder.id, item: offer.title, img: offer.img, price: offer.offerAmount, currency: offer.currency || 'USD', seller: offer.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') });
         // Update offer status in DB
-        sb.from('offers').update({ status: 'Completed' }).eq('id', offerId).then(() => {});
-        // v31: notify the seller of the sale (best-effort, never blocks the order)
+        // v31-29: ship-gate — persist Paid; seller marks shipped → Completed.
+        if (offer.dbId) sb.from('offers').update({ status: 'Paid' }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('offer paid persist:', error); });
+        // notify the seller they've been paid and need to ship
         notifyUsername(offer.seller, {
-          type: 'order', icon: '🎉',
-          title: 'You made a sale!',
-          body: '@' + (currentProfile?.username || 'A buyer') + ' bought ' + offer.title + ' for ' + (offer.currency === 'USD' ? '$' + offer.offerAmount : offer.offerAmount + ' SB'),
-          actionLabel: 'View', actionTarget: 'my-listings'
+          type: 'order', icon: '💰',
+          title: 'Paid — ship it!',
+          body: '@' + (currentProfile?.username || 'A buyer') + ' paid for ' + offer.title + ' (' + (offer.currency === 'USD' ? '$' + offer.offerAmount : offer.offerAmount + ' SB') + '). Mark it shipped when it\'s on the way.',
+          actionLabel: 'View', actionTarget: 'my-offers:received'
         });
       }
       showToast('🎉 Order placed at offer price of $' + offer.offerAmount + '!');
@@ -6303,6 +6306,7 @@ function renderOffers(filter) {
 
   const list = filter === 'all' ? OFFERS.filter(o => o.status !== 'Expired') :
                filter === 'Accepted' ? OFFERS.filter(o => o.status === 'Accepted' || o.status === 'Completing') :
+               filter === 'Completed' ? OFFERS.filter(o => o.status === 'Completed' || o.status === 'Paid') :
                filter === 'Expired' ? OFFERS.filter(o => o.status === 'Expired' || (o.expiresAt && o.expiresAt < Date.now() && o.status === 'Pending')) :
                OFFERS.filter(o => o.status === filter);
   list.sort((a, b) => (b.createdAtTs || 0) - (a.createdAtTs || 0)); // v31-26: newest first
@@ -6312,7 +6316,7 @@ function renderOffers(filter) {
   // shows under that status tab. (The Inbox still lists all received offers.) Generalizes
   // the v31-26 Countered-only handling. 'all' is intentionally excluded (that's the Inbox's job).
   const recvForTab = ['Pending', 'Countered', 'Accepted', 'Declined', 'Completed'].includes(filter)
-    ? RECEIVED_OFFERS.filter(o => o.status === filter)
+    ? RECEIVED_OFFERS.filter(o => o.status === filter || (filter === 'Accepted' && o.status === 'Paid'))
         .slice().sort((a, b) => (b.createdAtTs || 0) - (a.createdAtTs || 0))
     : [];
 
@@ -6333,10 +6337,32 @@ function renderOffers(filter) {
     'Accepted':  {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'✅'},
     'Declined':  {bg:'rgba(255,59,48,.12)',  border:'rgba(255,59,48,.3)',   color:'#FF3B30', icon:'❌'},
     'Completed': {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'🎉'},
+    'Paid':      {bg:'rgba(79,195,247,.12)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'💰'},
   };
 
-  el.innerHTML = list.map(o => {
-    const sc = STATUS_CONFIG[o.status] || STATUS_CONFIG['Pending'];
+  // v31-30: merge the buyer's sent offers (list) and the seller's received offers (recvForTab)
+  // into ONE list sorted newest-first, so the newest item is at the top of every box regardless
+  // of side. Previously received offers were appended as a block BELOW all sent ones, so a
+  // seller's countered/paid items never reached the top.
+  const combined = [
+    ...list.map(o => ({ o, recv: false })),
+    ...recvForTab.map(o => ({ o, recv: true }))
+  ].sort((a, b) => (b.o.createdAtTs || 0) - (a.o.createdAtTs || 0));
+  el.innerHTML = combined.map(x => x.recv ? receivedOfferCard(x.o) : sentOfferCard(x.o)).join('');
+}
+
+// Build one sent-offer card (the buyer's view of an offer they made). Extracted from
+// renderOffers (v31-30) so sent and received offers can be merged + sorted in a single list.
+function sentOfferCard(o) {
+  const STATUS_CONFIG = {
+    'Pending':   {bg:'rgba(255,179,71,.12)', border:'rgba(255,179,71,.3)',  color:'#FFB347', icon:'⏳'},
+    'Countered': {bg:'rgba(79,195,247,.12)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'🔄'},
+    'Accepted':  {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'✅'},
+    'Declined':  {bg:'rgba(255,59,48,.12)',  border:'rgba(255,59,48,.3)',   color:'#FF3B30', icon:'❌'},
+    'Completed': {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'🎉'},
+    'Paid':      {bg:'rgba(79,195,247,.12)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'💰'},
+  };
+  const sc = STATUS_CONFIG[o.status] || STATUS_CONFIG['Pending'];
     const isUSD = o.currency === 'USD';
     const fmt = v => isUSD ? '$' + v : v + ' SB';
     const expiry = formatExpiry(o.expiresAt);
@@ -6370,14 +6396,13 @@ function renderOffers(filter) {
             <button onclick="acceptAndCheckout('${o.id}')" style="background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Complete Purchase →</button>` :
           o.status === 'Pending' ? `
             <span style="color:rgba(255,255,255,.3);font-size:12px;">Waiting for seller...</span>` :
-          o.status === 'Completed' ? `
+          (o.status === 'Completed' || o.status === 'Paid') ? `
             <span style="color:#00C864;font-size:12px;font-weight:600;">Purchase completed ✓</span>` :
           o.status === 'Declined' ? `
             <button onclick="reOffer('${o.id}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer Again</button>` :
           `<span style="color:rgba(255,255,255,.3);font-size:12px;">No action needed</span>`}
         </div>
       </div>`;
-  }).join('') + recvForTab.map(receivedOfferCard).join('');
 }
 
 function renderReceivedOffers() {
@@ -6454,11 +6479,42 @@ function receivedOfferCard(o) {
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
           <span style="background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:3px 10px;color:#4FC3F7;font-size:11px;font-weight:700;">🔄 Counter Sent: ${o.currency==='USD'?'$'+o.sellerCounter:o.sellerCounter+' SB'}</span>
           <span style="color:rgba(255,255,255,.3);font-size:12px;">Waiting for buyer...</span>
+        </div>` :
+        o.status === 'Paid' ? `
+        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;">
+          <div style="background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:20px;">💰</span>
+            <div>
+              <div style="color:#4FC3F7;font-weight:700;font-size:13px;">Paid by @${o.buyer} — ready to ship!</div>
+              <div style="color:rgba(255,255,255,.4);font-size:11px;">Mark it shipped once it's on the way.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="openChat('${o.buyer}','${o.buyerColor}','#00C864','${o.buyerInitials}')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Message Buyer</button>
+            <button onclick="markShipped('${o.id}')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:10px;padding:8px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;">📦 Mark Shipped</button>
+          </div>
+        </div>` :
+        o.status === 'Completed' ? `
+        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:8px;padding:3px 10px;color:#00C864;font-size:11px;font-weight:700;">📦 Shipped — complete</span>
+          <span style="color:rgba(255,255,255,.3);font-size:12px;">Order complete ✓</span>
         </div>` : `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
           <span style="background:${sc.bg};border:1px solid ${sc.border};border-radius:8px;padding:3px 10px;color:${sc.color};font-size:11px;font-weight:700;">${sc.icon} ${o.status}</span>
         </div>`}
       </div>`;
+}
+
+// v31-29: seller marks a Paid offer shipped → Completed (closes the ship-gate loop).
+function markShipped(offerId) {
+  const o = RECEIVED_OFFERS.find(x => x.id === offerId);
+  if (!o) return;
+  o.status = 'Completed';
+  if (o.dbId) sb.from('offers').update({ status: 'Completed' }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('mark shipped persist:', error); });
+  showToast('📦 Marked shipped — order complete!');
+  const _shipNotif = { type:'order', icon:'📦', title:'Your order shipped!', body:'@' + (currentProfile?.username || 'The seller') + ' marked "' + o.title + '" as shipped.', actionLabel:'Track', actionTarget:'my-orders' };
+  if (o.buyerId) notifyUser(o.buyerId, _shipNotif); else notifyUsername(o.buyer, _shipNotif);
+  renderReceivedOffers();
 }
 
 function respondToOffer(offerId, action) {
