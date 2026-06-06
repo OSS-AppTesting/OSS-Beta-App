@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-10</title>
+<title>OneStopSwap v32-12</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-10';
+window._OSS_BUILD = 'v32-12';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2037,7 +2037,7 @@ async function confirmSBCheckout() {
         // v31-12: capture the saved order and add it to local ORDERS so it shows on the
         // purchased side (My Orders) immediately — mirrors the direct-buy branch below.
         // Was fire-and-forget, so an accepted offer didn't appear until a full reload.
-        const dbOrder = await saveOrderToDb(offer.title, offer.offerAmount, 'SB', offer.seller, offer.seller, null, offer.img);
+        const dbOrder = await saveOrderToDb(offer.title, offer.offerAmount, 'SB', offer.seller, offer.seller, null, offer.img, offer.productId);
         if (dbOrder) ORDERS.unshift({ id: dbOrder.id, item: offer.title, img: offer.img, price: offer.offerAmount, currency: 'SB', seller: offer.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') });
         // v31-29: ship-gate — persist Paid (seller must mark shipped to reach Completed).
         if (offer.dbId) sb.from('offers').update({ status: 'Paid' }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('offer paid persist:', error); });
@@ -2062,12 +2062,18 @@ async function confirmSBCheckout() {
   document.getElementById('modal-sb-checkout').style.display = 'none';
   // Save order to DB
   if (currentUser) {
-    const dbOrder = await saveOrderToDb(p.title, p.price, 'SB', p.location || p.seller, p.seller, p.sellerId || null, p.img);
+    const dbOrder = await saveOrderToDb(p.title, p.price, 'SB', p.location || p.seller, p.seller, p.sellerId || null, p.img, p.id);
     if (dbOrder) {
       const localOrder = { id: dbOrder.id, item: p.title, img: p.img, price: p.price, currency: 'SB', seller: p.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') };
       ORDERS.unshift(localOrder);
     }
+    // v32-11: mark the listing sold past the seller-only RLS wall (direct full-price buy)
+    if (p.id) sb.rpc('buy_listing', { p_listing_id: p.id }).then(({ error }) => { if (error) console.error('buy_listing:', error); });
+    const _saleNotif = { type:'order', icon:'🎉', title:'You made a sale!', body:'@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + ' for ' + p.price + ' SB. Prep it for shipment!', actionLabel:'View', actionTarget:'my-listings:sold' };
+    if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
   }
+  // v32-11: drop the now-sold item from the buyer's local feed so it can't be re-bought
+  { const i = PRODS.findIndex(x => String(x.id) === String(p.id)); if (i > -1) PRODS.splice(i, 1); renderAll(); }
   showToast('⚡ Swapped! ' + p.price + ' SB spent (6% fee: ' + fee + ' SB). Check My Orders.');
   go('home');
 }
@@ -2429,7 +2435,7 @@ async function buyNowAuction(auctionId) {
   if (!isUSD) { SB -= price; updateAllSBDisplays(); }
   addTransaction('spent', '⚡', 'Bought Now: ' + a.title, '@' + a.seller + (isUSD ? ' · USD' : ''), -price);
   if (currentUser) {
-    const dbOrder = await saveOrderToDb(a.title, price, isUSD ? 'USD' : 'SB', a.location || a.seller, a.seller, a.sellerId || null, a.img);
+    const dbOrder = await saveOrderToDb(a.title, price, isUSD ? 'USD' : 'SB', a.location || a.seller, a.seller, a.sellerId || null, a.img, a.id);
     if (dbOrder) ORDERS.unshift({ id: dbOrder.id, item: a.title, img: a.img, price, currency: isUSD ? 'USD' : 'SB', seller: a.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') });
     // BIN (v32-9): notify the seller their item sold outright (best-effort, never blocks)
     const _binSaleNotif = {
@@ -2990,7 +2996,7 @@ async function confirmCheckout() {
       if (currentUser) {
         // v31-12: capture the saved order and add it to local ORDERS so the purchase
         // shows on the purchased side (My Orders) immediately — mirrors direct-buy.
-        const dbOrder = await saveOrderToDb(offer.title, offer.offerAmount, offer.currency || 'USD', offer.seller, offer.seller, null, offer.img);
+        const dbOrder = await saveOrderToDb(offer.title, offer.offerAmount, offer.currency || 'USD', offer.seller, offer.seller, null, offer.img, offer.productId);
         if (dbOrder) ORDERS.unshift({ id: dbOrder.id, item: offer.title, img: offer.img, price: offer.offerAmount, currency: offer.currency || 'USD', seller: offer.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') });
         // Update offer status in DB
         // v31-29: ship-gate — persist Paid; seller marks shipped → Completed.
@@ -3016,20 +3022,24 @@ async function confirmCheckout() {
   addTransaction('spent', '💳', 'Purchased: ' + p.title, '@' + p.seller + ' · USD', -p.price);
   // Save order to DB
   if (currentUser) {
-    const dbOrder = await saveOrderToDb(p.title, p.price, 'USD', p.location || p.seller, p.seller, p.sellerId || null, p.img);
+    const dbOrder = await saveOrderToDb(p.title, p.price, 'USD', p.location || p.seller, p.seller, p.sellerId || null, p.img, p.id);
     if (dbOrder) {
       const localOrder = { id: dbOrder.id, item: p.title, img: p.img, price: p.price, currency: 'USD', seller: p.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') };
       ORDERS.unshift(localOrder);
     }
+    // v32-11: mark the listing sold past the seller-only RLS wall (direct full-price buy)
+    if (p.id) sb.rpc('buy_listing', { p_listing_id: p.id }).then(({ error }) => { if (error) console.error('buy_listing:', error); });
     // v31: notify the seller of the sale (best-effort, never blocks the order)
     const _saleNotif = {
       type: 'order', icon: '🎉',
       title: 'You made a sale!',
-      body: '@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + ' for $' + p.price,
-      actionLabel: 'View', actionTarget: 'my-listings'
+      body: '@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + ' for $' + p.price + '. Prep it for shipment!',
+      actionLabel: 'View', actionTarget: 'my-listings:sold'
     };
     if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
   }
+  // v32-11: drop the now-sold item from the buyer's local feed so it can't be re-bought
+  { const i = PRODS.findIndex(x => String(x.id) === String(p.id)); if (i > -1) PRODS.splice(i, 1); renderAll(); }
   showToast('🎉 Order placed! 6% platform fee: $' + fee + '. Check My Orders for tracking.');
   go('home');
 }
@@ -3664,7 +3674,7 @@ async function saveListingToDb(listing) {
   return data;
 }
 
-async function saveOrderToDb(title, price, currency, shipFrom, sellerUsername, sellerId, imageUrl) {
+async function saveOrderToDb(title, price, currency, shipFrom, sellerUsername, sellerId, imageUrl, listingId) {
   if (!currentUser) return null;
   const fee = Math.round(price * 0.06);
   // v31-13: resolve the seller's uuid if not passed (offer path has only the username).
@@ -3672,15 +3682,86 @@ async function saveOrderToDb(title, price, currency, shipFrom, sellerUsername, s
   // the order. seller_username + image_url make the buyer's My Orders show name + photo.
   let sid = sellerId || null;
   if (!sid && sellerUsername) { try { sid = await resolveUserId(sellerUsername); } catch (e) { sid = null; } }
-  const { data, error } = await sb.from('orders').insert({
+  const row = {
     buyer_id: currentUser.id, title, price, currency,
     status: 'Processing', ship_from: shipFrom,
     ship_to: currentProfile?.location || 'Your address',
     platform_fee: fee,
     seller_id: sid, seller_username: sellerUsername || null, image_url: imageUrl || null
-  }).select().single();
+  };
+  // v32-12: link the order to its item so the seller can manage fulfillment from the Sold tab.
+  if (listingId != null && /^[0-9a-f-]{36}$/i.test(String(listingId))) row.listing_id = String(listingId);
+  const { data, error } = await sb.from('orders').insert(row).select().single();
   if (error) { console.error('Order save error:', error); return null; }
   return data;
+}
+
+// v32-12: seller fulfillment from the Sold tab. Find the sale's order, create a shipping
+// label (→ Shipped + tracking) or mark delivered, notifying the buyer at each step.
+async function openSaleManage(itemId, title) {
+  if (!currentUser) return;
+  let order = null;
+  try {
+    const { data } = await sb.from('orders').select('*')
+      .eq('listing_id', String(itemId)).eq('seller_id', currentUser.id)
+      .order('created_at', { ascending: false }).limit(1);
+    if (data && data.length) order = data[0];
+  } catch (e) { console.error('openSaleManage lookup:', e); }
+  renderSaleManage(order, title);
+}
+
+function renderSaleManage(order, title) {
+  const ex = document.getElementById('sale-manage-overlay'); if (ex) ex.remove();
+  const status = order ? (order.status || 'Processing') : null;
+  const cur = order ? (order.currency === 'USD' ? '$' + order.price : order.price + ' SB') : '';
+  const shipped = ['Shipped', 'Out for Delivery'].includes(status);
+  const delivered = ['Delivered', 'Completed'].includes(status);
+  let actions;
+  if (!order) {
+    actions = '<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:16px;text-align:center;color:rgba(255,255,255,.5);font-size:13px;line-height:1.5;">No order to fulfill for this one.<br>Items marked sold manually have no buyer order.</div>';
+  } else if (delivered) {
+    actions = '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:14px;padding:16px;text-align:center;color:#00C864;font-weight:800;font-size:15px;">🎉 Delivered</div>';
+  } else if (shipped) {
+    actions = (order.tracking_number ? '<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:12px;margin-bottom:12px;"><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:3px;">Tracking · ' + (order.carrier || 'USPS') + '</div><div style="color:#fff;font-family:monospace;font-size:13px;word-break:break-all;">' + order.tracking_number + '</div></div>' : '')
+      + '<button onclick="sellerDeliverOrder(\'' + order.id + '\')" style="width:100%;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:14px;padding:15px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">✓ Mark as Delivered</button>';
+  } else {
+    actions = '<button onclick="sellerShipOrder(\'' + order.id + '\')" style="width:100%;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:15px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">📦 Create Shipping Label</button>';
+  }
+  const ov = document.createElement('div');
+  ov.id = 'sale-manage-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:flex-end;justify-content:center;';
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  ov.innerHTML = '<div style="background:#161616;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:22px 20px 30px;border-top:1px solid rgba(255,255,255,.1);">'
+    + '<div style="width:40px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px;"></div>'
+    + '<div style="color:#fff;font-weight:900;font-size:18px;margin-bottom:4px;">Manage Sale</div>'
+    + '<div style="color:rgba(255,255,255,.5);font-size:13px;margin-bottom:18px;">' + (title || (order && order.title) || 'Item') + (cur ? ' · ' + cur : '') + (status ? ' · ' + status : '') + '</div>'
+    + actions
+    + '<button onclick="document.getElementById(\'sale-manage-overlay\').remove()" style="width:100%;background:transparent;border:none;color:rgba(255,255,255,.4);font-size:13px;margin-top:14px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">Close</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
+
+async function sellerShipOrder(orderId) {
+  const tracking = '9400' + Math.floor(1e11 + Math.random() * 9e11);
+  const { error } = await sb.from('orders').update({ status: 'Shipped', tracking_number: tracking, carrier: 'USPS' }).eq('id', orderId);
+  if (error) { showToast('❌ ' + (error.message || 'Could not create label')); return; }
+  showToast('📦 Shipping label created — buyer notified!');
+  try {
+    const { data } = await sb.from('orders').select('*').eq('id', orderId).single();
+    if (data?.buyer_id) notifyUser(data.buyer_id, { type:'order', icon:'📦', title:'Your order shipped!', body:'@' + (currentProfile?.username || 'The seller') + ' shipped "' + (data.title || 'your order') + '". Tracking: ' + tracking, actionLabel:'Track', actionTarget:'my-orders' });
+    renderSaleManage(data, data?.title);
+  } catch (e) { console.error('sellerShipOrder refresh:', e); }
+}
+
+async function sellerDeliverOrder(orderId) {
+  const { error } = await sb.from('orders').update({ status: 'Delivered' }).eq('id', orderId);
+  if (error) { showToast('❌ ' + (error.message || 'Could not update')); return; }
+  showToast('🎉 Marked as delivered!');
+  try {
+    const { data } = await sb.from('orders').select('*').eq('id', orderId).single();
+    if (data?.buyer_id) notifyUser(data.buyer_id, { type:'order', icon:'🎉', title:'Order delivered!', body:'@' + (currentProfile?.username || 'The seller') + ' marked "' + (data.title || 'your order') + '" as delivered.', actionLabel:'View', actionTarget:'my-orders' });
+    renderSaleManage(data, data?.title);
+  } catch (e) { console.error('sellerDeliverOrder refresh:', e); }
 }
 
 async function saveTransactionToDb(type, icon, label, subLabel, amount) {
@@ -7238,8 +7319,8 @@ async function renderMyListings() {
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;padding:12px;justify-content:center;flex-shrink:0;">
         ${wantSold
-          ? `<button onclick="relistEditListing('${l.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 12px;color:#00C864;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Relist</button>
-             <button onclick="deleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>`
+          ? `<button onclick="openSaleManage('${l.id}','${l.title.replace(/'/g,"\\'")}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:10px;padding:7px 12px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">📦 Manage</button>
+             <button onclick="relistEditListing('${l.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 12px;color:#00C864;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Relist</button>`
           : wantRemoved
           ? `<button onclick="relistEditListing('${l.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 14px;color:#00C864;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩︎ Relist</button>`
           : `<button onclick="showDetail('${l.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View</button>
@@ -7275,7 +7356,7 @@ async function renderMyListings() {
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;padding:12px;justify-content:center;flex-shrink:0;max-width:104px;">
         ${sold
-          ? `<span style="color:#00C864;font-size:11px;text-align:center;line-height:1.3;font-weight:700;">🎉 Sold</span>`
+          ? `<button onclick="openSaleManage('${a.id}','${(a.title||'').replace(/'/g,"\\'")}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:10px;padding:7px 12px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">📦 Manage</button>`
           : (hadBids
           ? `<span style="color:rgba(255,255,255,.4);font-size:11px;text-align:center;line-height:1.3;">🏆 Ended with bids</span>`
           : `<button onclick="relistEditAuction('${a.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 14px;color:#00C864;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩︎ Relist</button>`)}
