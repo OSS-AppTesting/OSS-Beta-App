@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v31-37</title>
+<title>OneStopSwap v31-38</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v31-37';
+window._OSS_BUILD = 'v31-38';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -747,6 +747,10 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <div style="color:rgba(255,255,255,.4);font-size:12px;">Snap a photo — AI writes title, price & description instantly</div>
       </div>
       <span style="color:#FF3B30;font-size:20px;">›</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button id="ml-tab-active" onclick="setMyListingsView('active')" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:6px 18px;color:#FF3B30;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Active</button>
+      <button id="ml-tab-removed" onclick="setMyListingsView('removed')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 18px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">🚫 Removed</button>
     </div>
     <div id="my-listings-count" style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Your Listings</div>
     <div id="my-listings-list" style="display:flex;flex-direction:column;gap:12px;"></div>
@@ -6995,6 +6999,19 @@ function filterOrders(type, el) {
   renderOrders(type);
 }
 
+// v31-38: My Listings Active/Removed toggle. Sets the view, restyles the two tab pills, re-renders.
+function setMyListingsView(view) {
+  window._myListingsView = view;
+  const a = document.getElementById('ml-tab-active');
+  const r = document.getElementById('ml-tab-removed');
+  const on  = 'background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);color:#FF3B30;';
+  const off = 'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);';
+  const base = 'border-radius:20px;padding:6px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+  if (a) a.style.cssText = base + (view === 'active'  ? on : off);
+  if (r) r.style.cssText = base + (view === 'removed' ? on : off);
+  renderMyListings();
+}
+
 async function renderMyListings() {
   const el = document.getElementById('my-listings-list');
   if (!el) return;
@@ -7007,17 +7024,18 @@ async function renderMyListings() {
   }
 
   const myUsername = currentProfile?.username || '';
+  const wantActive = (window._myListingsView || 'active') === 'active'; // v31-38: Active vs Removed view
 
-  // Fetch both fixed-price listings AND auctions
+  // Fetch fixed-price listings for the selected view; auctions only on the Active view.
   const [listingsRes, auctionsRes] = await Promise.all([
     sb.from('listings').select('*')
       .or(`seller_id.eq.${currentUser.id},seller_username.eq.${myUsername}`)
-      .eq('is_active', true)
+      .eq('is_active', wantActive)
       .order('created_at', { ascending: false }),
-    sb.from('auctions').select('*')
+    wantActive ? sb.from('auctions').select('*')
       .or(`seller_id.eq.${currentUser.id},seller_username.eq.${myUsername}`)
       .eq('status', 'live')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }) : Promise.resolve({ data: [] })
   ]);
 
   const listings = listingsRes.data || [];
@@ -7034,18 +7052,23 @@ async function renderMyListings() {
   const total = listings.length + auctions.length;
 
   if (!total) {
-    el.innerHTML = `
+    el.innerHTML = wantActive ? `
       <div style="text-align:center;padding:60px 20px;">
         <div style="font-size:48px;margin-bottom:16px;">🏪</div>
         <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:8px;">No listings yet</div>
         <div style="color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;">Post your first item and start selling!</div>
         <button onclick="startNewListing()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px 28px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ Post a Listing</button>
+      </div>` : `
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="font-size:48px;margin-bottom:16px;">🗑️</div>
+        <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:8px;">No removed listings</div>
+        <div style="color:rgba(255,255,255,.4);font-size:14px;">Listings you remove show up here, ready to relist anytime.</div>
       </div>`;
     return;
   }
 
   const countEl = document.getElementById('my-listings-count');
-  if (countEl) countEl.textContent = 'Active · ' + total + ' listing' + (total !== 1 ? 's' : '');
+  if (countEl) countEl.textContent = (wantActive ? 'Active' : 'Removed') + ' · ' + total + ' listing' + (total !== 1 ? 's' : '');
 
   // Render fixed-price listings
   const listingsHTML = listings.map(l => `
@@ -7062,18 +7085,22 @@ async function renderMyListings() {
           <div style="background:linear-gradient(135deg,${l.currency==='USD'?'#00A550,#007A3D':'#FF3B30,#C0392B'});border-radius:8px;padding:3px 10px;">
             <span style="color:#fff;font-weight:800;font-size:13px;">${l.currency==='USD'?'$':''}${l.price}${l.currency==='SB'?' SB':''}</span>
           </div>
-          ${l.sold
+          ${!wantActive
+            ? '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:3px 8px;"><span style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;">🚫 Removed</span></div>'
+            : (l.sold
             ? '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">✓ Sold</span></div>'
-            : '<div style="background:rgba(0,200,100,.1);border:1px solid rgba(0,200,100,.2);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">● Fixed Price</span></div>'}
+            : '<div style="background:rgba(0,200,100,.1);border:1px solid rgba(0,200,100,.2);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">● Fixed Price</span></div>')}
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;padding:12px;justify-content:center;flex-shrink:0;">
-        ${l.sold
+        ${!wantActive
+          ? `<button onclick="relistListing('${l.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 14px;color:#00C864;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩︎ Relist</button>`
+          : (l.sold
           ? `<button onclick="relistListing('${l.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 12px;color:#00C864;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Relist</button>
              <button onclick="deleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>`
           : `<button onclick="showDetail('${l.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View</button>
              <button onclick="openEditListing('${l.id}')" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.25);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
-             <button onclick="deleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>`}
+             <button onclick="deleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>`)}
       </div>
     </div>`).join('');
 
@@ -7809,7 +7836,7 @@ function go(name) {
   if (name === 'messages') renderMessages();
   if (name === 'my-offers') renderOffers('all');
   if (name === 'notifications') renderNotifications(notifFilter);
-  if (name === 'my-listings') renderMyListings();
+  if (name === 'my-listings') setMyListingsView('active'); // v31-38: always land on Active w/ correct toggle styling
   if (name === 'sb-wallet') renderWallet();
   if (name === 'my-reviews') renderReviews();
   if (name === 'acct-settings') loadProfileSettings();
