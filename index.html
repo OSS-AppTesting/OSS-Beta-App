@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-22</title>
+<title>OneStopSwap v32-23</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-22';
+window._OSS_BUILD = 'v32-23';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -4502,6 +4502,10 @@ Return ONLY the JSON. No markdown, no explanation, no backticks.`;
     const condEl = document.getElementById('f-condition');
     for (let opt of catEl.options) { if (opt.text === parsed.category) { catEl.value = opt.value || opt.text; break; } }
     for (let opt of condEl.options) { if (opt.text === parsed.condition) { condEl.value = opt.value || opt.text; break; } }
+    // v32-23: setting catEl.value programmatically does NOT fire its onchange, so the
+    // size dropdown stayed on the lone "N/A" option (no shoe sizes / region row) when the
+    // AI picked Sneakers/Vintage. Refresh size options explicitly to match the chosen category.
+    if (typeof updateSizeOptions === 'function') updateSizeOptions();
 
     // Highlight fields briefly
     ['f-title','f-desc','f-price','f-category','f-condition'].forEach(id => {
