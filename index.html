@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-15</title>
+<title>OneStopSwap v32-16</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-15';
+window._OSS_BUILD = 'v32-16';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -7376,8 +7376,18 @@ async function renderMyListings() {
     return `<div style="color:rgba(255,255,255,.35);font-size:11px;font-weight:600;margin-top:6px;">🕒 ${label} ${notifTimeLabel(new Date(ts).getTime())}</div>`;
   };
 
-  // Render fixed-price listings
-  const listingsHTML = listings.map(l => `
+  // v32-16: sort each tab by the relevant stage time (sold/shipped/delivered), not the listing date,
+  // so a 4-day-old listing that just sold jumps to the top. active/removed sort by listing date.
+  const sortTs = (id, createdAt) => {
+    const ord = orderByListing[String(id)];
+    if (wantShipped)   return ord && ord.shipped_at   ? new Date(ord.shipped_at).getTime()   : 0;
+    if (wantDelivered) return ord && ord.delivered_at ? new Date(ord.delivered_at).getTime() : 0;
+    if (wantSold)      return new Date((ord && ord.created_at) || createdAt || 0).getTime();
+    return new Date(createdAt || 0).getTime(); // active + removed → listing date
+  };
+
+  // Render fixed-price listings → {ts, html} items (merged + sorted below)
+  const listingItems = listings.map(l => ({ ts: sortTs(l.id, l.created_at), html: `
     <div style="background:#1A1A1A;border-radius:18px;overflow:hidden;border:1px solid ${l.sold ? 'rgba(0,200,100,.25)' : 'rgba(255,255,255,.08)'};display:flex;align-items:stretch;">
       <div style="width:90px;flex-shrink:0;background:#111;position:relative;">
         <img src="${l.image_url || ''}" style="width:100%;height:100%;object-fit:cover;display:block;${l.sold ? 'opacity:.5;' : ''}">
@@ -7413,15 +7423,15 @@ async function renderMyListings() {
              <button onclick="openEditListing('${l.id}')" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.25);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
              <button onclick="deleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>`}
       </div>
-    </div>`).join('');
+    </div>` }));
 
   // Render auction listings
-  const auctionsHTML = auctions.map(a => {
+  const auctionItems = auctions.map(a => {
     if (!wantActive) {
       // v32-2: ended-auction card in the Removed tab. v32-9: a winner means it SOLD (BIN/won) — show it as a sale.
       const hadBids = (a.bid_count || 0) > 0;
       const sold = !!a.winner_username;
-      return `
+      return { ts: sortTs(a.id, a.created_at), html: `
     <div style="background:#1A1A1A;border-radius:18px;overflow:hidden;border:1px solid ${sold ? 'rgba(0,200,100,.25)' : 'rgba(255,255,255,.08)'};display:flex;align-items:stretch;">
       <div style="width:90px;flex-shrink:0;background:#111;position:relative;">
         <img src="${a.image_url || ''}" style="width:100%;height:100%;object-fit:cover;display:block;opacity:.6;">
@@ -7448,12 +7458,12 @@ async function renderMyListings() {
           ? `<span style="color:rgba(255,255,255,.4);font-size:11px;text-align:center;line-height:1.3;">🏆 Ended with bids</span>`
           : `<button onclick="relistEditAuction('${a.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 14px;color:#00C864;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩︎ Relist</button>`)}
       </div>
-    </div>`;
+    </div>` };
     }
     const endsAt = new Date(a.ends_at);
     const remaining = endsAt - Date.now();
     const cd = formatCountdown(remaining);
-    return `
+    return { ts: sortTs(a.id, a.created_at), html: `
     <div style="background:#1A1A1A;border-radius:18px;overflow:hidden;border:1px solid rgba(255,179,71,.2);display:flex;align-items:stretch;">
       <div style="width:90px;flex-shrink:0;background:#111;position:relative;">
         <img src="${a.image_url || ''}" style="width:100%;height:100%;object-fit:cover;display:block;">
@@ -7475,10 +7485,11 @@ async function renderMyListings() {
         <button onclick="openEditAuction('${a.id}')" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.25);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
         <button onclick="deleteAuction('${a.id}','${a.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">End</button>
       </div>
-    </div>`;
-  }).join('');
+    </div>` };
+  });
 
-  el.innerHTML = auctionsHTML + listingsHTML;
+  // v32-16: merge auctions + listings into one list sorted by the per-tab stage time (newest atop).
+  el.innerHTML = [...auctionItems, ...listingItems].sort((x, y) => y.ts - x.ts).map(it => it.html).join('');
 }
 
 // v31-37: when a seller removes a listing, resolve open offers on it.
