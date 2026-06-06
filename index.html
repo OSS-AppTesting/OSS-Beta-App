@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-2</title>
+<title>OneStopSwap v33-3</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-2';
+window._OSS_BUILD = 'v33-3';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -949,6 +949,10 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
             <div class="dur-btn" onclick="selectDuration('6h',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">6h</span></div>
             <div class="dur-btn" onclick="selectDuration('12h',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">12h</span></div>
             <div class="dur-btn" onclick="selectDuration('24h',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">24h</span></div>
+            <div class="dur-btn" onclick="selectDuration('custom',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:8px 16px;cursor:pointer;flex-shrink:0;"><span style="color:rgba(255,255,255,.5);font-weight:700;font-size:13px;">⏱ Custom</span></div>
+          </div>
+          <div id="dur-custom-wrap" style="display:none;margin-top:8px;">
+            <input id="f-dur-custom" type="datetime-local" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;color-scheme:dark;">
           </div>
         </div>
         <div>
@@ -2937,6 +2941,7 @@ function selectDuration(dur, el) {
   el.style.background = 'rgba(255,59,48,.2)';
   el.style.border = '2px solid rgba(255,59,48,.5)';
   el.querySelector('span').style.color = '#FF3B30';
+  const cw = document.getElementById('dur-custom-wrap'); if (cw) cw.style.display = (dur === 'custom') ? 'block' : 'none'; // v33-3
 }
 
 let auctionCurrency = 'SB';
@@ -4719,10 +4724,18 @@ async function postAuction(title, desc, category, condition) {
   if (buyNow > 0 && buyNow <= startBid) { showToast('Buy It Now must be higher than the starting bid'); return; }
   const sellerName = currentProfile?.username || 'user';
 
-  // Calculate end time from duration
-  const durationMap = {'1h':1,'3h':3,'6h':6,'12h':12,'24h':24};
-  const hrs = durationMap[selectedDuration] || 1;
-  const endsAt = new Date(Date.now() + hrs * 60 * 60 * 1000);
+  // Calculate end time — a preset number of hours, or a custom end date/time (v33-3)
+  let endsAt, durLabel;
+  if (selectedDuration === 'custom') {
+    const cv = (document.getElementById('f-dur-custom') || {}).value;
+    const d = cv ? new Date(cv) : null;
+    if (!d || isNaN(d.getTime()) || d.getTime() <= Date.now()) { showToast('⚠️ Pick a custom end date & time in the future'); return; }
+    endsAt = d; durLabel = '';
+  } else {
+    const durationMap = {'1h':1,'3h':3,'6h':6,'12h':12,'24h':24};
+    const hrs = durationMap[selectedDuration] || 1;
+    endsAt = new Date(Date.now() + hrs * 60 * 60 * 1000); durLabel = hrs + 'h';
+  }
 
   let imgUrl = '';
   if (aiPhotoBase64 && aiPhotoMime) {
@@ -4776,7 +4789,7 @@ async function postAuction(title, desc, category, condition) {
     else if (data) {
       localAuction.id = data.id; // update to real DB id
       localAuction.dbId = data.id;
-      showToast('⚡ Auction is live! ' + hrs + 'h countdown started.');
+      showToast('⚡ Auction is live!' + (durLabel ? ' ' + durLabel + ' countdown started.' : ' Countdown started.'));
       // Subscribe to realtime bids for this auction
       subscribeToAuction(data.id);
     }
@@ -4803,6 +4816,8 @@ async function postAuction(title, desc, category, condition) {
     document.getElementById('f-auction-location').value = '';
     document.getElementById('f-category').value = '';
     auctionCurrency = 'SB'; setAuctionCurrency('SB');
+    // v33-3: reset duration to the 1h preset + clear/hide the custom picker
+    { const cw = document.getElementById('dur-custom-wrap'); if (cw) cw.style.display = 'none'; const cv = document.getElementById('f-dur-custom'); if (cv) cv.value = ''; selectedDuration = '1h'; document.querySelectorAll('.dur-btn').forEach(b => { if ((b.getAttribute('onclick') || '').includes("'1h'")) selectDuration('1h', b); }); }
     sellMode = 'fixed'; setSellMode('fixed'); bgRemovalEnabled = false; const bgT = document.getElementById('bg-remove-toggle'); const bgK = document.getElementById('bg-remove-knob'); if(bgT) bgT.style.background = 'rgba(255,255,255,.15)'; if(bgK) bgK.style.transform = 'translateX(0)';
     go('live'); // go straight to auctions tab to see it live
   }, 1200);
