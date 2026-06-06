@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v32-20</title>
+<title>OneStopSwap v32-21</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v32-20';
+window._OSS_BUILD = 'v32-21';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2487,14 +2487,10 @@ async function placeBid(auctionId, amount) {
 
   const myUsername = currentProfile?.username || 'user';
 
-  if (!isUSD) {
-    // Deduct SB (hold)
-    SB -= amount;
-    updateAllSBDisplays();
-    addTransaction('pending', '⚡', 'Bid on: ' + a.title, '@' + a.seller + ' auction', -amount);
-  }
-  // USD auction: no SwapBucks touched — the card on file is authorized (captured if you win).
-  // No SB-ledger entry (the ledger is SwapBucks-only); conveyed in the confirmation toast below.
+  // v32-21: charge-on-win. Bids no longer deduct SB (the old deduction was local-only and popped
+  // back on reload). Nothing moves at bid time; the winner is charged once at settlement
+  // (settle_auction RPC) for SB, or via the card for USD. The affordability check above still
+  // prevents bidding beyond your balance.
 
   // Update local auction immediately
   a.currentBid = amount;
@@ -2543,7 +2539,7 @@ async function placeBid(auctionId, amount) {
 
   showToast(isUSD
     ? '🏆 You\'re the highest bidder! $' + amount + ' — your card is charged if you win.'
-    : '🏆 You\'re the highest bidder! ' + amount + ' SB placed.');
+    : '🏆 You\'re the highest bidder! ' + amount + ' SB — charged if you win.');
 
   // Save bid to Supabase via the place_bid RPC (SECURITY DEFINER): records the bid AND bumps the
   // auction's current_bid/bid_count past the owner-only auctions UPDATE RLS — a direct
@@ -7492,7 +7488,7 @@ async function renderMyListings() {
       <div style="display:flex;flex-direction:column;gap:6px;padding:12px;justify-content:center;flex-shrink:0;">
         <button onclick="openAuction('${a.id}')" style="background:rgba(255,179,71,.1);border:1px solid rgba(255,179,71,.3);border-radius:10px;padding:7px 12px;color:#FFB347;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View</button>
         <button onclick="openEditAuction('${a.id}')" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.25);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
-        <button onclick="deleteAuction('${a.id}','${a.title.replace(/'/g,"\\'")}',this)" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">End</button>
+        <button onclick="confirmEndAuction('${a.id}')" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">End</button>
       </div>
     </div>` };
   });
@@ -7996,7 +7992,81 @@ async function saveAuctionEdits() {
   if (currentAuctionId === id) openAuction(id);
 }
 
+// v32-21: End-auction flow with a seller warning. With bids → settle to the highest bidder
+// (settle_auction RPC: set winner, charge winner, create order). No bids → simple cancel.
+async function confirmEndAuction(id) {
+  const a = AUCTIONS.find(x => x.id === id || x.dbId === id);
+  if (!a) { showToast('Auction not found'); return; }
+  const dbId = a.dbId || a.id;
+  // Pull the authoritative winner/bids so the warning is accurate (local can be stale).
+  let bidCount = a.bidCount || 0, winner = null, finalAmt = a.currentBid || a.startPrice;
+  if (/^[0-9a-f-]{36}$/i.test(String(dbId))) {
+    try {
+      const { data: fr } = await sb.from('auctions').select('bid_count,current_bid').eq('id', dbId).single();
+      if (fr) { bidCount = fr.bid_count || 0; if (fr.current_bid != null) finalAmt = fr.current_bid; }
+      const { data: top } = await sb.from('auction_bids').select('bidder_username,amount')
+        .eq('auction_id', dbId).order('amount', { ascending: false }).order('created_at', { ascending: true }).limit(1);
+      if (top && top.length) { winner = top[0].bidder_username; finalAmt = top[0].amount; }
+    } catch (e) { console.error('confirmEndAuction lookup:', e); }
+  }
+  const hasBids = bidCount > 0 && !!winner;
+  window._endAuc = { dbId, title: a.title || 'this auction', settle: hasBids, winner, finalAmt, currency: a.currency || 'SB' };
+
+  const money = (a.currency === 'USD') ? ('$' + finalAmt) : (finalAmt + ' SB');
+  const ex = document.getElementById('end-auction-overlay'); if (ex) ex.remove();
+  const body = hasBids
+    ? '<div style="background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.25);border-radius:14px;padding:14px 16px;margin-bottom:16px;">'
+      + '<div style="color:#FFB347;font-weight:800;font-size:14px;margin-bottom:6px;">⚠️ This auction has ' + bidCount + ' bid' + (bidCount !== 1 ? 's' : '') + '</div>'
+      + '<div style="color:rgba(255,255,255,.75);font-size:13px;line-height:1.5;">Ending now <b>sells it to @' + winner + ' for ' + money + '</b>. It moves to your Sold tab to ship, and the buyer is charged. This can\'t be undone.</div></div>'
+    : '<div style="background:rgba(255,255,255,.05);border-radius:14px;padding:14px 16px;margin-bottom:16px;color:rgba(255,255,255,.7);font-size:13px;line-height:1.5;">No bids yet — ending just takes it down. You can relist it anytime.</div>';
+  const confirmLabel = hasBids ? ('🔨 End &amp; Sell to @' + winner) : 'End auction';
+  const ov = document.createElement('div');
+  ov.id = 'end-auction-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:flex-end;justify-content:center;';
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  ov.innerHTML = '<div style="background:#161616;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:22px 20px 30px;border-top:1px solid rgba(255,255,255,.1);">'
+    + '<div style="width:40px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px;"></div>'
+    + '<div style="color:#fff;font-weight:900;font-size:18px;margin-bottom:4px;">End auction?</div>'
+    + '<div style="color:rgba(255,255,255,.5);font-size:13px;margin-bottom:18px;">' + (window._endAuc.title) + '</div>'
+    + body
+    + '<button onclick="doEndAuction()" style="width:100%;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:15px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">' + confirmLabel + '</button>'
+    + '<button onclick="document.getElementById(\'end-auction-overlay\').remove()" style="width:100%;background:transparent;border:none;color:rgba(255,255,255,.5);font-size:14px;margin-top:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">Keep it running</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
+
+async function doEndAuction() {
+  const info = window._endAuc; if (!info) return;
+  const ov = document.getElementById('end-auction-overlay'); if (ov) ov.remove();
+  if (info.settle) {
+    const { data, error } = await sb.rpc('settle_auction', { p_auction_id: info.dbId });
+    if (error) { showToast('❌ ' + (error.message || 'Could not end the auction')); return; }
+    const row = Array.isArray(data) ? data[0] : data;
+    const wname = (row && row.winner_username) || info.winner || 'the winner';
+    const money = (info.currency === 'USD') ? ('$' + (row?.final_amount ?? info.finalAmt)) : ((row?.final_amount ?? info.finalAmt) + ' SB');
+    if (row && row.winner_id) {
+      notifyUser(row.winner_id, { type:'auction', icon:'🎉', title:'You won the auction!',
+        body:'You won "' + info.title + '" for ' + money + '. Head to My Orders to track it.',
+        actionLabel:'View order', actionTarget:'my-orders' });
+    }
+    showToast('🏆 Sold to @' + wname + ' for ' + money + '!');
+  } else {
+    const { error } = await sb.from('auctions').update({ status: 'ended' }).eq('id', info.dbId).eq('seller_id', currentUser.id);
+    if (error) { showToast('❌ ' + error.message); return; }
+    showToast('⏹️ Auction ended');
+  }
+  const idx = AUCTIONS.findIndex(x => x.id === info.dbId || x.dbId === info.dbId);
+  if (idx > -1) AUCTIONS.splice(idx, 1);
+  window._endAuc = null;
+  renderAuctionList();
+  go('my-listings'); setMyListingsView(info.settle ? 'sold' : 'removed');
+}
+
 async function endAuctionFromScreen(id) {
+  return confirmEndAuction(id); // v32-21: unified warning + settle flow
+}
+
+async function _endAuctionFromScreen_legacy(id) {
   if (window._endAucConfirm !== id) {
     window._endAucConfirm = id;
     showToast('Tap End again to confirm ending');
