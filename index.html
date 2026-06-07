@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-21</title>
+<title>OneStopSwap v33-22</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-21';
+window._OSS_BUILD = 'v33-22';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3654,20 +3654,32 @@ async function loadOrders() {
   if (!currentUser) return;
   const { data, error } = await sb.from('orders').select('*').eq('buyer_id', currentUser.id).order('created_at', { ascending: false });
   if (error || !data || !data.length) return;
-  // v31-13: map the real seller username (was seller_id → showed @null) and the stored
-  // image_url; dedup against orders already in ORDERS (e.g. a local order just unshifted
-  // this session with the same DB id) so accepted/bought items don't double up.
-  const mapped = data
-    .filter(o => !ORDERS.find(x => x.id === o.id))
-    .map(o => ({
-      id: o.id, item: o.title, img: o.image_url, price: o.price, currency: o.currency || 'SB',
-      seller: o.seller_username, status: o.status, date: new Date(o.created_at).toLocaleDateString(),
-      tracking: o.tracking_number, carrier: o.carrier || 'USPS',
-      shipFrom: o.ship_from, shipTo: o.ship_to,
-      shippedAt: o.shipped_at, deliveredAt: o.delivered_at, // v32-15: real stage times
-      timeline: buildTimeline(o) // v32-15: pass the row so Shipped/Delivered show actual timestamps
-    }));
-  ORDERS.unshift(...mapped);
+  // v33-22: UPDATE existing orders in place (status/tracking/stage times change after purchase —
+  // seller ships → Shipped → Delivered) AND add new ones. Was dedup-skip-only, so a shipped order
+  // stayed "awaiting" on the buyer's card even though the DB + the notification said Shipped.
+  const fresh = [];
+  data.forEach(o => {
+    const tl = buildTimeline(o); // v32-15: real stage times from the row
+    const existing = ORDERS.find(x => x.id === o.id);
+    if (existing) {
+      existing.status = o.status;
+      existing.tracking = o.tracking_number;
+      existing.carrier = o.carrier || 'USPS';
+      existing.shipFrom = o.ship_from; existing.shipTo = o.ship_to;
+      existing.shippedAt = o.shipped_at; existing.deliveredAt = o.delivered_at;
+      existing.timeline = tl;
+    } else {
+      fresh.push({
+        id: o.id, item: o.title, img: o.image_url, price: o.price, currency: o.currency || 'SB',
+        seller: o.seller_username, status: o.status, date: new Date(o.created_at).toLocaleDateString(),
+        tracking: o.tracking_number, carrier: o.carrier || 'USPS',
+        shipFrom: o.ship_from, shipTo: o.ship_to,
+        shippedAt: o.shipped_at, deliveredAt: o.delivered_at,
+        timeline: tl
+      });
+    }
+  });
+  if (fresh.length) ORDERS.unshift(...fresh);
 }
 
 async function loadTransactions() {
@@ -8884,7 +8896,7 @@ function go(name) {
   document.getElementById('nav').style.display = (name === 'chat' || name === 'auction' || name === 'detail' || name === 'seller' || name === 'order-track') ? 'none' : '';
   window.scrollTo(0,0);
   // Sub-screen data rendering
-  if (name === 'my-orders') { MY_ORDERS_QUERY = ''; window._ordersFilter = 'all'; const moi = document.getElementById('mo-search'); if (moi) moi.value = ''; const moc = document.getElementById('mo-search-clear'); if (moc) moc.style.display = 'none'; renderOrders('all'); }
+  if (name === 'my-orders') { MY_ORDERS_QUERY = ''; window._ordersFilter = 'all'; const moi = document.getElementById('mo-search'); if (moi) moi.value = ''; const moc = document.getElementById('mo-search-clear'); if (moc) moc.style.display = 'none'; renderOrders('all'); loadOrders().then(() => renderOrders(window._ordersFilter || 'all')); }
   if (name === 'messages') renderMessages();
   if (name === 'my-offers') { MY_OFFERS_QUERY = ''; window._offersFilter = 'all'; const ofi = document.getElementById('off-search'); if (ofi) ofi.value = ''; const ofc = document.getElementById('off-search-clear'); if (ofc) ofc.style.display = 'none'; renderOffers('all'); }
   if (name === 'notifications') renderNotifications(notifFilter);
