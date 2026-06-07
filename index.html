@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-14</title>
+<title>OneStopSwap v33-15</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-14';
+window._OSS_BUILD = 'v33-15';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -8108,6 +8108,7 @@ async function saveListingEdits(title, desc, category, condition) {
   const update = { title, description: desc, price, currency, category, condition, location };
   const editSize = (document.getElementById('f-size') || {}).value || '';
   update.size = editSize || null;
+  update.gender = categoryHasGender(category) ? _listingGender : null; // v33-15: persist Department edits (was silently dropped)
   if (newImgUrl) update.image_url = newImgUrl;
   if (window._relistMode) { update.is_active = true; update.sold = false; } // v31-39: relisting republishes the item live
 
@@ -8116,7 +8117,7 @@ async function saveListingEdits(title, desc, category, condition) {
   if (error) { showToast('❌ ' + error.message); if (btn) btn.textContent = window._relistMode ? '🚀 Relist' : '💾 Save Changes'; return; }
 
   const lp = PRODS.find(x => String(x.id) === String(id));
-  if (lp) { lp.title = title; lp.description = desc; lp.price = price; lp.currency = currency; lp.category = category; lp.condition = condition; lp.location = location; lp.size = editSize; if (newImgUrl) lp.img = newImgUrl; }
+  if (lp) { lp.title = title; lp.description = desc; lp.price = price; lp.currency = currency; lp.category = category; lp.condition = condition; lp.location = location; lp.size = editSize; lp.gender = update.gender || ''; if (newImgUrl) lp.img = newImgUrl; }
   if (window._relistMode) await loadListings(); // pull the now-active listing back into PRODS/feed
   renderAll();
   showToast(window._relistMode ? '🚀 Relisted — live in the shop again!' : '✅ Listing updated');
