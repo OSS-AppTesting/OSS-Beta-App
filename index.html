@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-12</title>
+<title>OneStopSwap v33-13</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-12';
+window._OSS_BUILD = 'v33-13';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2898,6 +2898,54 @@ const ITEM_SYNONYMS = {
   'desktop':['desktop','computer','pc','imac'],
   'macbook':['macbook','laptop','computer'],
   'notebook':['notebook','laptop','computer'],
+  // Electronics — expanded (v33-13). Generic word → the brand/model words that show up in titles.
+  'phone':['phone','iphone','smartphone','android','cellphone','mobile'],
+  'iphone':['iphone','phone','smartphone'],
+  'tablet':['tablet','ipad','surface','kindle'],
+  'ipad':['ipad','tablet'],
+  'headphones':['headphone','headphones','earbuds','earbud','airpods','airpod','earphone','earphones','headset'],
+  'earbuds':['earbud','earbuds','airpods','airpod','earphone','earphones'],
+  'airpods':['airpod','airpods','earbuds','earbud'],
+  'console':['console','playstation','ps5','ps4','ps3','xbox','nintendo','switch','wii','gamecube'],
+  'playstation':['playstation','ps5','ps4','ps3','console'],
+  'xbox':['xbox','console'],
+  'nintendo':['nintendo','switch','wii','gamecube','gameboy','console'],
+  'camera':['camera','dslr','gopro','polaroid','camcorder','mirrorless'],
+  'tv':['tv','television','oled','qled'],
+  'speaker':['speaker','soundbar','jbl','bose','sonos'],
+  'keyboard':['keyboard','keypad','mechanical keyboard'],
+  'charger':['charger','power adapter','charging cable','usb-c'],
+  'smartwatch':['smartwatch','smart watch','apple watch','wearable'],
+  'drone':['drone','quadcopter'],
+  // Bags
+  'purse':['purse','bag','handbag','clutch','pouch'],
+  'handbag':['handbag','purse','bag','clutch'],
+  'backpack':['backpack','bag','rucksack','knapsack','bookbag'],
+  'tote':['tote','bag','shopper'],
+  'wallet':['wallet','cardholder','card holder','billfold'],
+  'duffle':['duffle','duffel','bag','gym bag'],
+  // Jewelry & accessories
+  'jewelry':['jewelry','jewellery','necklace','bracelet','earring','chain','pendant','anklet','ring'],
+  'necklace':['necklace','chain','pendant','choker'],
+  'chain':['chain','necklace','pendant'],
+  'bracelet':['bracelet','bangle','cuff','wristband'],
+  'earrings':['earring','earrings','studs','hoops'],
+  'watch':['watch','wristwatch','timepiece'],
+  'sunglasses':['sunglasses','shades','sunnies','eyewear'],
+  'glasses':['glasses','eyewear','spectacles','sunglasses'],
+  'gloves':['glove','gloves','mittens'],
+  'socks':['sock','socks'],
+  'beanie':['beanie','knit hat','toque'],
+  // Collectibles & media
+  'figure':['figure','figurine','collectible','funko','action figure'],
+  'funko':['funko','figure','figurine'],
+  'cards':['card','cards','trading card','tcg','pokemon'],
+  'toy':['toy','toys','plush','stuffed','figure'],
+  'lego':['lego','legos'],
+  'vinyl':['vinyl','record','lp'],
+  'book':['book','novel','paperback','hardcover'],
+  'poster':['poster','wall art','lithograph'],
+  'plush':['plush','stuffed','stuffed animal','plushie'],
 };
 
 // Only these trigger a full category restriction
