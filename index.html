@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-17</title>
+<title>OneStopSwap v33-18</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-17';
+window._OSS_BUILD = 'v33-18';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3473,10 +3473,21 @@ async function _refreshOffersLive() {
   if (document.getElementById('s-my-offers')?.classList.contains('active')) renderOffers(window._offersFilter || 'all');
 }
 
-function setupRealtimeSubscriptions(myUsername) {
+async function setupRealtimeSubscriptions(myUsername) {
   // Clean up any existing subscriptions
   _realtimeChannels.forEach(ch => sb.removeChannel(ch));
   _realtimeChannels = [];
+
+  // v33-18: explicitly authenticate the Realtime socket with the user's JWT. postgres_changes on
+  // RLS-gated tables (offers: SELECT requires auth.uid()=buyer_id OR seller_id) only delivers rows
+  // the subscriber can SELECT — if the socket is anon, NOTHING arrives (DB write lands, buyer never
+  // sees it). supabase-js *should* propagate this automatically; doing it explicitly is the
+  // documented fix for "RLS table emits no Realtime events."
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.access_token) { sb.realtime.setAuth(session.access_token); console.log('[RT] socket auth set, token len', session.access_token.length); }
+    else { console.log('[RT] no session token — socket will be anon'); }
+  } catch (e) { console.log('[RT] getSession error', e); }
 
   // Realtime: new messages
   const msgCh = sb.channel('messages-' + currentUser.id)
@@ -3508,12 +3519,10 @@ function setupRealtimeSubscriptions(myUsername) {
       event: '*', schema: 'public', table: 'offers',
       filter: `seller_username=eq.${myUsername}`
     }, payload => {
-      // v33-17: was INSERT-only — now UPDATEs (buyer pays → Paid, buyer counters/declines back)
-      // re-pull + re-render live so the seller never needs a manual refresh. The notifications
-      // table still owns the buzz (no synthesized local notif here → no double-buzz).
+      console.log('[RT] offers(seller) event:', payload.eventType, 'status=', payload.new?.status, payload.new?.id);
       if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') _refreshOffersLive();
     })
-    .subscribe();
+    .subscribe((status, err) => console.log('[RT] offers(seller) channel:', status, err || ''));
   _realtimeChannels.push(offerCh);
 
   // v33-17: the channel above only catches offers where I'm the SELLER. A buyer's SENT offers
@@ -3524,9 +3533,10 @@ function setupRealtimeSubscriptions(myUsername) {
       event: '*', schema: 'public', table: 'offers',
       filter: `buyer_id=eq.${currentUser.id}`
     }, payload => {
+      console.log('[RT] offers(buyer) event:', payload.eventType, 'status=', payload.new?.status, payload.new?.id);
       if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') _refreshOffersLive();
     })
-    .subscribe();
+    .subscribe((status, err) => console.log('[RT] offers(buyer) channel:', status, err || ''));
   _realtimeChannels.push(offerBuyerCh);
 
   // Realtime: listings refresh (new items from anyone)
