@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-23</title>
+<title>OneStopSwap v33-24</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-23';
+window._OSS_BUILD = 'v33-24';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3616,8 +3616,18 @@ async function signOut() {
 async function loadListings() {
   const { data, error } = await sb.from('listings').select('*').eq('is_active', true).order('created_at', { ascending: false });
   if (error || !data || !data.length) return;
+  // v33-24: also hide any listing the buyer has already WON (Accepted/Paid/Completed offer). The
+  // seller's sold-flag write can lag or fail RLS, so don't rely on listing.sold alone — reconcile
+  // against the buyer's own offers (always readable). Fixes won items lingering in Fresh Swap Drops.
+  let wonIds = new Set();
+  if (currentUser) {
+    try {
+      const { data: won } = await sb.from('offers').select('listing_id').eq('buyer_id', currentUser.id).in('status', ['Accepted', 'Paid', 'Completed']);
+      wonIds = new Set((won || []).map(o => o.listing_id));
+    } catch (e) {}
+  }
   const now = Date.now();
-  const mapped = data.filter(l => !l.sold).map(l => ({
+  const mapped = data.filter(l => !l.sold && !wonIds.has(l.id)).map(l => ({
     id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
     seller: l.seller_username || 'user', sellerId: l.seller_id, location: l.location || '',
     img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
@@ -3667,6 +3677,7 @@ async function loadOrders() {
       existing.carrier = o.carrier || 'USPS';
       existing.shipFrom = o.ship_from; existing.shipTo = o.ship_to;
       existing.shippedAt = o.shipped_at; existing.deliveredAt = o.delivered_at;
+      existing.listingId = o.listing_id; // v33-24: for offer-status reconciliation
       existing.timeline = tl;
     } else {
       fresh.push({
@@ -3675,11 +3686,29 @@ async function loadOrders() {
         tracking: o.tracking_number, carrier: o.carrier || 'USPS',
         shipFrom: o.ship_from, shipTo: o.ship_to,
         shippedAt: o.shipped_at, deliveredAt: o.delivered_at,
+        listingId: o.listing_id, // v33-24
         timeline: tl
       });
     }
   });
   if (fresh.length) ORDERS.unshift(...fresh);
+  // v33-24: offer-based sales advance the OFFER (markShipped → Completed), but the seller often
+  // can't write the buyer's ORDER row (RLS) so it stayed 'Processing' while the offer was Completed
+  // ("waiting for seller" even though it shipped). Reconcile buyer-side: a Completed offer for the
+  // same listing means it shipped → reflect the order as Shipped (heals already-stuck orders too).
+  if (currentUser) {
+    try {
+      const { data: shipped } = await sb.from('offers').select('listing_id, updated_at').eq('buyer_id', currentUser.id).eq('status', 'Completed');
+      const shippedMap = new Map((shipped || []).map(o => [o.listing_id, o.updated_at]));
+      ORDERS.forEach(ord => {
+        if (ord.listingId && shippedMap.has(ord.listingId) && (ord.status === 'Processing' || ord.status === 'Paid')) {
+          ord.status = 'Shipped';
+          ord.shippedAt = ord.shippedAt || shippedMap.get(ord.listingId);
+          ord.timeline = buildTimeline({ status: 'Shipped', shipped_at: ord.shippedAt });
+        }
+      });
+    } catch (e) {}
+  }
 }
 
 async function loadTransactions() {
