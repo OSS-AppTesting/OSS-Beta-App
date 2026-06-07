@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1e</title>
+<title>OneStopSwap v34-1f</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1e';
+window._OSS_BUILD = 'v34-1f';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -4147,10 +4147,10 @@ function renderInvoiceSheet(ord, d, isSeller, buyerName) {
     + '<div style="font-weight:700;font-size:14px;color:#111;margin-bottom:12px;">' + d.title + '</div>'
     + (isSeller
         ? '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Gross sale</span><span>' + money(gross) + '</span></div>'
-          + '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Platform fee (6%)</span><span style="color:#c0392b;">−' + money(fee) + '</span></div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Platform fee (6%' + (isUSD ? '' : ', paid in cash') + ')</span><span style="color:#c0392b;">' + (isUSD ? '−$' + fee : '$' + fee) + '</span></div>'
           + '<div style="border-top:1px solid #eee;margin:10px 0;"></div>'
-          + '<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:900;color:#111;"><span>Net payout</span><span>' + money(net) + '</span></div>'
-          + '<div style="font-size:11px;color:#aaa;margin-top:6px;">Amount you receive after the 6% platform fee.</div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:900;color:#111;"><span>Net payout</span><span>' + (isUSD ? '$' + (gross - fee) : gross + ' SB') + '</span></div>'
+          + '<div style="font-size:11px;color:#aaa;margin-top:6px;">' + (isUSD ? 'Amount you receive after the 6% platform fee.' : 'You keep the full ' + gross + ' SB. The 6% platform fee ($' + fee + ', at 1 SB = $1) is billed separately in cash.') + '</div>'
         : '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Item price</span><span>' + money(gross) + '</span></div>'
           + '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Shipping</span><span style="color:#00A550;font-weight:700;">Free</span></div>'
           + '<div style="border-top:1px solid #eee;margin:10px 0;"></div>'
@@ -7034,9 +7034,22 @@ function formatExpiry(expiresAt) {
   return `Expires in ${mins}m`;
 }
 
-function renderOffers(filter) {
+let _ordByOffer = {};
+async function renderOffers(filter) {
   const el = document.getElementById('offers-list');
   if (!el) return;
+
+  // v34-1f: map the linked ORDER (by offer_id) for every accepted offer, so the cards reflect the
+  // REAL sale state (Paid/Shipped/Completed) instead of a stale "waiting for payment". Buyer orders
+  // come from the global ORDERS (carries offer_id); the seller's orders need one small fetch.
+  _ordByOffer = {};
+  (ORDERS || []).forEach(o => { if (o && o.offer_id) _ordByOffer[o.offer_id] = o; });
+  if (currentUser) {
+    try {
+      const { data: sOrds } = await sb.from('orders').select('id,offer_id,status,listing_id').eq('seller_id', currentUser.id);
+      (sOrds || []).forEach(o => { if (o.offer_id) _ordByOffer[o.offer_id] = o; });
+    } catch (e) {}
+  }
 
   // Update badge
   // v31-32: under the sticky-counter model, count only items awaiting THIS side's action:
@@ -7138,6 +7151,7 @@ function sentOfferCard(o) {
   const sc = STATUS_CONFIG[o.status] || STATUS_CONFIG['Pending'];
     const isUSD = o.currency === 'USD';
     const fmt = v => isUSD ? '$' + v : v + ' SB';
+    const lo = _ordByOffer[o.dbId]; // v34-1f: linked order (if accepted) — drives the live CTA
     const expiry = formatExpiry(o.expiresAt);
     const p = PRODS.find(x => x.id === o.productId);
     return `
@@ -7166,8 +7180,11 @@ function sentOfferCard(o) {
               <button onclick="showOfferResponse('${o.id}')" style="background:rgba(79,195,247,.15);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:4px 10px;color:#4FC3F7;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
             </div>` : `
             <span style="color:rgba(255,255,255,.3);font-size:12px;">🔄 Countered ${fmt(o.offerAmount)} — waiting for seller...</span>`) :
-          o.status === 'Accepted' ? `
-            <button onclick="acceptAndCheckout('${o.id}')" style="background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Complete Purchase →</button>` :
+          o.status === 'Accepted' ? (
+            (!lo || lo.status === 'AwaitingPayment')
+              ? `<button onclick="acceptAndCheckout('${o.id}')" style="background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Complete Purchase →</button>`
+              : `<div style="display:flex;align-items:center;gap:8px;"><span style="color:#00C864;font-size:12px;font-weight:700;">${lo.status === 'Completed' ? '🎉 Completed' : lo.status === 'Shipped' ? '📦 Shipped' : lo.status === 'Delivered' ? '✅ Delivered' : '💰 Paid'}</span><button onclick="go('my-orders')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">View Order →</button></div>`
+          ) :
           o.status === 'Pending' ? `
             <span style="color:rgba(255,255,255,.3);font-size:12px;">Waiting for seller...</span>` :
           o.status === 'Declined' ? `
@@ -7236,20 +7253,29 @@ function receivedOfferCard(o) {
           <button onclick="respondToOffer('${o.id}','countered')" style="flex:1;background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.3);border-radius:10px;padding:8px;color:#FFB347;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
           <button onclick="respondToOffer('${o.id}','accepted')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:10px;padding:8px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;">Accept ✓</button>
         </div>` :
-        o.status === 'Accepted' ? `
+        o.status === 'Accepted' ? (() => {
+          const lo = _ordByOffer[o.dbId];
+          const st = lo && lo.status;
+          const head = (!st || st === 'AwaitingPayment') ? { i:'🎉', t:'Offer Accepted!', s:'Waiting for @' + o.buyer + ' to complete payment' }
+            : st === 'Paid'      ? { i:'💰', t:'Paid — ready to ship', s:'@' + o.buyer + ' paid. Create a shipping label.' }
+            : st === 'Shipped'   ? { i:'📦', t:'Shipped', s:'On its way to @' + o.buyer + '.' }
+            : st === 'Completed' ? { i:'🎉', t:'Completed', s:'Sale complete.' }
+            : { i:'✅', t:'Delivered', s:'Delivered to @' + o.buyer + '.' };
+          return `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;">
           <div style="background:rgba(0,200,100,.08);border:1px solid rgba(0,200,100,.2);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
-            <span style="font-size:20px;">🎉</span>
+            <span style="font-size:20px;">${head.i}</span>
             <div>
-              <div style="color:#00C864;font-weight:700;font-size:13px;">Offer Accepted!</div>
-              <div style="color:rgba(255,255,255,.4);font-size:11px;">Waiting for @${o.buyer} to complete payment</div>
+              <div style="color:#00C864;font-weight:700;font-size:13px;">${head.t}</div>
+              <div style="color:rgba(255,255,255,.4);font-size:11px;">${head.s}</div>
             </div>
           </div>
           <div style="display:flex;gap:8px;">
             <button onclick="openChat('${o.buyer}','${o.buyerColor}','#00C864','${o.buyerInitials}')" style="flex:1;background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.25);border-radius:10px;padding:8px;color:#00C864;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Message Buyer</button>
-            <button onclick="showToast('Shipping label generator coming soon!')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.6);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">📦 Prep Shipment</button>
+            <button onclick="openSaleManage('${o.productId}','${(o.title||'').replace(/'/g,"\\'")}')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">📦 Manage Sale →</button>
           </div>
-        </div>` :
+        </div>`;
+        })() :
         o.status === 'Countered' ? (o.sellerCounter != null ? `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
           <span style="background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:3px 10px;color:#4FC3F7;font-size:11px;font-weight:700;">🔄 Counter Sent: ${o.currency==='USD'?'$'+o.sellerCounter:o.sellerCounter+' SB'}</span>
@@ -7834,9 +7860,13 @@ async function renderMyListings() {
   const _earn = {};
   (ordersRes.data || []).forEach(o => {
     if (o.status !== 'Completed') return;
-    const net = (o.price || 0) - (o.platform_fee != null ? o.platform_fee : Math.round((o.price || 0) * 0.06));
+    const price = o.price || 0;
+    const fee = (o.platform_fee != null) ? o.platform_fee : Math.round(price * 0.06);
     const cur = o.currency || 'SB';
-    _earn[cur] = (_earn[cur] || 0) + net;
+    // SB sales: seller keeps the FULL SB (the 6% fee is billed separately in cash, 1 SB = $1).
+    // USD sales: take-home is net of the fee.
+    const take = (cur === 'USD') ? (price - fee) : price;
+    _earn[cur] = (_earn[cur] || 0) + take;
   });
   const earnedStr = Object.keys(_earn).length
     ? ' · 💰 ' + Object.entries(_earn).map(([c, v]) => c === 'USD' ? '$' + v : v + ' SB').join(' + ') + ' earned'
@@ -7921,7 +7951,7 @@ async function renderMyListings() {
     const ord = orderByListing[String(id)];
     let label, ts;
     if (wantShipped)        { label = 'Shipped';   ts = ord && ord.shipped_at; }
-    else if (wantDelivered) { label = 'Delivered'; ts = ord && ord.delivered_at; }
+    else if (wantDelivered) { label = (ord && ord.status === 'Completed') ? 'Completed' : 'Delivered'; ts = ord && ord.delivered_at; }
     else if (wantSold)      { label = 'Sold';      ts = (ord && ord.created_at) || createdAt; }
     else                    { label = 'Listed';    ts = createdAt; } // active + removed
     if (!ts) return '';
@@ -7958,7 +7988,9 @@ async function renderMyListings() {
             : wantShipped
             ? '<div style="background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:3px 8px;"><span style="color:#4FC3F7;font-size:11px;font-weight:700;">📦 Shipped</span></div>'
             : wantDelivered
-            ? '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">🎉 Delivered</span></div>'
+            ? ((orderByListing[String(l.id)] && orderByListing[String(l.id)].status === 'Completed')
+              ? '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">✓ Completed</span></div>'
+              : '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">🎉 Delivered</span></div>')
             : wantRemoved
             ? '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:3px 8px;"><span style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;">🚫 Removed</span></div>'
             : '<div style="background:rgba(0,200,100,.1);border:1px solid rgba(0,200,100,.2);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">● Fixed Price</span></div>'}
