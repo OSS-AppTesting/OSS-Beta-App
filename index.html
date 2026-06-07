@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-16</title>
+<title>OneStopSwap v33-17</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-16';
+window._OSS_BUILD = 'v33-17';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3463,6 +3463,16 @@ async function completeLogin() {
 }
 
 let _realtimeChannels = [];
+// v33-17: shared live-refresh for the offers screen. loadOffersFromDb re-pulls BOTH sides
+// (sent via buyer_id + received via seller_username) and merges in place, but doesn't re-render;
+// so after the pull, re-render the offers screen if it's currently open (renderOffers also
+// refreshes the in-screen badge). If it's not open, the data is now correct for when the user
+// navigates there, and the notifications table already owns the buzz.
+async function _refreshOffersLive() {
+  await loadOffersFromDb();
+  if (document.getElementById('s-my-offers')?.classList.contains('active')) renderOffers(window._offersFilter || 'all');
+}
+
 function setupRealtimeSubscriptions(myUsername) {
   // Clean up any existing subscriptions
   _realtimeChannels.forEach(ch => sb.removeChannel(ch));
@@ -3498,22 +3508,40 @@ function setupRealtimeSubscriptions(myUsername) {
       event: '*', schema: 'public', table: 'offers',
       filter: `seller_username=eq.${myUsername}`
     }, payload => {
-      if (payload.eventType === 'INSERT') {
-        // v31: the seller's notification now comes from the notifications table
-        // (written by the buyer in submitOffer), so we no longer synthesize a local
-        // one here — that would double-buzz. Just refresh the offers list.
-        loadOffersFromDb();
-      }
+      // v33-17: was INSERT-only — now UPDATEs (buyer pays → Paid, buyer counters/declines back)
+      // re-pull + re-render live so the seller never needs a manual refresh. The notifications
+      // table still owns the buzz (no synthesized local notif here → no double-buzz).
+      if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') _refreshOffersLive();
     })
     .subscribe();
   _realtimeChannels.push(offerCh);
 
+  // v33-17: the channel above only catches offers where I'm the SELLER. A buyer's SENT offers
+  // also change status (seller accepts → Accepted, counters → Countered, declines → Declined) and
+  // had NO live channel — the buyer had to refresh. This second channel covers my sent side.
+  const offerBuyerCh = sb.channel('offers-buyer-' + currentUser.id)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'offers',
+      filter: `buyer_id=eq.${currentUser.id}`
+    }, payload => {
+      if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') _refreshOffersLive();
+    })
+    .subscribe();
+  _realtimeChannels.push(offerBuyerCh);
+
   // Realtime: listings refresh (new items from anyone)
   const listingCh = sb.channel('listings-feed')
     .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'listings'
+      event: '*', schema: 'public', table: 'listings'
     }, payload => {
       const l = payload.new;
+      // v33-17: live-drop a listing the moment it sells / goes inactive (complements the v33-16
+      // staleness guard — the stale card now disappears on its own instead of only erroring at buy).
+      if (payload.eventType === 'UPDATE') {
+        if (l && (l.sold || l.is_active === false)) dropSoldFromFeed(l.id);
+        return;
+      }
+      if (payload.eventType !== 'INSERT') return;
       if (l.seller_username === myUsername) return; // own listing already added
       const now = Date.now();
       const newProd = {
