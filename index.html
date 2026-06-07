@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-22</title>
+<title>OneStopSwap v33-23</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-22';
+window._OSS_BUILD = 'v33-23';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -7128,6 +7128,16 @@ function markShipped(offerId) {
   if (!o) return;
   o.status = 'Completed';
   if (o.dbId) sb.from('offers').update({ status: 'Completed' }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('mark shipped persist:', error); });
+  // v33-23: ALSO advance the buyer's ORDER row (offer-based sales create an order linked by
+  // listing_id, status 'Processing'). markShipped previously only touched the offer, so the buyer's
+  // My Orders stayed at "payment complete" forever. Set Shipped + tracking so the buyer's order +
+  // tracking view reflect it (the buyer picks it up on their next My Orders re-pull, v33-22).
+  if (o.productId && /^[0-9a-f-]{36}$/i.test(String(o.productId))) {
+    const tracking = '9400' + Math.floor(1e11 + Math.random() * 9e11);
+    sb.from('orders').update({ status: 'Shipped', tracking_number: tracking, carrier: 'USPS', shipped_at: new Date().toISOString() })
+      .eq('listing_id', o.productId).neq('status', 'Delivered')
+      .then(({ error }) => { if (error) console.error('order ship persist:', error); });
+  }
   showToast('📦 Marked shipped — order complete!');
   const _shipNotif = { type:'order', icon:'📦', title:'Your order shipped!', body:'@' + (currentProfile?.username || 'The seller') + ' marked "' + o.title + '" as shipped.', actionLabel:'Track', actionTarget:'my-orders' };
   if (o.buyerId) notifyUser(o.buyerId, _shipNotif); else notifyUsername(o.buyer, _shipNotif);
