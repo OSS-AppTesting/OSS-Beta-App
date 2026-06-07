@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-19</title>
+<title>OneStopSwap v33-20</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-19';
+window._OSS_BUILD = 'v33-20';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3488,6 +3488,16 @@ function _rtLog(msg) {
   } catch (e) {}
 }
 
+// v33-20: catch-up reconcile. Realtime sockets drop + auto-reconnect (esp. on mobile when the tab
+// backgrounds); any offer UPDATE that lands while disconnected is missed and the card never flips.
+// So on every (re)subscribe we re-pull offers — self-healing. Debounced because both offers channels
+// resubscribe near-simultaneously (coalesce into one pull).
+let _offersCatchupTimer = null;
+function _scheduleOffersCatchup() {
+  clearTimeout(_offersCatchupTimer);
+  _offersCatchupTimer = setTimeout(() => { _rtLog('catch-up re-pull (resubscribe)'); _refreshOffersLive(); }, 400);
+}
+
 async function _refreshOffersLive() {
   await loadOffersFromDb();
   if (document.getElementById('s-my-offers')?.classList.contains('active')) renderOffers(window._offersFilter || 'all');
@@ -3542,7 +3552,7 @@ async function setupRealtimeSubscriptions(myUsername) {
       _rtLog('offers(SELLER) evt ' + payload.eventType + ' status=' + (payload.new && payload.new.status));
       if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') _refreshOffersLive();
     })
-    .subscribe((status, err) => _rtLog('offers(SELLER) channel: ' + status + (err ? (' ' + err) : '')));
+    .subscribe((status, err) => { _rtLog('offers(SELLER) channel: ' + status + (err ? (' ' + err) : '')); if (status === 'SUBSCRIBED') _scheduleOffersCatchup(); });
   _realtimeChannels.push(offerCh);
 
   // v33-17: the channel above only catches offers where I'm the SELLER. A buyer's SENT offers
@@ -3556,7 +3566,7 @@ async function setupRealtimeSubscriptions(myUsername) {
       _rtLog('offers(BUYER) evt ' + payload.eventType + ' status=' + (payload.new && payload.new.status));
       if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') _refreshOffersLive();
     })
-    .subscribe((status, err) => _rtLog('offers(BUYER) channel: ' + status + (err ? (' ' + err) : '')));
+    .subscribe((status, err) => { _rtLog('offers(BUYER) channel: ' + status + (err ? (' ' + err) : '')); if (status === 'SUBSCRIBED') _scheduleOffersCatchup(); });
   _realtimeChannels.push(offerBuyerCh);
 
   // Realtime: listings refresh (new items from anyone)
