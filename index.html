@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1g</title>
+<title>OneStopSwap v34-1h</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1g';
+window._OSS_BUILD = 'v34-1h';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2222,6 +2222,7 @@ async function confirmSBCheckout() {
   if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
   // Drop the now-sold item from the buyer's local feed (already excluded server-side via the view).
   { const i = PRODS.findIndex(x => String(x.id) === String(p.id)); if (i > -1) PRODS.splice(i, 1); renderAll(); }
+  broadcastFeed('sold', p.id); // v34-1h: live-drop this listing from every other browsing feed
   showToast('⚡ Swapped! ' + p.price + ' SB spent (6% fee: ' + fee + ' SB). Check My Orders.');
   go('home');
 }
@@ -3219,6 +3220,7 @@ async function confirmCheckout() {
   if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
   // Drop the now-sold item from the buyer's local feed (already excluded server-side via the view).
   { const i = PRODS.findIndex(x => String(x.id) === String(p.id)); if (i > -1) PRODS.splice(i, 1); renderAll(); }
+  broadcastFeed('sold', p.id); // v34-1h: live-drop this listing from every other browsing feed
   showToast('🎉 Order placed! Check My Orders for tracking.');
   go('home');
 }
@@ -3431,6 +3433,7 @@ async function completeLogin() {
 }
 
 let _realtimeChannels = [];
+let _feedSyncCh = null; // v34-1h: public broadcast channel for live cross-feed sold/available drops
 // v33-17: shared live-refresh for the offers screen. loadOffersFromDb re-pulls BOTH sides
 // (sent via buyer_id + received via seller_username) and merges in place, but doesn't re-render;
 // so after the pull, re-render the offers screen if it's currently open (renderOffers also
@@ -3615,6 +3618,21 @@ async function setupRealtimeSubscriptions(myUsername) {
     })
     .subscribe();
   _realtimeChannels.push(notifCh);
+
+  // v34-1h: PUBLIC feed-sync broadcast — the one live update that can't ride postgres_changes.
+  // Orders are RLS-private, so a third (uninvolved) browser can't be told via the DB that an item
+  // sold. And v34 has no stored `sold` flag for the old listings-UPDATE drop path to fire on. So the
+  // acting client (buyer on buy-now, seller/buyer on offer-accept) broadcasts just the listing_id —
+  // already public — and every connected client drops the card instantly via dropSoldFromFeed. The
+  // inverse ('available', on cancel) re-hydrates a returned listing live. self:false ⇒ the actor
+  // doesn't reprocess its own event (it already updated its feed locally). Missed events (offline)
+  // self-heal on next feed load (available_listings is authoritative). No schema change, no leak.
+  const feedCh = sb.channel('feed-sync', { config: { broadcast: { self: false } } })
+    .on('broadcast', { event: 'sold' },      ({ payload }) => { if (payload && payload.id) dropSoldFromFeed(payload.id); })
+    .on('broadcast', { event: 'available' }, ({ payload }) => { if (payload && payload.id) readdToFeed(payload.id); })
+    .subscribe();
+  _realtimeChannels.push(feedCh);
+  _feedSyncCh = feedCh;
 }
 
 
@@ -3670,6 +3688,34 @@ function dropSoldFromFeed(id) {
   const i = PRODS.findIndex(x => String(x.id) === String(id));
   if (i > -1) PRODS.splice(i, 1);
   renderAll();
+}
+
+// v34-1h: broadcast a public feed event (sold/available) to every connected client. Fire-and-forget;
+// carries only the listing_id (already public). self:false on the channel ⇒ the sender's own feed is
+// updated locally, not via this echo. No-op until the feed-sync channel is subscribed (signed-in).
+function broadcastFeed(event, id) {
+  try { if (_feedSyncCh && id != null) _feedSyncCh.send({ type: 'broadcast', event: event, payload: { id: String(id) } }); }
+  catch (e) { /* best-effort; next feed load self-heals */ }
+}
+// v34-1h: re-hydrate a listing that returned to availability (seller cancelled a pre-ship order).
+// Point-read available_listings (authoritative) so we don't re-add something that isn't actually
+// back; mirror loadListings' card shape for full fidelity (sellerId etc. needed for offers).
+async function readdToFeed(id) {
+  if (PRODS.find(x => String(x.id) === String(id))) return; // already present
+  try {
+    const { data: l, error } = await sb.from('available_listings').select('*').eq('id', id).maybeSingle();
+    if (error || !l) return; // not actually available (re-sold, removed) → skip
+    PRODS.unshift({
+      id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
+      seller: l.seller_username || 'user', sellerId: l.seller_id, location: l.location || '',
+      img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
+      condition: l.condition || '', sold: false, size: l.size || '', gender: l.gender || '',
+      likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || '',
+      createdTs: l.created_at ? new Date(l.created_at).getTime() : 0, isNew: false
+    });
+    primeAvatars([l.seller_username || 'user']);
+    renderAll();
+  } catch (e) { /* best-effort */ }
 }
 
 async function loadOrders() {
@@ -4202,6 +4248,7 @@ async function sellerCancelOrder(orderId) {
   const { data, error } = await ossRpc('cancel_order', { p_order_id: orderId }, 'cancel_order');
   if (error) return; // e.g. "too late to cancel (Shipped)."
   showToast('Order cancelled — item back in your inventory.');
+  broadcastFeed('available', data && data.listing_id); // v34-1h: returned listing reappears live in other feeds
   try {
     if (data?.buyer_id) notifyUser(data.buyer_id, { type:'order', icon:'⚠️', title:'Order cancelled', body:'@' + (currentProfile?.username || 'The seller') + ' cancelled the order. Any payment is refunded.', actionLabel:'View', actionTarget:'my-orders' });
     const ov = document.getElementById('sale-manage-overlay'); if (ov) ov.remove();
@@ -6749,6 +6796,7 @@ async function acceptCounter(offerId) {
   if (error) return; // red toast already surfaced
   offer.offerAmount = offer.counterAmount; // reflect the agreed price in the checkout display
   offer.status = 'Accepted';
+  broadcastFeed('sold', offer.productId); // v34-1h: counter-accept also removes the listing — drop it live elsewhere
   acceptAndCheckout(offerId);
 }
 
@@ -7329,6 +7377,7 @@ async function respondToOffer(offerId, action) {
       const _li = PRODS.findIndex(x => String(x.id) === String(o.productId));
       if (_li > -1) { PRODS.splice(_li, 1); renderAll(); }
     }
+    broadcastFeed('sold', o.productId); // v34-1h: live-drop from every other browsing feed
     // Reflect the new AwaitingPayment order locally so the seller sees it immediately
     // (reads fully repoint to orders in v34-1c; this is just snappy feedback).
     if (order && order.id) {
