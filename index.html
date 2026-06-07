@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-24</title>
+<title>OneStopSwap v34-1e</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-24';
+window._OSS_BUILD = 'v34-1e';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -1361,7 +1361,6 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div class="offer-tab" onclick="filterOffers('Pending',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">⏳ Pending</span></div>
       <div class="offer-tab" onclick="filterOffers('Countered',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">🔄 Countered</span></div>
       <div class="offer-tab" onclick="filterOffers('Accepted',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">✅ Accepted</span></div>
-      <div class="offer-tab" onclick="filterOffers('Completed',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">🎉 Completed</span></div>
       <div class="offer-tab" onclick="filterOffers('Declined',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">❌ Declined</span></div>
       <div class="offer-tab" onclick="filterOffers('Expired',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:rgba(255,255,255,.5);font-size:13px;font-weight:700;">⌛ Expired</span></div>
       <div class="offer-tab" onclick="filterOffers('received',this)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:6px 16px;cursor:pointer;white-space:nowrap;"><span style="color:#FF3B30;font-size:13px;font-weight:700;">📬 Inbox</span></div>
@@ -2184,28 +2183,17 @@ async function confirmSBCheckout() {
   if (offerId) {
     const offer = OFFERS.find(o => o.id === offerId);
     if (offer) {
-      if (SB < offer.offerAmount) {
-        showSBShortfall(offer.offerAmount, () => confirmSBCheckout());
-        return;
-      }
-      SB -= offer.offerAmount;
-      updateAllSBDisplays();
-      addTransaction('spent', '🏷️', 'Offer: ' + offer.title, '@' + offer.seller, -offer.offerAmount);
-      offer.status = 'Paid'; // v31-29: ship-gate — buyer payment = Paid; seller ships → Completed
       window._offerCheckoutId = null;
       document.getElementById('modal-sb-checkout').style.display = 'none';
-      if (currentUser) {
-        // v31-12: capture the saved order and add it to local ORDERS so it shows on the
-        // purchased side (My Orders) immediately — mirrors the direct-buy branch below.
-        // Was fire-and-forget, so an accepted offer didn't appear until a full reload.
-        const dbOrder = await saveOrderToDb(offer.title, offer.offerAmount, 'SB', offer.seller, offer.seller, null, offer.img, offer.productId);
-        if (dbOrder) ORDERS.unshift({ id: dbOrder.id, item: offer.title, img: offer.img, price: offer.offerAmount, currency: 'SB', seller: offer.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') });
-        // v31-29: ship-gate — persist Paid (seller must mark shipped to reach Completed).
-        if (offer.dbId) sb.from('offers').update({ status: 'Paid' }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('offer paid persist:', error); });
-        notifyUsername(offer.seller, { type:'order', icon:'💰', title:'Paid — ship it!', body:'@' + (currentProfile?.username || 'A buyer') + ' paid for ' + offer.title + '. Mark it shipped when it\'s on the way.', actionLabel:'View', actionTarget:'my-offers:received' });
-      }
-      showToast('⚡ Purchased at offer price! ' + offer.offerAmount + ' SB spent.');
-      go('home');
+      if (!currentUser) { showError('Sign in to complete your purchase.'); return; }
+      if (!offer.dbId) { showError('This offer has no DB id.'); return; }
+      // v34-1c: pay the AwaitingPayment order accept_offer created (resolve by offer_id).
+      // completeOrderPayment handles the SB shortfall + client-side debit.
+      const { data: ord, error: qErr } = await sb.from('orders').select('id,currency,price').eq('offer_id', offer.dbId).maybeSingle();
+      if (qErr) { showError(qErr.message); return; }
+      if (!ord) { showError('No order found for this accepted offer.'); return; }
+      const ok = await completeOrderPayment(ord.id, ord.currency || 'SB', ord.price);
+      if (ok) go('home');
       return;
     }
   }
@@ -2216,25 +2204,23 @@ async function confirmSBCheckout() {
     showSBShortfall(p.price, () => confirmSBCheckout());
     return;
   }
-  if (p.id && await isListingSold(p.id)) { document.getElementById('modal-sb-checkout').style.display='none'; dropSoldFromFeed(p.id); showToast('😬 Just sold — someone beat you to it'); return; } // v33-16: staleness guard (no SB deducted)
+  document.getElementById('modal-sb-checkout').style.display = 'none';
+  if (!currentUser) { showError('Sign in to complete a purchase.'); return; }
+  if (!p.id || !/^[0-9a-f-]{36}$/i.test(String(p.id))) { showError('Demo seed item — buy-now needs a real DB listing.'); return; }
+  // v34-1b: create_order_buy_now validates availability (available_listings) + creates the Paid
+  // order atomically. SB debit stays client-side in the demo (spec §13) — applied only on success.
+  const { data: order, error } = await ossRpc('create_order_buy_now', { p_listing_id: p.id }, 'create_order_buy_now');
+  if (error) return;
   const fee = Math.round(p.price * 0.06);
   SB -= p.price;
   updateAllSBDisplays();
   addTransaction('spent', '🛍️', 'Purchased: ' + p.title, '@' + p.seller, -p.price);
-  document.getElementById('modal-sb-checkout').style.display = 'none';
-  // Save order to DB
-  if (currentUser) {
-    const dbOrder = await saveOrderToDb(p.title, p.price, 'SB', p.location || p.seller, p.seller, p.sellerId || null, p.img, p.id);
-    if (dbOrder) {
-      const localOrder = { id: dbOrder.id, item: p.title, img: p.img, price: p.price, currency: 'SB', seller: p.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') };
-      ORDERS.unshift(localOrder);
-    }
-    // v32-11: mark the listing sold past the seller-only RLS wall (direct full-price buy)
-    if (p.id) sb.rpc('buy_listing', { p_listing_id: p.id }).then(({ error }) => { if (error) console.error('buy_listing:', error); });
-    const _saleNotif = { type:'order', icon:'🎉', title:'You made a sale!', body:'@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + ' for ' + p.price + ' SB. Prep it for shipment!', actionLabel:'View', actionTarget:'my-listings:sold' };
-    if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
+  if (order && order.id) {
+    ORDERS.unshift({ id: order.id, item: p.title, img: p.img, price: order.price, currency: order.currency || 'SB', seller: p.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
   }
-  // v32-11: drop the now-sold item from the buyer's local feed so it can't be re-bought
+  const _saleNotif = { type:'order', icon:'🎉', title:'You made a sale!', body:'@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + ' for ' + p.price + ' SB. Prep it for shipment!', actionLabel:'View', actionTarget:'my-listings:sold' };
+  if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
+  // Drop the now-sold item from the buyer's local feed (already excluded server-side via the view).
   { const i = PRODS.findIndex(x => String(x.id) === String(p.id)); if (i > -1) PRODS.splice(i, 1); renderAll(); }
   showToast('⚡ Swapped! ' + p.price + ' SB spent (6% fee: ' + fee + ' SB). Check My Orders.');
   go('home');
@@ -2283,8 +2269,7 @@ function showDetail(id) {
       </div>`
     : `<div style="display:flex;gap:10px;">
         <button class="rbtn" onclick="openEditListing('${p.id}')" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);color:#fff;cursor:pointer;">✎ Edit Listing</button>
-        <button onclick="markAsSold('${p.id}')" style="flex:0 0 auto;background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:16px;padding:15px 14px;color:#00C864;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Mark Sold</button>
-        <button onclick="removeListingFromDetail('${p.id}')" style="flex:0 0 auto;background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:16px;padding:15px 14px;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🗑️</button>
+        <button onclick="removeListingFromDetail('${p.id}')" style="flex:0 0 auto;background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:16px;padding:15px 18px;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🗑️ Remove</button>
       </div>`;
   const similar = PRODS.filter(x=>x.category===p.category && x.id!==p.id).slice(0,4);
   // v31-14: non-owner view of a SOLD item — show a Sold state instead of Swap/Offer.
@@ -3197,61 +3182,44 @@ async function confirmCheckout() {
   if (offerId) {
     const offer = OFFERS.find(o => o.id === offerId);
     if (offer) {
-      offer.status = 'Paid'; // v31-29: ship-gate
-      const fee = Math.round(offer.offerAmount * 0.06 * 100) / 100;
-      addTransaction('spent', '🏷️', 'Offer: ' + offer.title, '@' + offer.seller, -offer.offerAmount);
       window._offerCheckoutId = null;
       document.getElementById('modal-checkout').style.display = 'none';
-      // Save offer order to DB
-      if (currentUser) {
-        // v31-12: capture the saved order and add it to local ORDERS so the purchase
-        // shows on the purchased side (My Orders) immediately — mirrors direct-buy.
-        const dbOrder = await saveOrderToDb(offer.title, offer.offerAmount, offer.currency || 'USD', offer.seller, offer.seller, null, offer.img, offer.productId);
-        if (dbOrder) ORDERS.unshift({ id: dbOrder.id, item: offer.title, img: offer.img, price: offer.offerAmount, currency: offer.currency || 'USD', seller: offer.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') });
-        // Update offer status in DB
-        // v31-29: ship-gate — persist Paid; seller marks shipped → Completed.
-        if (offer.dbId) sb.from('offers').update({ status: 'Paid' }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('offer paid persist:', error); });
-        // notify the seller they've been paid and need to ship
-        notifyUsername(offer.seller, {
-          type: 'order', icon: '💰',
-          title: 'Paid — ship it!',
-          body: '@' + (currentProfile?.username || 'A buyer') + ' paid for ' + offer.title + ' (' + (offer.currency === 'USD' ? '$' + offer.offerAmount : offer.offerAmount + ' SB') + '). Mark it shipped when it\'s on the way.',
-          actionLabel: 'View', actionTarget: 'my-offers:received'
-        });
-      }
-      showToast('🎉 Order placed at offer price of $' + offer.offerAmount + '!');
-      go('home');
+      if (!currentUser) { showError('Sign in to complete your purchase.'); return; }
+      if (!offer.dbId) { showError('This offer has no DB id.'); return; }
+      // v34-1c: accept_offer already created the order at AwaitingPayment — resolve it by offer_id and PAY it.
+      const { data: ord, error: qErr } = await sb.from('orders').select('id,currency,price').eq('offer_id', offer.dbId).maybeSingle();
+      if (qErr) { showError(qErr.message); return; }
+      if (!ord) { showError('No order found for this accepted offer.'); return; }
+      const ok = await completeOrderPayment(ord.id, ord.currency || offer.currency, ord.price);
+      if (ok) go('home');
       return;
     }
   }
 
   const p = PRODS.find(x=>String(x.id)===String(currentCheckoutId));
   if (!p) return;
-  if (p.id && await isListingSold(p.id)) { document.getElementById('modal-checkout').style.display='none'; dropSoldFromFeed(p.id); showToast('😬 Just sold — someone beat you to it'); return; } // v33-16: staleness guard
-  const fee = Math.round(p.price * 0.06 * 100) / 100;
   document.getElementById('modal-checkout').style.display = 'none';
-  addTransaction('spent', '💳', 'Purchased: ' + p.title, '@' + p.seller + ' · USD', -p.price);
-  // Save order to DB
-  if (currentUser) {
-    const dbOrder = await saveOrderToDb(p.title, p.price, 'USD', p.location || p.seller, p.seller, p.sellerId || null, p.img, p.id);
-    if (dbOrder) {
-      const localOrder = { id: dbOrder.id, item: p.title, img: p.img, price: p.price, currency: 'USD', seller: p.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') };
-      ORDERS.unshift(localOrder);
-    }
-    // v32-11: mark the listing sold past the seller-only RLS wall (direct full-price buy)
-    if (p.id) sb.rpc('buy_listing', { p_listing_id: p.id }).then(({ error }) => { if (error) console.error('buy_listing:', error); });
-    // v31: notify the seller of the sale (best-effort, never blocks the order)
-    const _saleNotif = {
-      type: 'order', icon: '🎉',
-      title: 'You made a sale!',
-      body: '@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + ' for $' + p.price + '. Prep it for shipment!',
-      actionLabel: 'View', actionTarget: 'my-listings:sold'
-    };
-    if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
+  if (!currentUser) { showError('Sign in to complete a purchase.'); return; }
+  // v34-1b: buy-now → create_order_buy_now. The RPC re-checks availability (available_listings)
+  // and creates the order already Paid, atomically. No client sold flip, no staleness probe —
+  // the RPC raises "listing is no longer available" → red toast if someone beat you to it.
+  if (!p.id || !/^[0-9a-f-]{36}$/i.test(String(p.id))) { showError('Demo seed item — buy-now needs a real DB listing.'); return; }
+  const { data: order, error } = await ossRpc('create_order_buy_now', { p_listing_id: p.id }, 'create_order_buy_now');
+  if (error) return;
+  addTransaction('spent', '💳', 'Purchased: ' + p.title, '@' + p.seller + ' · ' + (p.currency || 'USD'), -p.price);
+  if (order && order.id) {
+    ORDERS.unshift({ id: order.id, item: p.title, img: p.img, price: order.price, currency: order.currency || p.currency || 'USD', seller: p.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
   }
-  // v32-11: drop the now-sold item from the buyer's local feed so it can't be re-bought
+  const _saleNotif = {
+    type: 'order', icon: '🎉',
+    title: 'You made a sale!',
+    body: '@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + '. Prep it for shipment!',
+    actionLabel: 'View', actionTarget: 'my-listings:sold'
+  };
+  if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
+  // Drop the now-sold item from the buyer's local feed (already excluded server-side via the view).
   { const i = PRODS.findIndex(x => String(x.id) === String(p.id)); if (i > -1) PRODS.splice(i, 1); renderAll(); }
-  showToast('🎉 Order placed! 6% platform fee: $' + fee + '. Check My Orders for tracking.');
+  showToast('🎉 Order placed! Check My Orders for tracking.');
   go('home');
 }
 
@@ -3484,6 +3452,36 @@ async function _refreshOffersLive() {
   if (document.getElementById('s-my-offers')?.classList.contains('active')) renderOffers(window._offersFilter || 'all');
 }
 
+// v34-1e: live-refresh for ORDERS — the single source of truth for a sale. Mirrors the offers
+// catch-up: re-pull the buyer's orders (loadOrders) + re-render whichever order/sale view is open.
+// Self-heals after a socket drop/reconnect. Debounced (buyer+seller channels resubscribe together).
+let _ordersCatchupTimer = null;
+function _scheduleOrdersCatchup() {
+  clearTimeout(_ordersCatchupTimer);
+  _ordersCatchupTimer = setTimeout(() => { _refreshOrdersLive(); }, 400);
+}
+async function _refreshOrdersLive() {
+  try { await loadOrders(); } catch (e) { txlog('err', 'ordersCatchup', e.message || String(e)); }
+  if (document.getElementById('s-my-orders')?.classList.contains('active')) renderOrders(window._ordersFilter || 'all');
+  // My Listings (seller dashboard) re-fetches its own orders on render — re-render if open.
+  if (document.getElementById('s-my-listings')?.classList.contains('active')) renderMyListings();
+}
+
+// v34-1e: catch-up for MESSAGES. The live INSERT handler appends bubbles in real time, but a socket
+// drop (mobile backgrounding) can miss inserts; on every (re)subscribe we re-pull whatever messaging
+// view is open. Re-opening the chat re-pulls its history from the DB; the inbox re-pulls on render.
+let _messagesCatchupTimer = null;
+function _scheduleMessagesCatchup() {
+  clearTimeout(_messagesCatchupTimer);
+  _messagesCatchupTimer = setTimeout(() => { _refreshMessagesLive(); }, 400);
+}
+function _refreshMessagesLive() {
+  if (currentChatSeller && document.getElementById('s-chat')?.classList.contains('active')) {
+    openChat(currentChatSeller, currentChatColor, currentChatAccent);
+  }
+  if (document.getElementById('s-messages')?.classList.contains('active')) renderMessages();
+}
+
 async function setupRealtimeSubscriptions(myUsername) {
   // Clean up any existing subscriptions
   _realtimeChannels.forEach(ch => sb.removeChannel(ch));
@@ -3520,7 +3518,7 @@ async function setupRealtimeSubscriptions(myUsername) {
       // Refresh messages inbox if open
       if (document.getElementById('s-messages')?.classList.contains('active')) renderMessages();
     })
-    .subscribe();
+    .subscribe((status) => { if (status === 'SUBSCRIBED') _scheduleMessagesCatchup(); });
   _realtimeChannels.push(msgCh);
 
   // Realtime: offer updates for seller
@@ -3546,6 +3544,26 @@ async function setupRealtimeSubscriptions(myUsername) {
     })
     .subscribe((status) => { if (status === 'SUBSCRIBED') _scheduleOffersCatchup(); });
   _realtimeChannels.push(offerBuyerCh);
+
+  // v34-1e: Realtime ORDERS — the canonical sale state. Two filtered channels (buyer_id + seller_id)
+  // so I get live updates whether I'm the buyer or the seller. Drives My Orders, the seller's sold
+  // tabs, and dashboards; catch-up on (re)subscribe (mobile socket drops). Requires (cutover SQL):
+  // orders in supabase_realtime publication + replica identity full + the setAuth above.
+  const orderBuyerCh = sb.channel('orders-buyer-' + currentUser.id)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'orders',
+      filter: `buyer_id=eq.${currentUser.id}`
+    }, () => _refreshOrdersLive())
+    .subscribe((status) => { if (status === 'SUBSCRIBED') _scheduleOrdersCatchup(); });
+  _realtimeChannels.push(orderBuyerCh);
+
+  const orderSellerCh = sb.channel('orders-seller-' + currentUser.id)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'orders',
+      filter: `seller_id=eq.${currentUser.id}`
+    }, () => _refreshOrdersLive())
+    .subscribe((status) => { if (status === 'SUBSCRIBED') _scheduleOrdersCatchup(); });
+  _realtimeChannels.push(orderSellerCh);
 
   // Realtime: listings refresh (new items from anyone)
   const listingCh = sb.channel('listings-feed')
@@ -3614,24 +3632,17 @@ async function signOut() {
 // ── SUPABASE DATA FUNCTIONS ───────────────────────────────────────────────────
 
 async function loadListings() {
-  const { data, error } = await sb.from('listings').select('*').eq('is_active', true).order('created_at', { ascending: false });
-  if (error || !data || !data.length) return;
-  // v33-24: also hide any listing the buyer has already WON (Accepted/Paid/Completed offer). The
-  // seller's sold-flag write can lag or fail RLS, so don't rely on listing.sold alone — reconcile
-  // against the buyer's own offers (always readable). Fixes won items lingering in Fresh Swap Drops.
-  let wonIds = new Set();
-  if (currentUser) {
-    try {
-      const { data: won } = await sb.from('offers').select('listing_id').eq('buyer_id', currentUser.id).in('status', ['Accepted', 'Paid', 'Completed']);
-      wonIds = new Set((won || []).map(o => o.listing_id));
-    } catch (e) {}
-  }
+  // v34-1c: feed reads the DERIVED available_listings view — present iff active AND no non-cancelled
+  // order. No sold-flag filter, no won-item reconciliation hack (the view excludes anything with an
+  // active order, for every buyer). Nothing to go stale.
+  const { data, error } = await sb.from('available_listings').select('*').order('created_at', { ascending: false });
+  if (error || !data || !data.length) { PRODS.length = 0; return; }
   const now = Date.now();
-  const mapped = data.filter(l => !l.sold && !wonIds.has(l.id)).map(l => ({
+  const mapped = data.map(l => ({
     id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
     seller: l.seller_username || 'user', sellerId: l.seller_id, location: l.location || '',
     img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
-    condition: l.condition || '', sold: !!l.sold, size: l.size || '', gender: l.gender || '',
+    condition: l.condition || '', sold: false, size: l.size || '', gender: l.gender || '',
     likes: l.likes || 0, views: l.views || 0, hot: l.hot || false, description: l.description || '',
     createdTs: l.created_at ? new Date(l.created_at).getTime() : 0,
     isNew: l.created_at ? (now - new Date(l.created_at).getTime()) < 86400000 : false
@@ -3648,10 +3659,11 @@ async function loadListings() {
 // returns false on any miss/error (seed integer ids, deleted rows) so demo seed items still
 // transact. dropSoldFromFeed yanks the now-sold item out of PRODS + re-renders.
 async function isListingSold(id) {
+  // v34-1c: "no longer available?" — DERIVED. Absent from available_listings ⇒ sold/inactive.
   try {
-    const { data, error } = await sb.from('listings').select('sold').eq('id', id).maybeSingle();
-    if (error || !data) return false;
-    return !!data.sold;
+    const { data, error } = await sb.from('available_listings').select('id').eq('id', id).maybeSingle();
+    if (error) return false;   // on error, don't block (demo seed ids etc.)
+    return !data;              // present ⇒ still available (false); absent ⇒ gone (true)
   } catch (e) { return false; }
 }
 function dropSoldFromFeed(id) {
@@ -3664,12 +3676,13 @@ async function loadOrders() {
   if (!currentUser) return;
   const { data, error } = await sb.from('orders').select('*').eq('buyer_id', currentUser.id).order('created_at', { ascending: false });
   if (error || !data || !data.length) return;
-  // v33-22: UPDATE existing orders in place (status/tracking/stage times change after purchase —
-  // seller ships → Shipped → Delivered) AND add new ones. Was dedup-skip-only, so a shipped order
-  // stayed "awaiting" on the buyer's card even though the DB + the notification said Shipped.
+  // v34-1c: join-on-read — orders carry no title/image/seller (RPCs don't copy them, no drift);
+  // hydrate from the base listings table (auction/legacy rows fall back to the order's own fields).
+  const lmap = await fetchListingsMap(data.map(o => o.listing_id));
   const fresh = [];
   data.forEach(o => {
-    const tl = buildTimeline(o); // v32-15: real stage times from the row
+    const d = orderDisplay(o, lmap);
+    const tl = buildTimeline(o); // real stage times from the row
     const existing = ORDERS.find(x => x.id === o.id);
     if (existing) {
       existing.status = o.status;
@@ -3677,38 +3690,48 @@ async function loadOrders() {
       existing.carrier = o.carrier || 'USPS';
       existing.shipFrom = o.ship_from; existing.shipTo = o.ship_to;
       existing.shippedAt = o.shipped_at; existing.deliveredAt = o.delivered_at;
-      existing.listingId = o.listing_id; // v33-24: for offer-status reconciliation
+      existing.listingId = o.listing_id; existing.offerId = o.offer_id;
+      existing.item = d.title; existing.img = d.img; existing.seller = d.seller;
+      existing.price = o.price; existing.currency = o.currency || existing.currency;
       existing.timeline = tl;
     } else {
       fresh.push({
-        id: o.id, item: o.title, img: o.image_url, price: o.price, currency: o.currency || 'SB',
-        seller: o.seller_username, status: o.status, date: new Date(o.created_at).toLocaleDateString(),
+        id: o.id, item: d.title, img: d.img, price: o.price, currency: o.currency || 'SB',
+        seller: d.seller, status: o.status, date: new Date(o.created_at).toLocaleDateString(),
         tracking: o.tracking_number, carrier: o.carrier || 'USPS',
         shipFrom: o.ship_from, shipTo: o.ship_to,
         shippedAt: o.shipped_at, deliveredAt: o.delivered_at,
-        listingId: o.listing_id, // v33-24
+        listingId: o.listing_id, offerId: o.offer_id,
         timeline: tl
       });
     }
   });
   if (fresh.length) ORDERS.unshift(...fresh);
-  // v33-24: offer-based sales advance the OFFER (markShipped → Completed), but the seller often
-  // can't write the buyer's ORDER row (RLS) so it stayed 'Processing' while the offer was Completed
-  // ("waiting for seller" even though it shipped). Reconcile buyer-side: a Completed offer for the
-  // same listing means it shipped → reflect the order as Shipped (heals already-stuck orders too).
-  if (currentUser) {
-    try {
-      const { data: shipped } = await sb.from('offers').select('listing_id, updated_at').eq('buyer_id', currentUser.id).eq('status', 'Completed');
-      const shippedMap = new Map((shipped || []).map(o => [o.listing_id, o.updated_at]));
-      ORDERS.forEach(ord => {
-        if (ord.listingId && shippedMap.has(ord.listingId) && (ord.status === 'Processing' || ord.status === 'Paid')) {
-          ord.status = 'Shipped';
-          ord.shippedAt = ord.shippedAt || shippedMap.get(ord.listingId);
-          ord.timeline = buildTimeline({ status: 'Shipped', shipped_at: ord.shippedAt });
-        }
-      });
-    } catch (e) {}
+  // (v33-24's offer-Completed→Shipped reconciliation removed — orders now carry their own status
+  //  via the RPCs + realtime; offers are negotiation-only and never go Completed.)
+}
+
+// v34-1c: the single buyer-pay path. Used by the My Orders "Complete Purchase" CTA AND by the
+// offer-pay checkout (My Offers → Complete Purchase). The order already exists at AwaitingPayment
+// (created by accept_offer); this PAYS it via pay_order — it does not create an order.
+// SB debit stays client-side (spec §13), applied only after the RPC succeeds.
+async function completeOrderPayment(orderId, currency, amount) {
+  amount = Number(amount) || 0;
+  if (currency === 'SB' && SB < amount) {
+    showSBShortfall(amount, () => completeOrderPayment(orderId, currency, amount));
+    return false;
   }
+  const { data, error } = await ossRpc('pay_order', { p_order_id: orderId }, 'pay_order');
+  if (error) return false; // red toast already surfaced (e.g. "not awaiting payment")
+  const lo = ORDERS.find(x => x.id === orderId);
+  const itemLabel = (lo && lo.item) ? lo.item : 'order';
+  if (currency === 'SB') { SB -= amount; updateAllSBDisplays(); addTransaction('spent', '🏷️', 'Paid: ' + itemLabel, '', -amount); }
+  else { addTransaction('spent', '💳', 'Paid: ' + itemLabel, '', -amount); }
+  if (lo) { lo.status = 'Paid'; lo.timeline = buildTimeline(data || { status: 'Paid' }); }
+  if (data?.seller_id) notifyUser(data.seller_id, { type:'order', icon:'💰', title:'Paid — ship it!', body:'@' + (currentProfile?.username || 'A buyer') + ' paid for ' + itemLabel + '. Mark it shipped when it\'s on the way.', actionLabel:'View', actionTarget:'my-listings:sold' });
+  showToast('🎉 Payment complete — seller will ship soon!');
+  if (typeof renderOrders === 'function') renderOrders(window._ordersFilter || 'all');
+  return true;
 }
 
 async function loadTransactions() {
@@ -3859,13 +3882,17 @@ function buildTimeline(orderOrStatus) {
   const placed = fmt(o.created_at) || 'Ordered';
   const shipped = fmt(o.shipped_at);
   const delivered = fmt(o.delivered_at);
+  // v34-1c: rank the canonical order status so each step lights up correctly. Legacy 'Processing'
+  // ≈ Paid; 'Completed' is the terminal auto-complete-on-delivery lands on (must light all stages).
+  const RANK = { AwaitingPayment:0, Processing:1, Paid:1, Shipped:2, Delivered:3, Completed:4 };
+  const r = (RANK[status] != null) ? RANK[status] : 1;
   return [
-    {status:'Order Placed',      done:true, icon:'🛍️', date: placed},
-    {status:'Payment Confirmed', done:true, icon:'✅', date: placed},
-    {status:'Seller Packaged',   done:status!=='Processing', icon:'📦', date: shipped || 'Pending'},
-    {status:'Shipped',           done:['Shipped','Out for Delivery','Delivered'].includes(status), icon:'🚚', date: shipped || 'Pending'},
-    {status:'Out for Delivery',  done:['Out for Delivery','Delivered'].includes(status), icon:'🏃', date: 'Pending'},
-    {status:'Delivered',         done:status==='Delivered', icon:'🎉', date: delivered || 'Pending'},
+    {status:'Order Placed',      done:true,  icon:'🛍️', date: placed},
+    {status:'Payment Confirmed', done:r>=1,  icon:'✅', date: r>=1 ? placed : 'Pending'},
+    {status:'Seller Packaged',   done:r>=2,  icon:'📦', date: shipped || 'Pending'},
+    {status:'Shipped',           done:r>=2,  icon:'🚚', date: shipped || 'Pending'},
+    {status:'Out for Delivery',  done:r>=3,  icon:'🏃', date: 'Pending'},
+    {status:'Delivered',         done:r>=3,  icon:'🎉', date: delivered || 'Pending'},
   ];
 }
 
@@ -4038,6 +4065,7 @@ async function openSaleManage(itemId, title) {
       .order('created_at', { ascending: false }).limit(1);
     if (data && data.length) order = data[0];
   } catch (e) { console.error('openSaleManage lookup:', e); }
+  window._saleManageTitle = title; // v34-1b: keep the title across post-action re-renders
   renderSaleManage(order, title);
 }
 
@@ -4056,7 +4084,13 @@ function renderSaleManage(order, title) {
     actions = (order.tracking_number ? '<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:12px;margin-bottom:12px;"><div style="color:rgba(255,255,255,.4);font-size:11px;margin-bottom:3px;">Tracking · ' + (order.carrier || 'USPS') + '</div><div style="color:#fff;font-family:monospace;font-size:13px;word-break:break-all;">' + order.tracking_number + '</div></div>' : '')
       + '<button onclick="sellerDeliverOrder(\'' + order.id + '\')" style="width:100%;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:14px;padding:15px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">✓ Mark as Delivered</button>';
   } else {
-    actions = '<button onclick="sellerShipOrder(\'' + order.id + '\')" style="width:100%;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:15px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">📦 Create Shipping Label</button>';
+    actions = '<button onclick="sellerShipOrder(\'' + order.id + '\')" style="width:100%;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:15px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">📦 Create Shipping Label</button>'
+      + (status === 'AwaitingPayment' ? '<div style="background:rgba(255,179,71,.1);border:1px solid rgba(255,179,71,.25);border-radius:12px;padding:10px 12px;margin-top:10px;color:#FFB347;font-size:12px;text-align:center;">⏳ Waiting on buyer payment — you can ship once it\'s Paid.</div>' : '')
+      + '<button onclick="sellerCancelOrder(\'' + order.id + '\')" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:13px;color:rgba(255,255,255,.6);font-weight:700;font-size:14px;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-top:10px;">Cancel Order</button>';
+  }
+  // v34-1d: View Invoice — any order at Paid+ (reachable for completed sales too: records/taxes).
+  if (order && order.status && order.status !== 'AwaitingPayment') {
+    actions += '<button onclick="openInvoice(\'' + order.id + '\')" style="width:100%;margin-top:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:13px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">🧾 View Invoice</button>';
   }
   const ov = document.createElement('div');
   ov.id = 'sale-manage-overlay';
@@ -4072,29 +4106,107 @@ function renderSaleManage(order, title) {
   document.body.appendChild(ov);
 }
 
+// v34-1d: per-order invoice. One entry point — perspective auto-detected (seller vs buyer).
+// Reads the canonical order, joins the listing for the item title, renders a self-contained
+// light "receipt" block inside a dark bottom-sheet (the block is export-ready for a future PDF).
+// Gated to Paid+ (an AwaitingPayment order has no invoice yet).
+async function openInvoice(orderId) {
+  const { data: ord, error } = await sb.from('orders').select('*').eq('id', orderId).maybeSingle();
+  if (error) { showError(error.message); return; }
+  if (!ord) { showError('Order not found.'); return; }
+  if (ord.status === 'AwaitingPayment') { showToast('No invoice yet — awaiting payment.'); return; }
+  const lmap = await fetchListingsMap([ord.listing_id]);
+  const d = orderDisplay(ord, lmap);
+  const isSeller = !!(currentUser && ord.seller_id === currentUser.id);
+  let buyerName = '';
+  if (isSeller) {
+    try { const { data: bp } = await sb.from('profiles').select('username').eq('id', ord.buyer_id).maybeSingle(); buyerName = bp?.username || ''; } catch (e) {}
+  }
+  renderInvoiceSheet(ord, d, isSeller, buyerName);
+}
+function renderInvoiceSheet(ord, d, isSeller, buyerName) {
+  const ex = document.getElementById('invoice-overlay'); if (ex) ex.remove();
+  const isUSD = ord.currency === 'USD';
+  const money = (n) => (isUSD ? '$' + n : n + ' SB');
+  const invNo = '#' + String(ord.id).slice(-8).toUpperCase();
+  const dateStr = ord.created_at ? new Date(ord.created_at).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+  const ss = STATUS_STYLES[ord.status] || STATUS_STYLES['Paid'];
+  const gross = ord.price;
+  const fee = (ord.platform_fee != null) ? ord.platform_fee : Math.round(gross * 0.06);
+  const net = gross - fee;
+  // Self-contained receipt block (light theme; export-ready).
+  const block =
+    '<div id="oss-invoice-block" style="background:#fff;color:#111;border-radius:16px;padding:20px;font-family:\'DM Sans\',sans-serif;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">'
+    +   '<div><div style="font-weight:900;font-size:19px;color:#111;">OneStopSwap</div><div style="font-size:12px;color:#888;">Receipt</div></div>'
+    +   '<div style="text-align:right;"><div style="font-weight:800;font-size:15px;color:#111;">' + invNo + '</div><div style="font-size:11px;color:#aaa;">' + dateStr + '</div></div>'
+    + '</div>'
+    + '<div style="display:flex;justify-content:space-between;font-size:13px;color:#555;margin-bottom:5px;"><span>' + (isSeller ? 'Sold to' : 'Sold by') + '</span><span style="font-weight:700;color:#111;">@' + (isSeller ? (buyerName || 'buyer') : (d.seller || 'seller')) + '</span></div>'
+    + '<div style="display:flex;justify-content:space-between;font-size:13px;color:#555;margin-bottom:5px;"><span>Status</span><span style="font-weight:700;color:#111;">' + ord.status + '</span></div>'
+    + '<div style="border-top:1px solid #eee;margin:14px 0;"></div>'
+    + '<div style="font-weight:700;font-size:14px;color:#111;margin-bottom:12px;">' + d.title + '</div>'
+    + (isSeller
+        ? '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Gross sale</span><span>' + money(gross) + '</span></div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Platform fee (6%)</span><span style="color:#c0392b;">−' + money(fee) + '</span></div>'
+          + '<div style="border-top:1px solid #eee;margin:10px 0;"></div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:900;color:#111;"><span>Net payout</span><span>' + money(net) + '</span></div>'
+          + '<div style="font-size:11px;color:#aaa;margin-top:6px;">Amount you receive after the 6% platform fee.</div>'
+        : '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Item price</span><span>' + money(gross) + '</span></div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Shipping</span><span style="color:#00A550;font-weight:700;">Free</span></div>'
+          + '<div style="border-top:1px solid #eee;margin:10px 0;"></div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:900;color:#111;"><span>Total paid</span><span>' + money(gross) + '</span></div>')
+    + '<div style="border-top:1px solid #eee;margin:14px 0 8px;"></div>'
+    + '<div style="font-size:10px;color:#ccc;word-break:break-all;">Order ' + ord.id + '</div>'
+    + '</div>';
+  const ov = document.createElement('div');
+  ov.id = 'invoice-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100000;display:flex;align-items:flex-end;justify-content:center;';
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  ov.innerHTML = '<div style="background:#161616;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:18px 16px 28px;border-top:1px solid rgba(255,255,255,.1);max-height:88vh;overflow-y:auto;">'
+    + '<div style="width:40px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 16px;"></div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><span style="color:#fff;font-weight:900;font-size:18px;">🧾 Invoice</span>'
+    +   '<span style="background:' + ss.bg + ';border:1px solid ' + ss.border + ';border-radius:8px;padding:3px 10px;color:' + ss.color + ';font-size:11px;font-weight:700;">' + ss.icon + ' ' + ord.status + '</span></div>'
+    + block
+    + '<button onclick="document.getElementById(\'invoice-overlay\').remove()" style="width:100%;margin-top:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:13px;color:rgba(255,255,255,.7);font-weight:700;font-size:14px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">Close</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
+
 async function sellerShipOrder(orderId) {
-  const tracking = '9400' + Math.floor(1e11 + Math.random() * 9e11);
-  const { error } = await sb.from('orders').update({ status: 'Shipped', tracking_number: tracking, carrier: 'USPS', shipped_at: new Date().toISOString() }).eq('id', orderId);
-  if (error) { showToast('❌ ' + (error.message || 'Could not create label')); return; }
+  // v34-1b: ship_order RPC generates tracking + sets Shipped atomically (role-checked, must be Paid).
+  const { data, error } = await ossRpc('ship_order', { p_order_id: orderId }, 'ship_order');
+  if (error) return; // red toast + tx-log already surfaced (e.g. "order is not paid")
   showToast('📦 Shipping label created — buyer notified!');
   try {
-    const { data } = await sb.from('orders').select('*').eq('id', orderId).single();
-    if (data?.buyer_id) notifyUser(data.buyer_id, { type:'order', icon:'📦', title:'Your order shipped!', body:'@' + (currentProfile?.username || 'The seller') + ' shipped "' + (data.title || 'your order') + '". Tracking: ' + tracking, actionLabel:'Track', actionTarget:'my-orders' });
-    renderSaleManage(data, data?.title);
-    renderMyListings(); // v32-13: card moves Sold → Shipped behind the sheet
-  } catch (e) { console.error('sellerShipOrder refresh:', e); }
+    if (data?.buyer_id) notifyUser(data.buyer_id, { type:'order', icon:'📦', title:'Your order shipped!', body:'@' + (currentProfile?.username || 'The seller') + ' shipped your order. Tracking: ' + (data.tracking_number || ''), actionLabel:'Track', actionTarget:'my-orders' });
+    renderSaleManage(data, window._saleManageTitle);
+    renderMyListings(); // card moves Sold → Shipped behind the sheet
+  } catch (e) { txlog('err', 'sellerShipOrder refresh', e.message || String(e)); }
 }
 
 async function sellerDeliverOrder(orderId) {
-  const { error } = await sb.from('orders').update({ status: 'Delivered', delivered_at: new Date().toISOString() }).eq('id', orderId);
-  if (error) { showToast('❌ ' + (error.message || 'Could not update')); return; }
-  showToast('🎉 Marked as delivered!');
+  // v34-1b: deliver_order RPC → Delivered, or auto-Completed when app_config flag is true.
+  const { data, error } = await ossRpc('deliver_order', { p_order_id: orderId }, 'deliver_order');
+  if (error) return;
+  showToast(data?.status === 'Completed' ? '🎉 Delivered — sale complete!' : '🎉 Marked as delivered!');
   try {
-    const { data } = await sb.from('orders').select('*').eq('id', orderId).single();
-    if (data?.buyer_id) notifyUser(data.buyer_id, { type:'order', icon:'🎉', title:'Order delivered!', body:'@' + (currentProfile?.username || 'The seller') + ' marked "' + (data.title || 'your order') + '" as delivered.', actionLabel:'View', actionTarget:'my-orders' });
-    renderSaleManage(data, data?.title);
-    renderMyListings(); // v32-13: card moves Shipped → Delivered behind the sheet
-  } catch (e) { console.error('sellerDeliverOrder refresh:', e); }
+    if (data?.buyer_id) notifyUser(data.buyer_id, { type:'order', icon:'🎉', title:'Order delivered!', body:'@' + (currentProfile?.username || 'The seller') + ' marked your order as delivered.', actionLabel:'View', actionTarget:'my-orders' });
+    renderSaleManage(data, window._saleManageTitle);
+    renderMyListings(); // card moves Shipped → Delivered behind the sheet
+  } catch (e) { txlog('err', 'sellerDeliverOrder refresh', e.message || String(e)); }
+}
+
+async function sellerCancelOrder(orderId) {
+  // v34-1b: cancel_order RPC → Cancelled; listing returns to available_listings (derived). Pre-ship only.
+  if (!confirm('Cancel this order? The item goes back into your inventory.')) return;
+  const { data, error } = await ossRpc('cancel_order', { p_order_id: orderId }, 'cancel_order');
+  if (error) return; // e.g. "too late to cancel (Shipped)."
+  showToast('Order cancelled — item back in your inventory.');
+  try {
+    if (data?.buyer_id) notifyUser(data.buyer_id, { type:'order', icon:'⚠️', title:'Order cancelled', body:'@' + (currentProfile?.username || 'The seller') + ' cancelled the order. Any payment is refunded.', actionLabel:'View', actionTarget:'my-orders' });
+    const ov = document.getElementById('sale-manage-overlay'); if (ov) ov.remove();
+    renderMyListings();
+  } catch (e) { txlog('err', 'sellerCancelOrder refresh', e.message || String(e)); }
 }
 
 async function saveTransactionToDb(type, icon, label, subLabel, amount) {
@@ -5310,9 +5422,9 @@ async function openChat(seller, color, accent, initials) {
         <div style="color:#fff;font-weight:700;font-size:15px;">@${seller}</div>
         <div id="chat-status" style="color:${accent};font-size:11px;font-weight:600;">● Online</div>
       </div>
-      <div style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:4px 10px;">
+      ${isDemoSeller(seller) ? `<div style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:4px 10px;">
         <span style="color:#FF3B30;font-size:10px;font-weight:800;">⚡ AI Seller</span>
-      </div>
+      </div>` : ''}
     </div>
     <div id="chat-messages" style="padding:16px;display:flex;flex-direction:column;gap:12px;padding-bottom:110px;">
       ${msgs.map(m=>chatBubble(m.f, m.t, m.ts)).join('')}
@@ -5406,6 +5518,20 @@ async function sendChatMsg() {
   // Add to history
   if (!chatHistory[currentChatSeller]) chatHistory[currentChatSeller] = [];
   chatHistory[currentChatSeller].push({ role: 'user', content: text });
+
+  // v34-1e: only DEMO sellers get an AI auto-reply. A real account (a signed-up user) RECEIVES the
+  // message and answers from their own session — delivered live by the messages realtime channel.
+  // So for a real seller we persist just the buyer's message (one row) and stop here — no AI call,
+  // no typing indicator, no fabricated reply.
+  if (!isDemoSeller(currentChatSeller)) {
+    if (currentUser) {
+      sb.from('messages').insert([
+        { sender_id: currentUser.id, sender_username: currentProfile?.username || 'user', receiver_username: currentChatSeller, message: text, is_ai_response: false }
+      ]).then(({ error }) => { if (error) { console.error('Message save error:', error); showError('Message failed to send.'); } });
+    }
+    btn.style.opacity = '1'; btn.disabled = false; input.focus();
+    return;
+  }
 
   // Build seller context
   const sellerProducts = PRODS.filter(p => p.seller === currentChatSeller);
@@ -5876,20 +6002,25 @@ function ratingBreakdown(reviews, fallback) {
 async function confirmDelivery(orderId) {
   const o = ORDERS.find(x => x.id === orderId);
   if (!o) return;
-  o.status = 'Delivered';
-  o.timeline.forEach(t => t.done = true);
-  o.timeline[o.timeline.length-1].date = 'Just now';
-  addTransaction('earned', '✅', 'Delivery confirmed: ' + o.item, '@' + o.seller, 0);
-  showToast('✅ Delivery confirmed! You can now leave a review.');
-  // v32-14: persist to the DB (was local-only) so the SELLER's My Listings bucketing flips
-  // Shipped → Delivered, and notify the seller that the buyer confirmed receipt. Real orders
-  // only (seed orders like OSS-1042 aren't uuids — skip the DB write + notify for those).
+  // v34-1b: buyer confirm → confirm_receipt RPC (NOT deliver_order — that's the seller's path).
+  // With auto_complete_on_delivery=true both reach Completed; when the flag flips for buyer
+  // protection, confirm_receipt is what carries the buyer's confirmation through to Completed.
   if (/^[0-9a-f-]{36}$/i.test(String(orderId))) {
-    try { await sb.from('orders').update({ status: 'Delivered', delivered_at: new Date().toISOString() }).eq('id', orderId); }
-    catch (e) { console.error('confirmDelivery persist:', e); }
+    const { data, error } = await ossRpc('confirm_receipt', { p_order_id: orderId }, 'confirm_receipt');
+    if (error) return; // e.g. "not in transit (...)" if it isn't Shipped/Delivered yet
+    o.status = data?.status || 'Completed';
+    if (o.timeline) { o.timeline.forEach(t => t.done = true); o.timeline[o.timeline.length - 1].date = 'Just now'; }
+    addTransaction('earned', '✅', 'Receipt confirmed: ' + o.item, '@' + o.seller, 0);
+    showToast('✅ Receipt confirmed! You can now leave a review.');
     if (o.seller) notifyUsername(o.seller, { type:'order', icon:'🎉', title:'Delivery confirmed!',
-      body:'@' + (currentProfile?.username || 'The buyer') + ' confirmed delivery of "' + o.item + '". Nice sale!',
+      body:'@' + (currentProfile?.username || 'The buyer') + ' confirmed receipt of "' + o.item + '". Nice sale!',
       actionLabel:'View', actionTarget:'my-listings:delivered' });
+  } else {
+    // demo seed order (non-uuid id) — local-only behavior preserved for the seeded demo.
+    o.status = 'Delivered';
+    if (o.timeline) { o.timeline.forEach(t => t.done = true); o.timeline[o.timeline.length - 1].date = 'Just now'; }
+    addTransaction('earned', '✅', 'Delivery confirmed: ' + o.item, '@' + o.seller, 0);
+    showToast('✅ Delivery confirmed! You can now leave a review.');
   }
   openOrderTracking(orderId);
 }
@@ -6546,7 +6677,8 @@ function acceptAndCheckout(offerId) {
   const offer = OFFERS.find(o => o.id === offerId);
   if (!offer) return;
   document.getElementById('modal-offer-response').style.display = 'none';
-  offer.status = 'Completing';
+  // v34-1d: offer stays 'Accepted' (negotiation-terminal). Payment lands on the ORDER via
+  // completeOrderPayment; double-pay is guarded server-side (pay_order raises "not awaiting payment").
 
   // v31-18: don't require the listing in PRODS — once an offer is accepted the listing is
   // marked sold (v31-17) and filtered out of PRODS, so this lookup returned null and
@@ -6604,12 +6736,19 @@ function acceptAndCheckout(offerId) {
   }
 }
 
-function acceptCounter(offerId) {
+async function acceptCounter(offerId) {
   const offer = OFFERS.find(o => o.id === offerId);
   if (!offer) return;
-  offer.offerAmount = offer.counterAmount;
-  offer.status = 'Accepted';
+  if (!offer.dbId) { showError('This offer has no DB id.'); return; }
   document.getElementById('modal-offer-response').style.display = 'none';
+  // v34-1e: buyer accepting the seller's counter must CREATE the AwaitingPayment order first
+  // (accept_offer is now buyer-callable when it's a seller counter). Checkout then PAYS that order
+  // via completeOrderPayment (resolve-by-offer_id) — same path as the seller-accepts flow. A double
+  // tap is server-guarded: the offer leaves 'Countered', so a second accept raises "offer is not open".
+  const { error } = await ossRpc('accept_offer', { p_offer_id: offer.dbId }, 'accept_offer');
+  if (error) return; // red toast already surfaced
+  offer.offerAmount = offer.counterAmount; // reflect the agreed price in the checkout display
+  offer.status = 'Accepted';
   acceptAndCheckout(offerId);
 }
 
@@ -6714,7 +6853,7 @@ function openOrderTracking(orderId) {
     </div>
 
     <!-- Est delivery banner -->
-    ${o.status !== 'Delivered' ? `
+    ${!['Delivered','Completed'].includes(o.status) ? `
     <div style="background:linear-gradient(135deg,rgba(255,59,48,.15),rgba(255,59,48,.05));border-bottom:1px solid rgba(255,59,48,.2);padding:12px 20px;display:flex;align-items:center;gap:10px;">
       <span style="font-size:20px;">📅</span>
       <div>
@@ -6793,7 +6932,7 @@ function openOrderTracking(orderId) {
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
                 <span style="font-size:16px;">${step.icon}</span>
                 <span style="color:${step.done?'#fff':'rgba(255,255,255,.3)'};font-weight:${step.done?'700':'500'};font-size:14px;">${step.status}</span>
-                ${i===currentStep&&o.status!=='Delivered'?'<span style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:1px 8px;color:#FF3B30;font-size:10px;font-weight:800;">CURRENT</span>':''}
+                ${i===currentStep&&!['Delivered','Completed'].includes(o.status)?'<span style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:1px 8px;color:#FF3B30;font-size:10px;font-weight:800;">CURRENT</span>':''}
               </div>
               <div style="color:${step.done?'rgba(255,255,255,.4)':'rgba(255,255,255,.2)'};font-size:12px;padding-left:24px;">${step.date}</div>
             </div>
@@ -6808,6 +6947,9 @@ function openOrderTracking(orderId) {
         </div>
         <button onclick="openChat('${o.seller}','#1a0000','#FF3B30','${o.seller.substring(0,2).toUpperCase()}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:12px;padding:8px 16px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
       </div>
+
+      ${o.status !== 'AwaitingPayment' ? `
+      <button onclick="openInvoice('${o.id}')" style="width:100%;margin-top:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:15px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🧾 View Invoice</button>` : ''}
 
       <!-- Confirm delivery -->
       ${o.status === 'Shipped' ? `
@@ -6912,14 +7054,13 @@ function renderOffers(filter) {
     return;
   }
 
+  // v34-1d: offers are negotiation-only (Pending/Countered/Accepted/Declined/Withdrawn).
+  // No Paid/Completed offer states — those live on the ORDER now.
   let list = filter === 'all' ? OFFERS.filter(o => o.status !== 'Expired') :
-               filter === 'Accepted' ? OFFERS.filter(o => o.status === 'Accepted' || o.status === 'Completing') :
-               filter === 'Completed' ? OFFERS.filter(o => o.status === 'Completed' || o.status === 'Paid') :
+               filter === 'Accepted' ? OFFERS.filter(o => o.status === 'Accepted') :
                filter === 'Expired' ? OFFERS.filter(o => o.status === 'Expired' || (o.expiresAt && o.expiresAt < Date.now() && o.status === 'Pending')) :
                // v31-35: the BUYER's Pending tab also shows a seller's outstanding counter (status
-               // 'Countered' with counterAmount != null = the buyer's turn to respond) — the exact
-               // mirror of the seller's Pending rule. Without this the buyer's Pending went empty the
-               // moment the seller countered (the offer flips to 'Countered'). Still in Countered too.
+               // 'Countered' with counterAmount != null = the buyer's turn to respond).
                filter === 'Pending' ? OFFERS.filter(o => o.status === 'Pending' || (o.status === 'Countered' && o.counterAmount != null)) :
                filter === 'Declined' ? OFFERS.filter(o => o.status === 'Declined' || o.status === 'Withdrawn') : // v31-37: removed-listing offers land in Declined
                OFFERS.filter(o => o.status === filter);
@@ -6929,13 +7070,11 @@ function renderOffers(filter) {
   // only the 📬 Inbox — so an Accepted / Countered / Declined / Pending received offer also
   // shows under that status tab. (The Inbox still lists all received offers.) Generalizes
   // the v31-26 Countered-only handling. 'all' is intentionally excluded (that's the Inbox's job).
-  let recvForTab = ['Pending', 'Countered', 'Accepted', 'Declined', 'Completed'].includes(filter)
+  let recvForTab = ['Pending', 'Countered', 'Accepted', 'Declined'].includes(filter)
     ? RECEIVED_OFFERS.filter(o => o.status === filter
-        || (filter === 'Accepted' && o.status === 'Paid')
         || (filter === 'Declined' && o.status === 'Withdrawn') // v31-37: removed-listing offers land in Declined
         // v31-33: a buyer counter-back (status 'Countered' with no seller counter outstanding) is
-        // genuinely pending the SELLER's action, so it ALSO shows in the Pending tab — while still
-        // living in the Countered tab (the "what's still open" tracker). Dual visibility, on purpose.
+        // genuinely pending the SELLER's action, so it ALSO shows in the Pending tab.
         || (filter === 'Pending' && o.status === 'Countered' && o.sellerCounter == null))
         .slice().sort((a, b) => (b.lastActivityTs || b.createdAtTs || 0) - (a.lastActivityTs || a.createdAtTs || 0))
     : [];
@@ -7031,8 +7170,6 @@ function sentOfferCard(o) {
             <button onclick="acceptAndCheckout('${o.id}')" style="background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Complete Purchase →</button>` :
           o.status === 'Pending' ? `
             <span style="color:rgba(255,255,255,.3);font-size:12px;">Waiting for seller...</span>` :
-          (o.status === 'Completed' || o.status === 'Paid') ? `
-            <span style="color:#00C864;font-size:12px;font-weight:600;">Purchase completed ✓</span>` :
           o.status === 'Declined' ? `
             <button onclick="reOffer('${o.id}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer Again</button>` :
           o.status === 'Withdrawn' ? `
@@ -7126,25 +7263,7 @@ function receivedOfferCard(o) {
             <button onclick="respondToOffer('${o.id}','accepted')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:10px;padding:8px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;">Accept ✓</button>
           </div>
         </div>`) :
-        o.status === 'Paid' ? `
-        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;">
-          <div style="background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
-            <span style="font-size:20px;">💰</span>
-            <div>
-              <div style="color:#4FC3F7;font-weight:700;font-size:13px;">Paid by @${o.buyer} — ready to ship!</div>
-              <div style="color:rgba(255,255,255,.4);font-size:11px;">Mark it shipped once it's on the way.</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button onclick="openChat('${o.buyer}','${o.buyerColor}','#00C864','${o.buyerInitials}')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Message Buyer</button>
-            <button onclick="markShipped('${o.id}')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:10px;padding:8px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;">📦 Mark Shipped</button>
-          </div>
-        </div>` :
-        o.status === 'Completed' ? `
-        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
-          <span style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:8px;padding:3px 10px;color:#00C864;font-size:11px;font-weight:700;">📦 Shipped — complete</span>
-          <span style="color:rgba(255,255,255,.3);font-size:12px;">Order complete ✓</span>
-        </div>` : `
+        `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
           <span style="background:${sc.bg};border:1px solid ${sc.border};border-radius:8px;padding:3px 10px;color:${sc.color};font-size:11px;font-weight:700;">${sc.icon} ${o.status}</span>
         </div>`}
@@ -7152,65 +7271,50 @@ function receivedOfferCard(o) {
 }
 
 // v31-29: seller marks a Paid offer shipped → Completed (closes the ship-gate loop).
-function markShipped(offerId) {
+async function markShipped(offerId) {
   const o = RECEIVED_OFFERS.find(x => x.id === offerId);
   if (!o) return;
-  o.status = 'Completed';
-  if (o.dbId) sb.from('offers').update({ status: 'Completed' }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('mark shipped persist:', error); });
-  // v33-23: ALSO advance the buyer's ORDER row (offer-based sales create an order linked by
-  // listing_id, status 'Processing'). markShipped previously only touched the offer, so the buyer's
-  // My Orders stayed at "payment complete" forever. Set Shipped + tracking so the buyer's order +
-  // tracking view reflect it (the buyer picks it up on their next My Orders re-pull, v33-22).
-  if (o.productId && /^[0-9a-f-]{36}$/i.test(String(o.productId))) {
-    const tracking = '9400' + Math.floor(1e11 + Math.random() * 9e11);
-    sb.from('orders').update({ status: 'Shipped', tracking_number: tracking, carrier: 'USPS', shipped_at: new Date().toISOString() })
-      .eq('listing_id', o.productId).neq('status', 'Delivered')
-      .then(({ error }) => { if (error) console.error('order ship persist:', error); });
-  }
-  showToast('📦 Marked shipped — order complete!');
-  const _shipNotif = { type:'order', icon:'📦', title:'Your order shipped!', body:'@' + (currentProfile?.username || 'The seller') + ' marked "' + o.title + '" as shipped.', actionLabel:'Track', actionTarget:'my-orders' };
+  if (!o.dbId) { showError('Offer has no DB id.'); return; }
+  // v34-1b: shipping lives on the ORDER now, not the offer. Resolve the order accept_offer created
+  // (orders.offer_id = this offer) and ship it via the RPC. The offer stays Accepted (negotiation-terminal).
+  const { data: ord, error: qErr } = await sb.from('orders').select('id,status').eq('offer_id', o.dbId).maybeSingle();
+  if (qErr) { showError(qErr.message); return; }
+  if (!ord) { showError('No order for this offer yet — the buyer needs to pay first.'); return; }
+  const { data, error } = await ossRpc('ship_order', { p_order_id: ord.id }, 'ship_order');
+  if (error) return; // e.g. "order is not paid (AwaitingPayment)."
+  showToast('📦 Marked shipped!');
+  const _shipNotif = { type:'order', icon:'📦', title:'Your order shipped!', body:'@' + (currentProfile?.username || 'The seller') + ' shipped "' + o.title + '". Tracking: ' + (data?.tracking_number || ''), actionLabel:'Track', actionTarget:'my-orders' };
   if (o.buyerId) notifyUser(o.buyerId, _shipNotif); else notifyUsername(o.buyer, _shipNotif);
   renderReceivedOffers();
 }
 
-function respondToOffer(offerId, action) {
+async function respondToOffer(offerId, action) {
   const o = RECEIVED_OFFERS.find(x => x.id === offerId);
   if (!o) return;
   if (action === 'accepted') {
+    // v34-1b: accept_offer RPC atomically sets offer→Accepted AND creates the AwaitingPayment
+    // order (fee captured). Item leaves inventory via derived availability — no manual sold flip.
+    if (!o.dbId) { showError('This offer has no DB id — cannot accept.'); return; }
+    const { data: order, error } = await ossRpc('accept_offer', { p_offer_id: o.dbId }, 'accept_offer');
+    if (error) return; // red toast + tx-log already surfaced (e.g. "offer is not open")
     o.status = 'Accepted';
-    // v31-31: persist the accept; v31-21/22 diagnostic alerts removed (seller write verified working).
-    if (o.dbId) sb.from('offers').update({ status: 'Accepted' }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('offer accept persist:', error); });
-    if (currentUser && o.productId) {
-      sb.from('listings').update({ sold: true }).eq('id', o.productId).eq('seller_id', currentUser.id).then(({ error }) => { if (error) console.error('listing sold persist:', error); });
+    // Drop the item from the local feed for immediate UX (the view already excludes it server-side).
+    if (o.productId) {
       const _li = PRODS.findIndex(x => String(x.id) === String(o.productId));
       if (_li > -1) { PRODS.splice(_li, 1); renderAll(); }
     }
-
-    // Auto-create order
-    const p = PRODS.find(x => x.id === o.productId);
-    const newOrder = {
-      id: 'OSS-' + (1050 + ORDERS.length),
-      item: o.title,
-      img: Object.keys(I).find(k => I[k] === o.img) || 'gold_shirt',
-      price: o.offerAmount,
-      seller: 'dinobravo', // current user is seller
-      status: 'Processing',
-      date: 'Today',
-      currency: o.currency,
-      tracking: null,
-      carrier: 'USPS',
-      shipFrom: 'Nashville, TN',
-      shipTo: o.buyer + "'s address",
-      timeline: [
-        {status:'Order Placed',      date:'Today',    done:true,  icon:'🛍️'},
-        {status:'Payment Confirmed', date:'Pending',  done:false, icon:'✅'},
-        {status:'Seller Packaged',   date:'Pending',  done:false, icon:'📦'},
-        {status:'Shipped',           date:'Pending',  done:false, icon:'🚚'},
-        {status:'Out for Delivery',  date:'Pending',  done:false, icon:'🏃'},
-        {status:'Delivered',         date:'Pending',  done:false, icon:'🎉'},
-      ]
-    };
-    ORDERS.unshift(newOrder);
+    // Reflect the new AwaitingPayment order locally so the seller sees it immediately
+    // (reads fully repoint to orders in v34-1c; this is just snappy feedback).
+    if (order && order.id) {
+      ORDERS.unshift({
+        id: order.id, item: o.title, img: o.img,
+        price: order.price, currency: order.currency || o.currency,
+        seller: currentProfile?.username || '', status: 'AwaitingPayment', date: 'Today',
+        tracking: null, carrier: 'USPS',
+        listingId: order.listing_id, offerId: order.offer_id,
+        timeline: buildTimeline(order)
+      });
+    }
 
     // Log to wallet as pending earning
     addTransaction('pending', '🏷️', 'Offer accepted: ' + o.title, '@' + o.buyer + ' · awaiting payment', o.offerAmount);
@@ -7547,16 +7651,22 @@ const ORDERS = [
 ];
 
 const STATUS_STYLES = {
-  'Delivered': {bg:'rgba(0,200,100,.12)',border:'rgba(0,200,100,.3)',color:'#00C864',icon:'✓'},
+  'AwaitingPayment': {bg:'rgba(255,179,71,.12)',border:'rgba(255,179,71,.3)',color:'#FFB347',icon:'⏳'},
+  'Paid':      {bg:'rgba(79,195,247,.12)',border:'rgba(79,195,247,.3)',color:'#4FC3F7',icon:'💳'},
   'Shipped':   {bg:'rgba(79,195,247,.12)',border:'rgba(79,195,247,.3)',color:'#4FC3F7',icon:'📦'},
+  'Delivered': {bg:'rgba(0,200,100,.12)',border:'rgba(0,200,100,.3)',color:'#00C864',icon:'✓'},
+  'Completed': {bg:'rgba(0,200,100,.12)',border:'rgba(0,200,100,.3)',color:'#00C864',icon:'✓'},
+  'Cancelled': {bg:'rgba(255,255,255,.06)',border:'rgba(255,255,255,.15)',color:'rgba(255,255,255,.5)',icon:'⊘'},
+  'Refunded':  {bg:'rgba(255,255,255,.06)',border:'rgba(255,255,255,.15)',color:'rgba(255,255,255,.5)',icon:'↩'},
   'Processing':{bg:'rgba(255,179,71,.12)',border:'rgba(255,179,71,.3)',color:'#FFB347',icon:'⏳'},
 };
 
 function renderOrders(filter) {
   const oq = (typeof MY_ORDERS_QUERY === 'string' ? MY_ORDERS_QUERY.trim() : ''); // v33-10: in-account search is TAB-SPECIFIC
+  // v34-1c: tabs re-map to the new order vocabulary. active = pre-completion stages; the other tab = done.
   let list = filter === 'all' ? ORDERS :
-             filter === 'active' ? ORDERS.filter(o=>o.status!=='Delivered') :
-             ORDERS.filter(o=>o.status==='Delivered');
+             filter === 'active' ? ORDERS.filter(o => ['AwaitingPayment','Paid','Shipped'].includes(o.status)) :
+             ORDERS.filter(o => ['Delivered','Completed'].includes(o.status));
   if (oq) list = list.filter(o => myMatch({ title: o.item, seller: o.seller, category: o.category || '', location: '', description: '' }, oq));
   document.getElementById('orders-list').innerHTML = list.map(o => {
     const ss = STATUS_STYLES[o.status] || STATUS_STYLES['Processing'];
@@ -7575,14 +7685,14 @@ function renderOrders(filter) {
           </div>
         </div>
       </div>
-      ${o.tracking ? `<div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+      ${o.status === 'AwaitingPayment' ? `<div style="border-top:1px solid rgba(255,255,255,.05);padding:12px 14px;"><button onclick="completeOrderPayment('${o.id}','${o.currency}',${o.price})" style="width:100%;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:12px;padding:11px;color:#fff;font-weight:800;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">💳 Complete Purchase · ${o.currency==='USD'?'$'+o.price:o.price+' SB'}</button></div>` : o.tracking ? `<div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
         <span style="color:rgba(255,255,255,.4);font-size:11px;">📦 ${o.carrier||'USPS'} · ${o.tracking.slice(-8)}</span>
         <button onclick="openOrderTracking('${o.id}')" style="background:linear-gradient(135deg,rgba(255,59,48,.2),rgba(255,59,48,.1));border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:4px 12px;color:#FF3B30;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Track →</button>
       </div>` : `<div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
         <span style="color:rgba(255,255,255,.3);font-size:11px;">⏳ Awaiting shipment</span>
         <button onclick="openOrderTracking('${o.id}')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 12px;color:rgba(255,255,255,.5);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Details →</button>
       </div>`}
-      ${o.status === 'Delivered' ? `
+      ${['Delivered','Completed'].includes(o.status) ? `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;">
           ${reviewed ? `
             <div style="background:rgba(255,179,71,.06);border:1px solid rgba(255,179,71,.15);border-radius:12px;padding:10px 14px;">
@@ -7700,44 +7810,54 @@ async function renderMyListings() {
   const soldFamily = wantSold || wantShipped || wantDelivered; // all three pull the same sold set, then split by linked-order status
   let orderByListing = {}; // v32-15: listing_id → {status, created_at, shipped_at, delivered_at} for sold-family stage times
 
-  // Fetch the seller's listings + auctions scoped per view, then refine in JS:
-  //  active = live & not sold · sold-family = sold (fixed) / ended-with-winner (auction), split by order fulfillment stage · removed = taken down, not sold.
+  // v34-1c: bucket by DERIVED order state (no listings.sold source of truth). Fetch ALL the seller's
+  // listings + auctions + their orders, then split: has a non-cancelled order → sold-family (stage by
+  // order status); active = is_active & no order; removed = !is_active & no order. Auctions stay on the
+  // winner_username path (v34-2) but read the same order map for their fulfillment stage.
   const baseL = sb.from('listings').select('*').or(`seller_id.eq.${currentUser.id},seller_username.eq.${myUsername}`).order('created_at', { ascending: false });
   const baseA = sb.from('auctions').select('*').or(`seller_id.eq.${currentUser.id},seller_username.eq.${myUsername}`).order('created_at', { ascending: false });
-  const listingsQ = wantActive ? baseL.eq('is_active', true) : soldFamily ? baseL.eq('sold', true) : baseL.eq('is_active', false);
   const auctionsQ = wantActive ? baseA.eq('status', 'live') : baseA.eq('status', 'ended');
-  const [listingsRes, auctionsRes] = await Promise.all([listingsQ, auctionsQ]);
+  const ordersQ = sb.from('orders').select('listing_id,status,price,currency,platform_fee,created_at,shipped_at,delivered_at').eq('seller_id', currentUser.id).order('created_at', { ascending: false });
+  const [listingsRes, auctionsRes, ordersRes] = await Promise.all([baseL, auctionsQ, ordersQ]);
 
   let listings = listingsRes.data || [];
   let auctions = auctionsRes.data || [];
   const error = listingsRes.error || auctionsRes.error;
-  // Keep sold items out of Active/Removed; split ended auctions by winner (sold vs expired).
-  if (wantActive)      { listings = listings.filter(l => !l.sold); }
-  else if (soldFamily) {
-    // Only auctions with a winner are sales; expired-no-winner belong in Removed.
-    auctions = auctions.filter(a => a.winner_username);
-    // Map each item to its linked order (newest wins) — status + stage timestamps for display.
-    try {
-      const { data: myOrders } = await sb.from('orders')
-        .select('listing_id,status,created_at,shipped_at,delivered_at')
-        .eq('seller_id', currentUser.id)
-        .order('created_at', { ascending: false });
-      (myOrders || []).forEach(o => {
-        const k = o.listing_id ? String(o.listing_id) : null;
-        if (k && !(k in orderByListing)) orderByListing[k] = o; // first = newest
-      });
-    } catch (e) { console.error('renderMyListings order lookup:', e); }
-    const stageOf = (id) => {
-      const ord = orderByListing[String(id)];
-      const st = ord && ord.status;
-      if (st === 'Delivered' || st === 'Completed') return 'delivered';
-      if (st === 'Shipped' || st === 'Out for Delivery') return 'shipped';
-      return 'sold'; // no order (manual mark-sold) or pre-ship (Processing/Paid/Accepted) → awaiting shipment
-    };
-    listings = listings.filter(l => stageOf(l.id) === view);
-    auctions = auctions.filter(a => stageOf(a.id) === view);
+  // Map each item id → its newest NON-CANCELLED order (the sale + stage timestamps).
+  (ordersRes.data || []).forEach(o => {
+    if (o.status === 'Cancelled' || o.status === 'Refunded') return;
+    const k = o.listing_id ? String(o.listing_id) : null;
+    if (k && !(k in orderByListing)) orderByListing[k] = o; // first = newest
+  });
+  const hasOrder = (id) => String(id) in orderByListing;
+  // v34-1e: seller earnings = net (price − fee) on COMPLETED orders, per currency (no SB+USD mixing).
+  const _earn = {};
+  (ordersRes.data || []).forEach(o => {
+    if (o.status !== 'Completed') return;
+    const net = (o.price || 0) - (o.platform_fee != null ? o.platform_fee : Math.round((o.price || 0) * 0.06));
+    const cur = o.currency || 'SB';
+    _earn[cur] = (_earn[cur] || 0) + net;
+  });
+  const earnedStr = Object.keys(_earn).length
+    ? ' · 💰 ' + Object.entries(_earn).map(([c, v]) => c === 'USD' ? '$' + v : v + ' SB').join(' + ') + ' earned'
+    : '';
+  const stageOf = (id, soldByDefault) => {
+    const ord = orderByListing[String(id)];
+    if (!ord) return soldByDefault ? 'sold' : null;
+    const st = ord.status;
+    if (st === 'Delivered' || st === 'Completed') return 'delivered';
+    if (st === 'Shipped') return 'shipped';
+    return 'sold'; // AwaitingPayment / Paid → awaiting shipment
+  };
+  if (wantActive) {
+    listings = listings.filter(l => l.is_active && !hasOrder(l.id));
+  } else if (soldFamily) {
+    listings = listings.filter(l => stageOf(l.id, false) === view);                  // fixed-price: must have an order
+    auctions = auctions.filter(a => a.winner_username && stageOf(a.id, true) === view); // won auction defaults to 'sold'
+  } else { // removed
+    listings = listings.filter(l => !l.is_active && !hasOrder(l.id));
+    auctions = auctions.filter(a => !a.winner_username);
   }
-  else /* removed */   { listings = listings.filter(l => !l.sold); auctions = auctions.filter(a => !a.winner_username); }
 
   // v33-10: in-account search is TAB-SPECIFIC — filter the current tab's items by the query (was cross-tab in v33-8/9).
   const mlq = (typeof MY_LISTINGS_QUERY === 'string' ? MY_LISTINGS_QUERY.trim() : '');
@@ -7794,7 +7914,7 @@ async function renderMyListings() {
   }
 
   const countEl = document.getElementById('my-listings-count');
-  if (countEl) countEl.textContent = (wantActive ? 'Active' : wantSold ? 'Sold' : wantShipped ? 'Shipped' : wantDelivered ? 'Delivered' : 'Removed') + ' · ' + total + ' listing' + (total !== 1 ? 's' : '');
+  if (countEl) countEl.textContent = (wantActive ? 'Active' : wantSold ? 'Sold' : wantShipped ? 'Shipped' : wantDelivered ? 'Delivered' : 'Removed') + ' · ' + total + ' listing' + (total !== 1 ? 's' : '') + earnedStr;
 
   // v32-15: per-card stage timestamp. active/removed → listing date; sold → order/listing date; shipped/delivered → real stage time.
   const stampLine = (id, createdAt) => {
@@ -7820,11 +7940,11 @@ async function renderMyListings() {
 
   // Render fixed-price listings → {ts, html} items (merged + sorted below)
   const listingItems = listings.map(l => ({ ts: sortTs(l.id, l.created_at), html: `
-    <div style="background:#1A1A1A;border-radius:18px;overflow:hidden;border:1px solid ${l.sold ? 'rgba(0,200,100,.25)' : 'rgba(255,255,255,.08)'};display:flex;align-items:stretch;">
+    <div style="background:#1A1A1A;border-radius:18px;overflow:hidden;border:1px solid ${soldFamily ? 'rgba(0,200,100,.25)' : 'rgba(255,255,255,.08)'};display:flex;align-items:stretch;">
       <div style="width:90px;flex-shrink:0;background:#111;position:relative;">
-        <img src="${l.image_url || ''}" style="width:100%;height:100%;object-fit:cover;display:block;${l.sold ? 'opacity:.5;' : ''}">
+        <img src="${l.image_url || ''}" style="width:100%;height:100%;object-fit:cover;display:block;${soldFamily ? 'opacity:.5;' : ''}">
         ${l.image_url ? '' : '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;">🏷️</div>'}
-        ${l.sold ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><span style="background:#00C864;color:#000;font-size:10px;font-weight:900;padding:3px 8px;border-radius:6px;transform:rotate(-12deg);">SOLD</span></div>' : ''}
+        ${soldFamily ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><span style="background:#00C864;color:#000;font-size:10px;font-weight:900;padding:3px 8px;border-radius:6px;transform:rotate(-12deg);">SOLD</span></div>' : ''}
       </div>
       <div style="flex:1;padding:12px 14px;min-width:0;">
         <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.title}</div>
@@ -8248,20 +8368,9 @@ async function saveListingEdits(title, desc, category, condition) {
   go('my-listings');
 }
 
-async function markAsSold(id) {
-  if (!currentUser) return;
-  // v31-16: capture the updated row(s). A 0-row update (listing's seller_id null/mismatched,
-  // or blocked by RLS) previously returned no error — seller saw a false "Marked as sold!"
-  // while the DB stayed unsold, so the item came back in the feed on reload.
-  const { data, error } = await sb.from('listings').update({ sold: true }).eq('id', id).eq('seller_id', currentUser.id).select();
-  if (error) { showToast('❌ ' + (error.message || 'Could not mark as sold')); return; }
-  if (!data || !data.length) { showToast('❌ Couldn\'t mark sold — this listing isn\'t linked to your account (seller_id mismatch)'); return; }
-  const idx = PRODS.findIndex(x => String(x.id) === String(id));
-  if (idx > -1) PRODS.splice(idx, 1);
-  renderAll();
-  showToast('🎉 Marked as sold!');
-  go('my-listings'); setMyListingsView('sold'); // v32-10: land on the Sold tab
-}
+// v34-1d: markAsSold removed. A sale is an ORDER (buyer + fee). A buyer-less "mark sold" would
+// re-introduce phantom state (sold flag with no order) — the exact drift this rewrite kills.
+// Sellers take a listing down via Remove (is_active=false → Removed) instead.
 
 async function relistListing(id) {
   if (!currentUser) return;
@@ -8922,6 +9031,116 @@ function showToast(msg) {
   t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2200);
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// v34-1a SUBSTRATE — RPC wrapper + error toasts + on-device tx-log + join-on-read.
+// DORMANT in v34-1a: nothing calls these yet (v34-1b repoints writes onto ossRpc).
+// The app behaves identically to v33-24 until then.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Distinct, persistent error toast (red, ~4s) — RPC `raise exception` messages
+// surface here instead of dying in a console nobody can see on a phone.
+function showError(msg) {
+  let t = document.getElementById('toast-err');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast-err';
+    t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(60,12,10,.98);border:1px solid rgba(255,59,48,.55);border-radius:14px;padding:12px 20px;color:#FF6B5E;font-size:14px;font-weight:700;font-family:"DM Sans",sans-serif;z-index:10000;max-width:88%;text-align:center;line-height:1.4;backdrop-filter:blur(20px);transition:opacity .3s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = '⚠️ ' + msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 4200);
+}
+
+// On-device transaction log — every RPC call + result + failure. Toggle via the 📋 badge.
+// On during testing, stripped before "demo." Mirrors the diagnostics-badge pattern.
+window._OSS_TXLOG = window._OSS_TXLOG || [];
+function txlog(kind, label, detail) {
+  window._OSS_TXLOG.unshift({ t: Date.now(), kind: kind, label: label, detail: detail || '' });
+  if (window._OSS_TXLOG.length > 200) window._OSS_TXLOG.pop();
+  if (document.getElementById('oss-txlog-panel')) renderTxLog();
+}
+function renderTxLog() {
+  const body = document.getElementById('oss-txlog-body');
+  if (!body) return;
+  body.innerHTML = window._OSS_TXLOG.map(e => {
+    const time = new Date(e.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const clr = e.kind === 'err' ? '#FF6B5E' : e.kind === 'ok' ? '#00E676' : 'rgba(255,255,255,.7)';
+    const tag = e.kind === 'err' ? '✗' : e.kind === 'ok' ? '✓' : '·';
+    return '<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);">' +
+      '<span style="color:rgba(255,255,255,.35);">' + time + '</span>' +
+      '<span style="color:' + clr + ';font-weight:700;"> ' + tag + ' ' + e.label + '</span>' +
+      (e.detail ? '<div style="color:rgba(255,255,255,.45);font-size:10px;margin-top:2px;word-break:break-word;">' + e.detail + '</div>' : '') +
+      '</div>';
+  }).join('') || '<div style="color:rgba(255,255,255,.3);padding:12px 0;">No transactions yet</div>';
+}
+function toggleTxLog() {
+  let p = document.getElementById('oss-txlog-panel');
+  if (p) { p.remove(); return; }
+  p = document.createElement('div');
+  p.id = 'oss-txlog-panel';
+  p.style.cssText = 'position:fixed;left:8px;right:8px;bottom:185px;max-height:42vh;z-index:99998;background:rgba(12,12,14,.97);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px 12px;backdrop-filter:blur(24px);box-shadow:0 8px 28px rgba(0,0,0,.5);display:flex;flex-direction:column;';
+  p.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;">' +
+      '<span style="color:#fff;font:800 12px \'DM Sans\',sans-serif;">📋 Transaction Log <span style="color:rgba(255,255,255,.4);font-weight:600;">· ' + (window._OSS_BUILD || '') + '</span></span>' +
+      '<span style="display:flex;gap:8px;">' +
+        '<button onclick="window._OSS_TXLOG=[];renderTxLog();" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:7px;padding:3px 9px;color:rgba(255,255,255,.6);font:600 11px sans-serif;cursor:pointer;">Clear</button>' +
+        '<button onclick="toggleTxLog()" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:7px;padding:3px 9px;color:#FF6B5E;font:700 11px sans-serif;cursor:pointer;">Close</button>' +
+      '</span>' +
+    '</div>' +
+    '<div id="oss-txlog-body" style="overflow-y:auto;font:600 11px ui-monospace,monospace;flex:1;"></div>';
+  document.body.appendChild(p);
+  renderTxLog();
+}
+
+// THE RPC wrapper — every atomic transition (accept/buy-now/pay/ship/deliver/cancel)
+// goes through here. On error: visible red toast + tx-log ✗ (never swallowed).
+// On success: tx-log ✓. Returns { data, error } so callers branch normally.
+async function ossRpc(name, params, friendly) {
+  const label = friendly || name;
+  txlog('call', label, JSON.stringify(params || {}));
+  try {
+    const { data, error } = await sb.rpc(name, params || {});
+    if (error) {
+      const msg = error.message || ('RPC ' + name + ' failed');
+      txlog('err', label, msg); showError(msg);
+      (window._ossErrs = window._ossErrs || []).push(name + ': ' + msg);
+      return { data: null, error: error };
+    }
+    txlog('ok', label, (data && data.id) ? ('order ' + String(data.id).slice(0, 8)) : '');
+    return { data: data, error: null };
+  } catch (e) {
+    const msg = (e && e.message) ? e.message : String(e);
+    txlog('err', label, msg); showError(msg);
+    (window._ossErrs = window._ossErrs || []).push(name + ': ' + msg);
+    return { data: null, error: e };
+  }
+}
+
+// Join-on-read: hydrate an order's display fields from the BASE `listings` table
+// (not available_listings — a sold item is correctly absent from the view but its
+// order must still render). New offer/buy-now orders carry no title/image/seller;
+// fall back to the order's own stored fields for legacy + auction-sourced orders
+// (listing_id points at an auction → no listings row → fallback resolves it).
+function orderDisplay(order, listingsById) {
+  const l = (listingsById && order.listing_id) ? listingsById[String(order.listing_id)] : null;
+  return {
+    title:    (l && l.title)           || order.title           || 'Item',
+    img:      (l && l.image_url)       || order.image_url       || '',
+    seller:   (l && l.seller_username) || order.seller_username || '',
+    category: (l && l.category)        || order.category        || ''
+  };
+}
+async function fetchListingsMap(listingIds) {
+  const ids = [...new Set((listingIds || []).filter(Boolean).map(String))];
+  if (!ids.length) return {};
+  const { data, error } = await sb.from('listings').select('*').in('id', ids);
+  if (error) { txlog('err', 'fetchListingsMap', error.message); return {}; }
+  const m = {};
+  (data || []).forEach(l => { m[String(l.id)] = l; });
+  return m;
+}
+
 // Override go() to trigger sub-screen renders
 function go(name) {
   document.querySelectorAll('.screen').forEach(s => s.style.display = '');
@@ -9094,6 +9313,19 @@ async function ossDebug() {
     b.textContent = (window._OSS_BUILD || 'build') + ' 🐞';
     b.style.cssText = 'position:fixed;left:8px;bottom:150px;z-index:99999;background:rgba(255,59,48,.9);color:#fff;font:700 11px -apple-system,sans-serif;padding:5px 9px;border-radius:8px;opacity:.9;box-shadow:0 2px 8px rgba(0,0,0,.4);';
     b.onclick = ossDebug;
+    document.body.appendChild(b);
+  }
+  if (document.body) add(); else document.addEventListener('DOMContentLoaded', add);
+})();
+// v34-1a: tappable tx-log toggle badge, sits just above the 🐞 diagnostics badge.
+(function injectTxLogBadge() {
+  function add() {
+    if (document.getElementById('oss-txlog-badge')) return;
+    var b = document.createElement('div');
+    b.id = 'oss-txlog-badge';
+    b.textContent = '📋 TX';
+    b.style.cssText = 'position:fixed;left:8px;bottom:182px;z-index:99999;background:rgba(20,20,24,.92);border:1px solid rgba(255,255,255,.18);color:#fff;font:700 11px -apple-system,sans-serif;padding:5px 9px;border-radius:8px;opacity:.9;box-shadow:0 2px 8px rgba(0,0,0,.4);';
+    b.onclick = toggleTxLog;
     document.body.appendChild(b);
   }
   if (document.body) add(); else document.addEventListener('DOMContentLoaded', add);
