@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1h</title>
+<title>OneStopSwap v34-1i</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1h';
+window._OSS_BUILD = 'v34-1i';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3594,7 +3594,7 @@ async function setupRealtimeSubscriptions(myUsername) {
       // Only add if not already in list
       if (!PRODS.find(x => x.id === l.id)) {
         PRODS.unshift(newProd);
-        renderAll();
+        renderBrowse();
       }
     })
     .subscribe();
@@ -3684,10 +3684,20 @@ async function isListingSold(id) {
     return !data;              // present ⇒ still available (false); absent ⇒ gone (true)
   } catch (e) { return false; }
 }
+// v34-1i: repaint whichever BROWSE surface is on-screen after a LIVE feed mutation (new listing
+// arriving, sold-drop, cancel re-add). renderAll() only repaints Home's grids (home-grid/all-grid);
+// the Shop screen's product grid is painted by renderShop() (shop-grid, only in the filtered view)
+// and the Live screen by renderAuctionList() — so before this, a live change landed in PRODS but the
+// visible Shop/Sneakers/Live grid never repainted (only a reload via loadListings did). Fan it out.
+function renderBrowse() {
+  renderAll();
+  if (document.getElementById('s-shop')?.classList.contains('active')) { renderShop(); updateFilterUI(); }
+  if (document.getElementById('s-live')?.classList.contains('active')) renderAuctionList();
+}
 function dropSoldFromFeed(id) {
   const i = PRODS.findIndex(x => String(x.id) === String(id));
   if (i > -1) PRODS.splice(i, 1);
-  renderAll();
+  renderBrowse();
 }
 
 // v34-1h: broadcast a public feed event (sold/available) to every connected client. Fire-and-forget;
@@ -3714,7 +3724,7 @@ async function readdToFeed(id) {
       createdTs: l.created_at ? new Date(l.created_at).getTime() : 0, isNew: false
     });
     primeAvatars([l.seller_username || 'user']);
-    renderAll();
+    renderBrowse();
   } catch (e) { /* best-effort */ }
 }
 
