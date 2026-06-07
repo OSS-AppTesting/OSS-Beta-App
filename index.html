@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-13</title>
+<title>OneStopSwap v33-14</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-13';
+window._OSS_BUILD = 'v33-14';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2039,7 +2039,7 @@ function pCard(p, i) {
 
 function catTileHome(cat) {
   if (cat.locked) return `<div class="cs-tile" style="width:90px;height:100px;flex-shrink:0;"><div class="cs-shimmer"></div><span class="cs-lock">🔒</span><span class="cs-lbl">COMING</span><span class="cs-sub"><span class="cs-dot"></span>SOON</span></div>`;
-  const s = CS[cat.name], sel = FILTERS.category === cat.name;
+  const s = CS[cat.name], sel = FILTERS.category.includes(cat.name);
   return `<div class="ctile${sel?' sel':''}" style="width:90px;height:100px;flex-shrink:0;background:${s.grad};" onclick="filterCat('${cat.name}')">
     <div class="ct-glow" style="background:radial-gradient(circle at 50% 30%,${s.accent}55,transparent 70%);"></div>
     <div class="ct-glass"></div><div class="ct-shine"></div>
@@ -2049,7 +2049,7 @@ function catTileHome(cat) {
 
 function catTileShop(cat) {
   if (cat.locked) return `<div class="cs-tile cs-tile-shop" style="height:110px;"><div class="cs-shimmer"></div><span style="font-size:28px;position:relative;z-index:1;filter:drop-shadow(0 0 8px rgba(255,255,255,.3));">🔒</span><span class="cs-lbl">COMING</span><span class="cs-sub"><span class="cs-dot"></span>SOON</span></div>`;
-  const s = CS[cat.name], sel = FILTERS.category === cat.name;
+  const s = CS[cat.name], sel = FILTERS.category.includes(cat.name);
   return `<div class="ctile${sel?' sel':''}" style="height:110px;background:${s.grad};" onclick="filterCat('${cat.name}')">
     <div class="ct-glow" style="background:radial-gradient(circle at 50% 25%,${s.accent}66,transparent 65%);"></div>
     <div class="ct-glass"></div><div class="ct-shine"></div>
@@ -2112,7 +2112,7 @@ function renderAll() {
   document.getElementById('shop-cats').innerHTML = CATS.map(catTileShop).join('');
 
   // Grids
-  const filtered = FILTERS.category ? PRODS.filter(p=>p.category===FILTERS.category) : PRODS;
+  const filtered = FILTERS.category.length ? PRODS.filter(p=>FILTERS.category.includes(p.category)) : PRODS;
   document.getElementById('grid-count').textContent = filtered.length + ' items';
   document.getElementById('home-grid').innerHTML = filtered.map((p,i)=>pCard(p,i)).join('');
   document.getElementById('all-grid').innerHTML = PRODS.map((p,i)=>pCard(p,i)).join('');
@@ -2129,7 +2129,7 @@ function renderAll() {
 }
 
 function filterCat(name) {
-  FILTERS.category = FILTERS.category === name ? null : name;
+  FILTERS.category = FILTERS.category.includes(name) ? [] : [name];
   renderAll();      // refresh home grid + category-tile highlights
   applyFilters();   // refresh the Shop results surface (if visible)
 }
