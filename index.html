@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v33-15</title>
+<title>OneStopSwap v33-16</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v33-15';
+window._OSS_BUILD = 'v33-16';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2216,6 +2216,7 @@ async function confirmSBCheckout() {
     showSBShortfall(p.price, () => confirmSBCheckout());
     return;
   }
+  if (p.id && await isListingSold(p.id)) { document.getElementById('modal-sb-checkout').style.display='none'; dropSoldFromFeed(p.id); showToast('😬 Just sold — someone beat you to it'); return; } // v33-16: staleness guard (no SB deducted)
   const fee = Math.round(p.price * 0.06);
   SB -= p.price;
   updateAllSBDisplays();
@@ -3226,6 +3227,7 @@ async function confirmCheckout() {
 
   const p = PRODS.find(x=>String(x.id)===String(currentCheckoutId));
   if (!p) return;
+  if (p.id && await isListingSold(p.id)) { document.getElementById('modal-checkout').style.display='none'; dropSoldFromFeed(p.id); showToast('😬 Just sold — someone beat you to it'); return; } // v33-16: staleness guard
   const fee = Math.round(p.price * 0.06 * 100) / 100;
   document.getElementById('modal-checkout').style.display = 'none';
   addTransaction('spent', '💳', 'Purchased: ' + p.title, '@' + p.seller + ' · USD', -p.price);
@@ -3582,6 +3584,24 @@ async function loadListings() {
   PRODS.length = 0;
   PRODS.push(...mapped);
   primeAvatars(mapped.map(m => m.seller));
+}
+
+// v33-16: staleness guard helpers. A buyer sitting on a stale feed/detail can try to buy or
+// offer on a listing another account already sold (loadListings filters !sold, so it's gone on
+// reload — but not on a card loaded before the sale). isListingSold does a fresh point-read;
+// returns false on any miss/error (seed integer ids, deleted rows) so demo seed items still
+// transact. dropSoldFromFeed yanks the now-sold item out of PRODS + re-renders.
+async function isListingSold(id) {
+  try {
+    const { data, error } = await sb.from('listings').select('sold').eq('id', id).maybeSingle();
+    if (error || !data) return false;
+    return !!data.sold;
+  } catch (e) { return false; }
+}
+function dropSoldFromFeed(id) {
+  const i = PRODS.findIndex(x => String(x.id) === String(id));
+  if (i > -1) PRODS.splice(i, 1);
+  renderAll();
 }
 
 async function loadOrders() {
@@ -6227,7 +6247,7 @@ function initShortfallSwipe() {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-function submitOffer() {
+async function submitOffer() {
   if (!requirePayment('make an offer')) return;
   const p = PRODS.find(x => x.id === currentOfferProductId);
   if (!p) return;
@@ -6243,6 +6263,8 @@ function submitOffer() {
     showSBShortfall(amount, () => submitOffer());
     return;
   }
+
+  if (p.id && await isListingSold(p.id)) { document.getElementById('modal-make-offer').style.display='none'; dropSoldFromFeed(p.id); showToast('😬 This just sold — it\'s no longer available'); return; } // v33-16: staleness guard
 
   const currencyChanged = chosenCurrency !== p.currency;
 
