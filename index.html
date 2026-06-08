@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1w</title>
+<title>OneStopSwap v34-1x</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1w';
+window._OSS_BUILD = 'v34-1x';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -4116,6 +4116,7 @@ async function loadOffersFromDb() {
         existing.currencyChanged = o.currency_changed;  // v34-1t: keep the badge in sync
         existing.listedCurrency = o.listed_currency;     // v34-1t: belt-and-suspenders
         existing.sellerPrevCounter = o.seller_prev_counter; // Item 4 (v32-4): seller's last ask, for the monotonic-down floor
+        existing.sellerPrevCounterCurrency = o.seller_prev_counter_currency; // v34-1x
         existing.lastActivityTs = actTs;
         if (img && !existing.img) existing.img = img;
       } else {
@@ -4128,7 +4129,7 @@ async function loadOffersFromDb() {
           buyerColor: '#1a0000', listedPrice: o.listed_price, listedCurrency: o.listed_currency,
           offerAmount: o.offer_amount, currency: o.offer_currency,
           counterAmount: o.counter_amount, sellerCounter: o.counter_amount,
-          sellerPrevCounter: o.seller_prev_counter,
+          sellerPrevCounter: o.seller_prev_counter, sellerPrevCounterCurrency: o.seller_prev_counter_currency,
           currencyChanged: o.currency_changed, message: o.message,
           status: o.status, date: new Date(o.created_at).toLocaleDateString(),
           expiresAt: o.expires_at ? new Date(o.expires_at).getTime() : null
@@ -6934,8 +6935,18 @@ function showOfferResponse(offerId) {
 function showSellerOfferResponse(offerId) {
   const o = RECEIVED_OFFERS.find(x => x.id === offerId);
   if (!o) return;
-  const isUSD = o.currency === 'USD';
-  const fmt = v => isUSD ? '$' + v : v + ' SB';
+  const fmtC = (v, c) => c === 'USD' ? '$' + v : v + ' SB';
+  const isCounter = (o.status === 'Countered' && o.sellerCounter == null); // buyer countered back (vs a fresh offer)
+  const head = isCounter
+    ? { emoji:'🔄', title:'Counter Offer!', sub:'@' + o.buyer + ' countered back', label:'Their counter' }
+    : { emoji:'🏷️', title:'New Offer!', sub:'@' + o.buyer + ' made an offer', label:'Their offer' };
+  // v34-1x: show the seller's OWN last counter in its OWN currency, so they don't have to remember it.
+  const priorLine = (isCounter && o.sellerPrevCounter != null) ? `
+        <div style="text-align:center;">
+          <div style="color:rgba(255,255,255,.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Your last counter</div>
+          <div style="color:rgba(255,255,255,.5);font-weight:700;font-size:18px;text-decoration:line-through;">${fmtC(o.sellerPrevCounter, o.sellerPrevCounterCurrency || o.currency)}</div>
+        </div>
+        <div style="color:rgba(255,255,255,.3);font-size:24px;">→</div>` : '';
   const currencyNote = o.currencyChanged ? `
     <div style="background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:8px 14px;margin-bottom:12px;text-align:left;">
       <div style="color:#FF3B30;font-size:12px;font-weight:700;">⚠️ Currency Change</div>
@@ -6947,14 +6958,17 @@ function showSellerOfferResponse(offerId) {
         <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
           <button onclick="document.getElementById('modal-offer-response').style.display='none';showToast('Saved — find it in Received Offers')" style="background:none;border:none;color:rgba(255,59,48,.6);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Decide Later ›</button>
         </div>
-        <div style="font-size:48px;margin-bottom:12px;">🔄</div>
-        <div style="color:#FFB347;font-weight:900;font-size:22px;margin-bottom:8px;">Counter Offer!</div>
-        <div style="color:rgba(255,255,255,.5);font-size:14px;margin-bottom:16px;">@${o.buyer} countered back</div>
-        <div style="margin-bottom:6px;">
-          <div style="color:rgba(255,255,255,.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Their counter</div>
-          <div style="color:#FFB347;font-weight:900;font-size:32px;">${fmt(o.offerAmount)}</div>
+        <div style="font-size:48px;margin-bottom:12px;">${head.emoji}</div>
+        <div style="color:#FFB347;font-weight:900;font-size:22px;margin-bottom:8px;">${head.title}</div>
+        <div style="color:rgba(255,255,255,.5);font-size:14px;margin-bottom:16px;">${head.sub}</div>
+        <div style="display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:8px;">
+          ${priorLine}
+          <div style="text-align:center;">
+            <div style="color:rgba(255,255,255,.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">${head.label}</div>
+            <div style="color:#FFB347;font-weight:900;font-size:28px;">${fmtC(o.offerAmount, o.currency)}</div>
+          </div>
         </div>
-        <div style="color:rgba(255,255,255,.35);font-size:12px;margin-bottom:24px;">Listed ${o.listedCurrency==='USD'?'$'+o.listedPrice:o.listedPrice+' SB'}</div>
+        <div style="color:rgba(255,255,255,.35);font-size:12px;margin-bottom:24px;">Listed ${fmtC(o.listedPrice, o.listedCurrency)}</div>
         <div style="display:flex;gap:10px;">
           <button onclick="document.getElementById('modal-offer-response').style.display='none';respondToOffer('${o.id}','declined')" style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Decline</button>
           <button onclick="document.getElementById('modal-offer-response').style.display='none';respondToOffer('${o.id}','countered')" style="flex:1;background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.3);border-radius:14px;padding:14px;color:#FFB347;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
@@ -7128,9 +7142,8 @@ function submitCounter(_ackd) {
   // counter_amount=null = ball back to the seller; offer_currency carries the (possibly new) deal currency.
   if (offer.dbId) {
     const _upd = { status: 'Countered', offer_amount: amount, counter_amount: null, offer_currency: chosenCur, currency_changed: curChanged };
-    // v34-1v: a currency switch resets the seller's walk-up ceiling — sellerPrevCounter was set in the
-    // OLD currency, so it can't constrain a counter in the new one (Dean's rule: switch resets the floor).
-    if (!sameCur) _upd.seller_prev_counter = null;
+    // v34-1x: the seller ceiling is now currency-gated in submitSellerCounter (prior counter PRESERVED for
+    // display + compared only within its own currency) — so we no longer null seller_prev_counter here.
     sb.from('offers').update(_upd).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer counter persist:', error); });
     // v34-1w: separate best-effort write so a missing column never fails the counter.
     sb.from('offers').update({ buyer_prev_offer: amount }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer_prev_offer persist (run the v34-1w ALTER?):', error); });
@@ -7569,10 +7582,9 @@ function receivedOfferCard(o) {
           </div>
         </div>
         ${o.status === 'Pending' ? `
-        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;gap:8px;">
-          <button onclick="respondToOffer('${o.id}','declined')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.6);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Decline</button>
-          <button onclick="respondToOffer('${o.id}','countered')" style="flex:1;background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.3);border-radius:10px;padding:8px;color:#FFB347;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
-          <button onclick="respondToOffer('${o.id}','accepted')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:10px;padding:8px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;">Accept ✓</button>
+        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <span style="color:#FFB347;font-size:12px;font-weight:700;">🏷️ @${o.buyer} offered ${o.currency==='USD'?'$'+o.offerAmount:o.offerAmount+' SB'}</span>
+          <button onclick="showSellerOfferResponse('${o.id}')" style="background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.3);border-radius:8px;padding:6px 14px;color:#FFB347;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
         </div>` :
         o.status === 'Accepted' ? (() => {
           const lo = _ordByOffer[o.dbId];
@@ -7729,8 +7741,10 @@ function submitSellerCounter(_ackd) {
   // Item 4 (v32-4): a seller can't counter HIGHER than their own previous counter (no walking the
   // ask up). v34-1n: that ceiling only applies WITHIN one currency — a currency switch is a fresh
   // ask with no ceiling; the new number re-establishes it for the next same-currency counter.
-  if (sameCur && o.sellerPrevCounter != null && amt >= o.sellerPrevCounter) {
-    showToast('Counter must be lower than your previous counter of ' + (o.currency === 'USD' ? '$' + o.sellerPrevCounter : o.sellerPrevCounter + ' SB'));
+  // v34-1x: ceiling is currency-gated (not nulled) — applies only when this counter is in the SAME currency
+  // as the seller's prior counter; a switch is a fresh ask, and the prior amount is preserved for display.
+  if (o.sellerPrevCounterCurrency && chosenCur === o.sellerPrevCounterCurrency && o.sellerPrevCounter != null && amt >= o.sellerPrevCounter) {
+    showToast('Counter must be lower than your previous counter of ' + (o.sellerPrevCounterCurrency === 'USD' ? '$' + o.sellerPrevCounter : o.sellerPrevCounter + ' SB'));
     return;
   }
   const curChanged = (chosenCur !== o.listedCurrency); // v34-1n: warning reflects deal-vs-listing currency
@@ -7744,6 +7758,7 @@ function submitSellerCounter(_ackd) {
   o.sellerCounter = amt;
   o.counterAmount = amt;
   o.sellerPrevCounter = amt; // Item 4 (v32-4): remember this ask for the next-round floor
+  o.sellerPrevCounterCurrency = chosenCur; // v34-1x: its currency, for display + currency-gated ceiling
   o.currency = chosenCur;          // v34-1n: the deal currency follows the counter
   o.currencyChanged = curChanged;
   o.lastActivityTs = Date.now(); // v31-34: bump to top of its tab on action
@@ -7751,6 +7766,7 @@ function submitSellerCounter(_ackd) {
   // Item 4 (v32-4): persist the seller's ask separately so a missing column can't break the counter
   // above. Survives hard-refresh once the one-time ALTER (offers.seller_prev_counter) is run.
   if (o.dbId) sb.from('offers').update({ seller_prev_counter: amt }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('seller_prev_counter persist (run the v32-4 ALTER?):', error); });
+  if (o.dbId) sb.from('offers').update({ seller_prev_counter_currency: chosenCur }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('seller_prev_counter_currency persist (run the v34-1x ALTER?):', error); });
   // v34-1w: a seller currency switch resets the BUYER's re-lowball floor — their prior offer was in the
   // old currency and can't constrain a counter in the new one (symmetric to the buyer-switch ceiling reset).
   if (!sameCur && o.dbId) sb.from('offers').update({ buyer_prev_offer: null }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('buyer_prev_offer reset persist:', error); });
