@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1x</title>
+<title>OneStopSwap v34-1y</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1x';
+window._OSS_BUILD = 'v34-1y';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -4142,6 +4142,7 @@ async function loadOffersFromDb() {
         existing.counterAmount = o.counter_amount;
         existing.offerAmount = o.offer_amount; // v31-32: keep buyer's amount in sync (counter-backs change it)
         existing.buyerPrevOffer = o.buyer_prev_offer;  // v34-1w: sync the buyer-floor bound (seller switch nulls it)
+        existing.buyerOfferCurrency = o.buyer_offer_currency; // v34-1y
         existing.currency = o.offer_currency;          // v34-1t: sync deal currency (seller counter can switch it)
         existing.currencyChanged = o.currency_changed;  // v34-1t: keep the badge in sync
         existing.listedCurrency = o.listed_currency;     // v34-1t: belt-and-suspenders
@@ -4155,6 +4156,7 @@ async function loadOffersFromDb() {
           seller: o.seller_username, listedPrice: o.listed_price,
           listedCurrency: o.listed_currency, offerAmount: o.offer_amount,
           buyerPrevOffer: o.buyer_prev_offer,
+          buyerOfferCurrency: o.buyer_offer_currency, // v34-1y
           currency: o.offer_currency, currencyChanged: o.currency_changed,
           counterAmount: o.counter_amount,
           message: o.message, status: o.status,
@@ -6747,6 +6749,7 @@ async function submitOffer() {
     listedCurrency: p.currency,
     offerAmount: amount,
     buyerPrevOffer: amount,        // v34-1w: dedicated buyer-floor bound (mirrors seller_prev_counter)
+    buyerOfferCurrency: chosenCurrency, // v34-1y: currency of the buyer's OWN offer, preserved across a seller currency switch (mirrors seller_prev_counter_currency)
     currency: chosenCurrency,
     currencyChanged: currencyChanged,
     message: message,
@@ -6790,6 +6793,9 @@ async function submitOffer() {
       if (data) offer.dbId = data.id; // store DB id for later updates
       // v34-1w: best-effort, separate write (mirrors seller_prev_counter) so a missing column never fails the insert.
       if (data) sb.from('offers').update({ buyer_prev_offer: amount }).eq('id', data.id).then(({ error }) => { if (error) console.error('buyer_prev_offer persist (run the v34-1w ALTER?):', error); });
+      // v34-1y: separate best-effort write so a missing column never fails the insert. Currency of the buyer's
+      // own offer, kept so the buyer card's "Your offer" survives a seller cross-currency counter.
+      if (data) sb.from('offers').update({ buyer_offer_currency: chosenCurrency }).eq('id', data.id).then(({ error }) => { if (error) console.error('buyer_offer_currency persist (run the v34-1y ALTER?):', error); });
       if (error) console.error('Offer save error:', error);
     })();
 
@@ -6854,6 +6860,11 @@ function showOfferResponse(offerId) {
   if (!offer) return;
   const isUSD = offer.currency === 'USD';
   const fmt = v => isUSD ? '$' + v : v + ' SB';
+  // v34-1y: the buyer's OWN offer can be in a different currency than the live deal currency once the
+  // seller counters with a switch (offer_currency follows the seller). Format the buyer's number in the
+  // currency they actually offered in (mirrors the seller card's fmtC). Falls back to the deal currency.
+  const fmtC = (v, c) => (c === 'USD') ? '$' + v : v + ' SB';
+  const buyerCur = offer.buyerOfferCurrency || offer.currency;
   const currencyNote = offer.currencyChanged ? `
     <div style="background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:8px 14px;margin-bottom:12px;text-align:left;">
       <div style="color:#FF3B30;font-size:12px;font-weight:700;">⚠️ Currency Change</div>
@@ -6899,7 +6910,7 @@ function showOfferResponse(offerId) {
         <div style="display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:24px;">
           <div style="text-align:center;">
             <div style="color:rgba(255,255,255,.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Your offer</div>
-            <div style="color:rgba(255,255,255,.5);font-weight:700;font-size:18px;text-decoration:line-through;">${fmt(offer.offerAmount)}</div>
+            <div style="color:rgba(255,255,255,.5);font-weight:700;font-size:18px;text-decoration:line-through;">${fmtC(offer.offerAmount, buyerCur)}</div>
           </div>
           <div style="color:rgba(255,255,255,.3);font-size:24px;">→</div>
           <div style="text-align:center;">
@@ -7136,6 +7147,7 @@ function submitCounter(_ackd) {
   offer.buyerPrevOffer = amount;       // v34-1w: re-arm the buyer floor in the new currency
   offer.counterAmount = null;
   offer.currency = chosenCur;          // v34-1n: the deal currency follows the counter
+  offer.buyerOfferCurrency = chosenCur; // v34-1y: buyer's own offer currency follows the buyer's counter-back
   offer.currencyChanged = curChanged;
   offer.status = 'Countered'; // v31-32: stay in the Countered negotiation (was 'Pending')
   offer.lastActivityTs = Date.now(); // v31-34: bump to top of its tab on action
@@ -7147,6 +7159,8 @@ function submitCounter(_ackd) {
     sb.from('offers').update(_upd).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer counter persist:', error); });
     // v34-1w: separate best-effort write so a missing column never fails the counter.
     sb.from('offers').update({ buyer_prev_offer: amount }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer_prev_offer persist (run the v34-1w ALTER?):', error); });
+    // v34-1y: separate best-effort write so a missing column never fails the counter.
+    sb.from('offers').update({ buyer_offer_currency: chosenCur }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer_offer_currency persist (run the v34-1y ALTER?):', error); });
   }
   document.getElementById('modal-counter-offer').style.display = 'none';
   showToast('🔄 Counter offer sent!');
