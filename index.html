@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1o</title>
+<title>OneStopSwap v34-1r</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1o';
+window._OSS_BUILD = 'v34-1r';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3546,6 +3546,21 @@ async function _refreshListingsLive() {
   renderBrowse();
 }
 
+// v34-1q: catch-up for NOTIFICATIONS (the bell). The notifications channel had a bare .subscribe()
+// — no re-pull on (re)subscribe — so a notification inserted while the socket was flapping/throttled
+// (e.g. a backgrounded browser app on mobile) was missed for good: no live event, and nothing re-pulled
+// it. Mirror the messages/listings self-heal: re-pull notifications on each SUBSCRIBED + refresh the bell.
+let _notifCatchupTimer = null;
+function _scheduleNotifCatchup() {
+  clearTimeout(_notifCatchupTimer);
+  _notifCatchupTimer = setTimeout(() => { _refreshNotifLive(); }, 400);
+}
+async function _refreshNotifLive() {
+  try { await loadNotificationsFromDb(); } catch (e) { txlog('err', 'notifCatchup', e.message || String(e)); }
+  updateNotifBadge();
+  if (document.getElementById('s-notifications')?.classList.contains('active')) renderNotifications(notifFilter);
+}
+
 async function setupRealtimeSubscriptions(myUsername) {
   // Clean up any existing subscriptions
   _realtimeChannels.forEach(ch => sb.removeChannel(ch));
@@ -3682,7 +3697,7 @@ async function setupRealtimeSubscriptions(myUsername) {
       showToast('🔔 ' + (row.title || 'New notification'));
       if (document.getElementById('s-notifications')?.classList.contains('active')) renderNotifications(notifFilter);
     })
-    .subscribe();
+    .subscribe((status) => { if (status === 'SUBSCRIBED') _scheduleNotifCatchup(); }); // v34-1q: self-heal missed bell events
   _realtimeChannels.push(notifCh);
 
   // v34-1h: PUBLIC feed-sync broadcast — the one live update that can't ride postgres_changes.
@@ -7043,8 +7058,9 @@ function submitCounter(_ackd) {
     return;
   }
   const curChanged = (chosenCur !== offer.listedCurrency); // v34-1n: warning reflects deal-vs-listing currency
-  // v34-1o: a counter in a non-listing currency requires an explicit slide-to-acknowledge.
-  if (curChanged && !_ackd) {
+  // v34-1p: slide only on an ACTUAL currency switch THIS step (was firing on every counter in a
+  // non-listing-currency deal, even same-currency). currency_changed (deal-vs-listing) still drives the badge.
+  if (!sameCur && !_ackd) {
     document.getElementById('modal-counter-offer').style.display = 'none';
     showCurrencyAck('Counter in ' + curName(chosenCur) + ' · listed in ' + curName(offer.listedCurrency), () => submitCounter(true));
     return;
@@ -7660,8 +7676,8 @@ function submitSellerCounter(_ackd) {
     return;
   }
   const curChanged = (chosenCur !== o.listedCurrency); // v34-1n: warning reflects deal-vs-listing currency
-  // v34-1o: a seller counter in a non-listing currency requires an explicit slide-to-acknowledge.
-  if (curChanged && !_ackd) {
+  // v34-1p: slide only on an ACTUAL currency switch THIS step (not every counter in a non-listing deal).
+  if (!sameCur && !_ackd) {
     document.getElementById('modal-seller-counter').style.display = 'none';
     showCurrencyAck('Counter in ' + curName(chosenCur) + ' · listed in ' + curName(o.listedCurrency), () => submitSellerCounter(true));
     return;
@@ -8242,9 +8258,14 @@ async function renderMyListings() {
         <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.title}</div>
         <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:8px;">${l.category} · ${l.condition || ''}</div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <div style="background:linear-gradient(135deg,${l.currency==='USD'?'#00A550,#007A3D':'#FF3B30,#C0392B'});border-radius:8px;padding:3px 10px;">
-            <span style="color:#fff;font-weight:800;font-size:13px;">${l.currency==='USD'?'$':''}${l.price}${l.currency==='SB'?' SB':''}</span>
-          </div>
+          ${(() => {
+            const _o = soldFamily ? orderByListing[String(l.id)] : null;
+            const _c = _o ? (_o.currency || l.currency) : l.currency;
+            const _p = _o ? ((_o.price != null) ? _o.price : l.price) : l.price;
+            const _amt = (_c === 'USD' ? '$' + _p : _p + ' SB');
+            const _pre = _o ? '<span style="color:rgba(255,255,255,.4);font-size:11px;margin-right:1px;">Sold&nbsp;for</span>' : '';
+            return _pre + '<div style="background:linear-gradient(135deg,' + (_c === 'USD' ? '#00A550,#007A3D' : '#FF3B30,#C0392B') + ');border-radius:8px;padding:3px 10px;"><span style="color:#fff;font-weight:800;font-size:13px;">' + _amt + '</span></div>';
+          })()}
           ${wantSold
             ? '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:8px;padding:3px 8px;"><span style="color:#00C864;font-size:11px;font-weight:700;">✓ Sold</span></div>'
             : wantShipped
