@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1ab</title>
+<title>OneStopSwap v34-1ac</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1ab';
+window._OSS_BUILD = 'v34-1ac';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -7095,6 +7095,30 @@ function declineCounter(offerId) {
   showToast('Offer declined.');
 }
 
+// v34-1ac: buyer retracts their OWN still-open offer — a fresh Pending offer, or their counter-back
+// awaiting the seller (Countered with counterAmount == null). Reuses the 'Withdrawn' status (offers
+// constraint is negotiation-only, so no new status). Buyer can UPDATE their own offer row (offers
+// UPDATE RLS allows buyer_id) — same persistence path as declineCounter. Seller's view self-heals via
+// the realtime offers channel; on the buyer side the offer moves to the Declined tab (Withdrawn maps there).
+function withdrawMyOffer(offerId) {
+  const offer = OFFERS.find(o => o.id === offerId);
+  if (!offer) return;
+  if (!(offer.status === 'Pending' || (offer.status === 'Countered' && offer.counterAmount == null))) {
+    showToast("This offer can't be withdrawn right now."); return;
+  }
+  offer.status = 'Withdrawn';
+  offer.lastActivityTs = Date.now();
+  if (offer.dbId) sb.from('offers').update({ status: 'Withdrawn' }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('withdraw offer persist:', error); });
+  notifyUsername(offer.seller, {
+    type: 'offer', icon: '🚫',
+    title: 'Offer withdrawn',
+    body: '@' + (currentProfile?.username || 'The buyer') + ' withdrew their offer on ' + offer.title + '.',
+    actionLabel: 'View', actionTarget: 'my-offers:received'
+  });
+  showToast('Offer withdrawn.');
+  renderOffers(window._offersFilter || 'all');
+}
+
 function openCounterOffer(offerId) {
   currentCounterOfferId = offerId;
   const offer = OFFERS.find(o => o.id === offerId);
@@ -7527,18 +7551,24 @@ function sentOfferCard(o) {
               <span style="color:#4FC3F7;font-size:12px;font-weight:700;">Counter: ${isUSD?'$'+o.counterAmount:o.counterAmount+' SB'}</span>
               <button onclick="showOfferResponse('${o.id}')" style="background:rgba(79,195,247,.15);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:4px 10px;color:#4FC3F7;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
             </div>` : `
-            <span style="color:rgba(255,255,255,.3);font-size:12px;">🔄 Countered ${fmt(o.offerAmount)} — waiting for seller...</span>`) :
+            <span style="display:inline-flex;align-items:center;gap:8px;">
+              <span style="color:rgba(255,255,255,.3);font-size:12px;">🔄 Countered ${fmt(o.offerAmount)} — waiting…</span>
+              <button onclick="withdrawMyOffer('${o.id}')" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:4px 10px;color:#FF3B30;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Withdraw</button>
+            </span>`) :
           o.status === 'Accepted' ? (
             (!lo || lo.status === 'AwaitingPayment')
               ? `<button onclick="acceptAndCheckout('${o.id}')" style="background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Complete Purchase →</button>`
               : `<div style="display:flex;align-items:center;gap:8px;"><span style="color:#00C864;font-size:12px;font-weight:700;">${lo.status === 'Completed' ? '🎉 Completed' : lo.status === 'Shipped' ? '📦 Shipped' : lo.status === 'Delivered' ? '✅ Delivered' : '💰 Paid'}</span><button onclick="go('my-orders')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">View Order →</button></div>`
           ) :
           o.status === 'Pending' ? `
-            <span style="color:rgba(255,255,255,.3);font-size:12px;">Waiting for seller...</span>` :
+            <span style="display:inline-flex;align-items:center;gap:10px;">
+              <span style="color:rgba(255,255,255,.3);font-size:12px;">Waiting for seller…</span>
+              <button onclick="withdrawMyOffer('${o.id}')" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:4px 10px;color:#FF3B30;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Withdraw</button>
+            </span>` :
           o.status === 'Declined' ? `
             <button onclick="reOffer('${o.id}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer Again</button>` :
           o.status === 'Withdrawn' ? `
-            <span style="color:rgba(255,255,255,.4);font-size:12px;font-weight:600;">🚫 Listing removed by seller</span>` :
+            <span style="color:rgba(255,255,255,.4);font-size:12px;font-weight:600;">🚫 Offer withdrawn</span>` :
           `<span style="color:rgba(255,255,255,.3);font-size:12px;">No action needed</span>`}
         </div>
       </div>`;
