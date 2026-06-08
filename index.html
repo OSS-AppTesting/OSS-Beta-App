@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1j</title>
+<title>OneStopSwap v34-1k</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1j';
+window._OSS_BUILD = 'v34-1k';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3485,6 +3485,22 @@ function _refreshMessagesLive() {
   if (document.getElementById('s-messages')?.classList.contains('active')) renderMessages();
 }
 
+// v34-1k: catch-up for LISTINGS (the feed). The listings-feed channel flaps (CHANNEL_ERRORs every
+// ~30–60s, auto-rejoins) — every OTHER browse channel survives this because it re-pulls on resubscribe;
+// listings was the only one without a catch-up, so a new listing arriving during an error window was
+// lost until manual refresh. Re-pull available_listings on each (re)subscribe and repaint the active
+// browse surface — same self-healing pattern as offers/orders/messages. (Root-cause flap fix tracked
+// separately via the err.message now captured in the subscribe callback.)
+let _listingsCatchupTimer = null;
+function _scheduleListingsCatchup() {
+  clearTimeout(_listingsCatchupTimer);
+  _listingsCatchupTimer = setTimeout(() => { _refreshListingsLive(); }, 400);
+}
+async function _refreshListingsLive() {
+  try { await loadListings(); } catch (e) { txlog('err', 'listingsCatchup', e.message || String(e)); }
+  renderBrowse();
+}
+
 async function setupRealtimeSubscriptions(myUsername) {
   // Clean up any existing subscriptions
   _realtimeChannels.forEach(ch => sb.removeChannel(ch));
@@ -3598,7 +3614,12 @@ async function setupRealtimeSubscriptions(myUsername) {
         renderBrowse();
       }
     })
-    .subscribe((status) => { txlog(status === 'SUBSCRIBED' ? 'ok' : 'err', 'listings-feed SUB', status); if (status !== 'SUBSCRIBED') showError('listings RT sub: ' + status); }); // v34-1j DIAG (temp)
+    .subscribe((status, err) => {
+      const detail = status + (err ? (' · ' + (err.message || (typeof err === 'string' ? err : JSON.stringify(err)))) : '');
+      txlog(status === 'SUBSCRIBED' ? 'ok' : 'err', 'listings-feed SUB', detail); // v34-1k DIAG (temp): now includes err.message
+      if (status !== 'SUBSCRIBED') showError('listings RT: ' + detail);
+      if (status === 'SUBSCRIBED') _scheduleListingsCatchup(); // v34-1k: re-pull on (re)subscribe so a flap can't lose a new listing
+    });
   _realtimeChannels.push(listingCh);
 
   // Realtime: my notifications — canonical live delivery for v31 events.
