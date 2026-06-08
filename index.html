@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1m</title>
+<title>OneStopSwap v34-1n</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1m';
+window._OSS_BUILD = 'v34-1n';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -1014,6 +1014,20 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     </div>
     <div id="seller-counter-summary" style="margin-bottom:20px;"></div>
     <div style="display:flex;flex-direction:column;gap:14px;">
+      <!-- v34-1n: seller counter currency toggle -->
+      <div id="seller-counter-currency-toggle">
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Counter In</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div id="seller-counter-toggle-usd" onclick="setSellerCounterCurrency('USD')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
+            <div style="font-size:18px;margin-bottom:2px;">💵</div>
+            <div style="color:rgba(255,255,255,.5);font-weight:800;font-size:13px;">USD Cash</div>
+          </div>
+          <div id="seller-counter-toggle-sb" onclick="setSellerCounterCurrency('SB')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
+            <div style="font-size:18px;margin-bottom:2px;">💰</div>
+            <div style="color:rgba(255,255,255,.5);font-weight:800;font-size:13px;">SwapBucks</div>
+          </div>
+        </div>
+      </div>
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Your Counter</div>
         <div style="position:relative;">
@@ -1088,6 +1102,20 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     </div>
     <div id="counter-offer-summary" style="margin-bottom:20px;"></div>
     <div style="display:flex;flex-direction:column;gap:14px;">
+      <!-- v34-1n: counter currency toggle — a counter can switch currency mid-deal -->
+      <div id="counter-currency-toggle">
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Counter In</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div id="counter-toggle-usd" onclick="setCounterCurrency('USD')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
+            <div style="font-size:18px;margin-bottom:2px;">💵</div>
+            <div style="color:rgba(255,255,255,.5);font-weight:800;font-size:13px;">USD Cash</div>
+          </div>
+          <div id="counter-toggle-sb" onclick="setCounterCurrency('SB')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
+            <div style="font-size:18px;margin-bottom:2px;">💰</div>
+            <div style="color:rgba(255,255,255,.5);font-weight:800;font-size:13px;">SwapBucks</div>
+          </div>
+        </div>
+      </div>
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Your Counter Offer</div>
         <div style="position:relative;">
@@ -6238,6 +6266,36 @@ let currentOfferProductId = null;
 let currentCounterOfferId = null;
 
 let offerChosenCurrency = null;
+// v34-1n: currency is negotiable through the whole deal — counters can switch USD⇄SB.
+// These hold the chosen currency for the buyer-counter and seller-counter steps.
+let counterChosenCurrency = null;
+let sellerCounterChosenCurrency = null;
+
+// v34-1n: style a 2-button currency toggle (USD / SB). Shared by both counter toggles.
+function styleCurrencyToggle(usdEl, sbEl, type) {
+  if (!usdEl || !sbEl) return;
+  if (type === 'USD') {
+    usdEl.style.background = 'rgba(0,165,80,.15)'; usdEl.style.border = '2px solid rgba(0,165,80,.5)';
+    usdEl.querySelector('div:last-child').style.color = '#00A550';
+    sbEl.style.background = 'rgba(255,255,255,.04)'; sbEl.style.border = '2px solid rgba(255,255,255,.1)';
+    sbEl.querySelector('div:last-child').style.color = 'rgba(255,255,255,.5)';
+  } else {
+    sbEl.style.background = 'rgba(255,59,48,.15)'; sbEl.style.border = '2px solid rgba(255,59,48,.5)';
+    sbEl.querySelector('div:last-child').style.color = '#FF3B30';
+    usdEl.style.background = 'rgba(255,255,255,.04)'; usdEl.style.border = '2px solid rgba(255,255,255,.1)';
+    usdEl.querySelector('div:last-child').style.color = 'rgba(255,255,255,.5)';
+  }
+}
+function setCounterCurrency(type) {
+  counterChosenCurrency = type;
+  styleCurrencyToggle(document.getElementById('counter-toggle-usd'), document.getElementById('counter-toggle-sb'), type);
+  document.getElementById('counter-currency-symbol').textContent = (type === 'USD') ? '$' : 'SB';
+}
+function setSellerCounterCurrency(type) {
+  sellerCounterChosenCurrency = type;
+  styleCurrencyToggle(document.getElementById('seller-counter-toggle-usd'), document.getElementById('seller-counter-toggle-sb'), type);
+  document.getElementById('seller-counter-currency').textContent = (type === 'USD') ? '$' : 'SB';
+}
 
 function setOfferCurrency(type) {
   offerChosenCurrency = type;
@@ -6291,18 +6349,14 @@ function openMakeOffer(productId) {
   }
 
   const isUSD = p.currency === 'USD';
-  document.getElementById('offer-currency-symbol').textContent = isUSD ? '$' : 'SB';
   document.getElementById('offer-listed-price').textContent = isUSD ? '$' + p.price + ' USD' : p.price + ' SB';
 
-  // Show currency toggle only on USD listings
-  const toggle = document.getElementById('offer-currency-toggle');
-  toggle.style.display = isUSD ? 'block' : 'none';
-  // v34-1m: reset the currency global to THIS listing's currency every open. Previously
-  // SB listings never called setOfferCurrency, so the global could carry a stale 'USD'
-  // from a prior USD offer → an SB offer got written as USD and tripped a false
-  // "currency changed" flag. USD listings still default the toggle to USD below.
-  offerChosenCurrency = p.currency;
-  if (isUSD) setOfferCurrency('USD'); // default to USD
+  // v34-1n: currency is negotiable from the first offer — show the toggle on EVERY listing
+  // (was USD-only) and default it to the listing's own currency; the buyer can switch either
+  // way. setOfferCurrency() sets the global + toggle styling + the $/SB symbol, so it also
+  // supersedes the v34-1m stale-global reset (no SB listing can inherit a stale 'USD' now).
+  document.getElementById('offer-currency-toggle').style.display = 'block';
+  setOfferCurrency(p.currency); // default = listing currency
   document.getElementById('offer-amount').value = '';
   document.getElementById('offer-message').value = '';
   document.getElementById('offer-pct-display').textContent = '';
@@ -6860,7 +6914,8 @@ function openCounterOffer(offerId) {
   const offer = OFFERS.find(o => o.id === offerId);
   if (!offer) return;
   const isUSD = offer.currency === 'USD';
-  document.getElementById('counter-currency-symbol').textContent = isUSD ? '$' : 'SB';
+  // v34-1n: counter can switch currency — default the toggle to the current deal currency
+  setCounterCurrency(offer.currency);
   document.getElementById('counter-amount').value = '';
   document.getElementById('counter-offer-summary').innerHTML = `
     <div style="display:flex;justify-content:space-between;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;">
@@ -6876,28 +6931,31 @@ function submitCounter() {
   if (!offer) return;
   const amount = parseFloat(document.getElementById('counter-amount').value);
   if (!amount || amount <= 0) { showToast('Enter a counter amount!'); return; }
+  // v34-1n: which currency is this counter in? (toggle; falls back to the current deal currency)
+  const chosenCur = counterChosenCurrency || offer.currency;
+  const sameCur = (chosenCur === offer.currency);
   // Item 4 (v32-4): a buyer can't counter LOWER than their own previous offer (no re-lowballing).
-  // offer.offerAmount is the buyer's last number, always preserved in offer_amount — robust across refresh.
-  if (offer.offerAmount != null && amount <= offer.offerAmount) {
+  // v34-1n: that floor only applies WITHIN one currency. A currency switch is a fresh offer with
+  // no floor; the new number re-establishes the floor for the next same-currency counter.
+  if (sameCur && offer.offerAmount != null && amount <= offer.offerAmount) {
     showToast('Counter must be higher than your previous offer of ' + (offer.currency === 'USD' ? '$' + offer.offerAmount : offer.offerAmount + ' SB'));
     return;
   }
-  // v31-12: must be able to afford an SB counter (mirrors submitOffer). Routes to the
-  // shortfall top-up sheet, which auto-resumes this counter on success. Checked before
-  // mutating offer state / hiding the modal so counter-amount is still readable on resume.
-  if (offer.currency === 'SB' && SB < amount) {
+  // v31-12 / v34-1n: must be able to afford an SB counter — checked against the CHOSEN currency.
+  // Routes to the shortfall top-up sheet, which auto-resumes this counter on success.
+  if (chosenCur === 'SB' && SB < amount) {
     showSBShortfall(amount, () => submitCounter());
     return;
   }
+  const curChanged = (chosenCur !== offer.listedCurrency); // v34-1n: warning reflects deal-vs-listing currency
   offer.offerAmount = amount;
   offer.counterAmount = null;
+  offer.currency = chosenCur;          // v34-1n: the deal currency follows the counter
+  offer.currencyChanged = curChanged;
   offer.status = 'Countered'; // v31-32: stay in the Countered negotiation (was 'Pending')
   offer.lastActivityTs = Date.now(); // v31-34: bump to top of its tab on action
-  // v31-32: keep the offer in the 'Countered' lane through the whole back-and-forth so it stays
-  // in BOTH sides' Countered tab until it's Accepted/Declined (was 'Pending', which bounced it
-  // out into the Pending tab). counter_amount=null = ball back to the seller; the seller's
-  // Countered card renders Accept/Counter/Decline on that condition.
-  if (offer.dbId) sb.from('offers').update({ status: 'Countered', offer_amount: amount, counter_amount: null }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer counter persist:', error); });
+  // counter_amount=null = ball back to the seller; offer_currency carries the (possibly new) deal currency.
+  if (offer.dbId) sb.from('offers').update({ status: 'Countered', offer_amount: amount, counter_amount: null, offer_currency: chosenCur, currency_changed: curChanged }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer counter persist:', error); });
   document.getElementById('modal-counter-offer').style.display = 'none';
   showToast('🔄 Counter offer sent!');
   // v31-11: notify the seller of the buyer's counter-back (best-effort, never blocks).
@@ -7473,7 +7531,8 @@ async function respondToOffer(offerId, action) {
           <div style="color:#fff;font-weight:700;font-size:16px;">${isUSD?'$'+o.listedPrice:o.listedPrice+' SB'}</div>
         </div>
       </div>`;
-    document.getElementById('seller-counter-currency').textContent = isUSD ? '$' : 'SB';
+    // v34-1n: seller can switch currency on a counter — default to the current deal currency
+    setSellerCounterCurrency(o.currency);
     document.getElementById('seller-counter-amount').value = '';
     document.getElementById('modal-seller-counter').style.display = 'flex';
   }
@@ -7484,19 +7543,25 @@ function submitSellerCounter() {
   if (!o) return;
   const amt = parseFloat(document.getElementById('seller-counter-amount').value);
   if (!amt || amt <= 0) { showToast('Enter a counter amount!'); return; }
+  // v34-1n: which currency is this counter in? (toggle; falls back to the current deal currency)
+  const chosenCur = sellerCounterChosenCurrency || o.currency;
+  const sameCur = (chosenCur === o.currency);
   // Item 4 (v32-4): a seller can't counter HIGHER than their own previous counter (no walking the
-  // ask back up). o.sellerPrevCounter survives refresh via the seller_prev_counter column (counter_amount
-  // itself gets nulled when the buyer counters back, so it can't hold the prior ask). Null = first counter, no floor.
-  if (o.sellerPrevCounter != null && amt >= o.sellerPrevCounter) {
+  // ask up). v34-1n: that ceiling only applies WITHIN one currency — a currency switch is a fresh
+  // ask with no ceiling; the new number re-establishes it for the next same-currency counter.
+  if (sameCur && o.sellerPrevCounter != null && amt >= o.sellerPrevCounter) {
     showToast('Counter must be lower than your previous counter of ' + (o.currency === 'USD' ? '$' + o.sellerPrevCounter : o.sellerPrevCounter + ' SB'));
     return;
   }
+  const curChanged = (chosenCur !== o.listedCurrency); // v34-1n: warning reflects deal-vs-listing currency
   o.status = 'Countered';
   o.sellerCounter = amt;
   o.counterAmount = amt;
   o.sellerPrevCounter = amt; // Item 4 (v32-4): remember this ask for the next-round floor
+  o.currency = chosenCur;          // v34-1n: the deal currency follows the counter
+  o.currencyChanged = curChanged;
   o.lastActivityTs = Date.now(); // v31-34: bump to top of its tab on action
-  if (o.dbId) sb.from('offers').update({ status: 'Countered', counter_amount: amt }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('offer counter persist:', error); });
+  if (o.dbId) sb.from('offers').update({ status: 'Countered', counter_amount: amt, offer_currency: chosenCur, currency_changed: curChanged }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('offer counter persist:', error); });
   // Item 4 (v32-4): persist the seller's ask separately so a missing column can't break the counter
   // above. Survives hard-refresh once the one-time ALTER (offers.seller_prev_counter) is run.
   if (o.dbId) sb.from('offers').update({ seller_prev_counter: amt }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('seller_prev_counter persist (run the v32-4 ALTER?):', error); });
