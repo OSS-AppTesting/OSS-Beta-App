@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1v</title>
+<title>OneStopSwap v34-1w</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1v';
+window._OSS_BUILD = 'v34-1w';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -4140,6 +4140,7 @@ async function loadOffersFromDb() {
         existing.status = o.status;
         existing.counterAmount = o.counter_amount;
         existing.offerAmount = o.offer_amount; // v31-32: keep buyer's amount in sync (counter-backs change it)
+        existing.buyerPrevOffer = o.buyer_prev_offer;  // v34-1w: sync the buyer-floor bound (seller switch nulls it)
         existing.currency = o.offer_currency;          // v34-1t: sync deal currency (seller counter can switch it)
         existing.currencyChanged = o.currency_changed;  // v34-1t: keep the badge in sync
         existing.listedCurrency = o.listed_currency;     // v34-1t: belt-and-suspenders
@@ -4152,6 +4153,7 @@ async function loadOffersFromDb() {
           productId: o.listing_id, title: o.listing_title, img: img,
           seller: o.seller_username, listedPrice: o.listed_price,
           listedCurrency: o.listed_currency, offerAmount: o.offer_amount,
+          buyerPrevOffer: o.buyer_prev_offer,
           currency: o.offer_currency, currencyChanged: o.currency_changed,
           counterAmount: o.counter_amount,
           message: o.message, status: o.status,
@@ -6743,6 +6745,7 @@ async function submitOffer() {
     listedPrice: p.price,
     listedCurrency: p.currency,
     offerAmount: amount,
+    buyerPrevOffer: amount,        // v34-1w: dedicated buyer-floor bound (mirrors seller_prev_counter)
     currency: chosenCurrency,
     currencyChanged: currencyChanged,
     message: message,
@@ -6784,6 +6787,8 @@ async function submitOffer() {
         expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
       }).select().single();
       if (data) offer.dbId = data.id; // store DB id for later updates
+      // v34-1w: best-effort, separate write (mirrors seller_prev_counter) so a missing column never fails the insert.
+      if (data) sb.from('offers').update({ buyer_prev_offer: amount }).eq('id', data.id).then(({ error }) => { if (error) console.error('buyer_prev_offer persist (run the v34-1w ALTER?):', error); });
       if (error) console.error('Offer save error:', error);
     })();
 
@@ -7093,8 +7098,10 @@ function submitCounter(_ackd) {
   // Item 4 (v32-4): a buyer can't counter LOWER than their own previous offer (no re-lowballing).
   // v34-1n: that floor only applies WITHIN one currency. A currency switch is a fresh offer with
   // no floor; the new number re-establishes the floor for the next same-currency counter.
-  if (sameCur && offer.offerAmount != null && amount <= offer.offerAmount) {
-    showToast('Counter must be higher than your previous offer of ' + (offer.currency === 'USD' ? '$' + offer.offerAmount : offer.offerAmount + ' SB'));
+  // v34-1w: floor compares against buyerPrevOffer (a dedicated bound nulled when the SELLER switches
+  // currency) — so after a seller currency switch the buyer can re-offer freely (symmetric to the seller).
+  if (sameCur && offer.buyerPrevOffer != null && amount <= offer.buyerPrevOffer) {
+    showToast('Counter must be higher than your previous offer of ' + (offer.currency === 'USD' ? '$' + offer.buyerPrevOffer : offer.buyerPrevOffer + ' SB'));
     return;
   }
   // v31-12 / v34-1n: must be able to afford an SB counter — checked against the CHOSEN currency.
@@ -7112,6 +7119,7 @@ function submitCounter(_ackd) {
     return;
   }
   offer.offerAmount = amount;
+  offer.buyerPrevOffer = amount;       // v34-1w: re-arm the buyer floor in the new currency
   offer.counterAmount = null;
   offer.currency = chosenCur;          // v34-1n: the deal currency follows the counter
   offer.currencyChanged = curChanged;
@@ -7124,6 +7132,8 @@ function submitCounter(_ackd) {
     // OLD currency, so it can't constrain a counter in the new one (Dean's rule: switch resets the floor).
     if (!sameCur) _upd.seller_prev_counter = null;
     sb.from('offers').update(_upd).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer counter persist:', error); });
+    // v34-1w: separate best-effort write so a missing column never fails the counter.
+    sb.from('offers').update({ buyer_prev_offer: amount }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer_prev_offer persist (run the v34-1w ALTER?):', error); });
   }
   document.getElementById('modal-counter-offer').style.display = 'none';
   showToast('🔄 Counter offer sent!');
@@ -7741,6 +7751,9 @@ function submitSellerCounter(_ackd) {
   // Item 4 (v32-4): persist the seller's ask separately so a missing column can't break the counter
   // above. Survives hard-refresh once the one-time ALTER (offers.seller_prev_counter) is run.
   if (o.dbId) sb.from('offers').update({ seller_prev_counter: amt }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('seller_prev_counter persist (run the v32-4 ALTER?):', error); });
+  // v34-1w: a seller currency switch resets the BUYER's re-lowball floor — their prior offer was in the
+  // old currency and can't constrain a counter in the new one (symmetric to the buyer-switch ceiling reset).
+  if (!sameCur && o.dbId) sb.from('offers').update({ buyer_prev_offer: null }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('buyer_prev_offer reset persist:', error); });
   document.getElementById('modal-seller-counter').style.display = 'none';
   showToast('🔄 Counter offer of ' + (o.currency==='USD'?'$'+amt:amt+' SB') + ' sent to @' + o.buyer + '!');
   // v31: notify the buyer of the counter offer (best-effort, never blocks)
