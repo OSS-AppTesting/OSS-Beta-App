@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1n</title>
+<title>OneStopSwap v34-1o</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1n';
+window._OSS_BUILD = 'v34-1o';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -1037,6 +1037,23 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       </div>
       <button onclick="submitSellerCounter()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">Send Counter Offer 🔄</button>
     </div>
+  </div>
+</div>
+
+<!-- CURRENCY-CHANGE ACKNOWLEDGMENT SLIDE (v34-1o) -->
+<div id="modal-currency-ack" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:850;" onclick="if(event.target===this)closeCurrencyAck()">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 44px;width:100%;animation:slideUp .3s ease;">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px;"></div>
+    <div style="text-align:center;font-size:34px;margin-bottom:8px;">⚠️</div>
+    <h3 style="color:#fff;font-weight:900;font-size:20px;text-align:center;margin-bottom:8px;">Currency Changed</h3>
+    <p style="color:rgba(255,255,255,.6);font-size:14px;text-align:center;line-height:1.5;margin-bottom:6px;">You acknowledge the currency offered has changed from how this item was listed.</p>
+    <p id="cack-detail" style="color:#FFB347;font-size:13px;font-weight:800;text-align:center;margin-bottom:20px;"></p>
+    <div id="cack-swipe" style="position:relative;width:100%;height:58px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none;">
+      <div id="cack-swipe-fill" style="position:absolute;left:4px;top:4px;height:50px;width:50px;border-radius:12px;background:linear-gradient(135deg,#FF3B30,#C0392B);"></div>
+      <div id="cack-swipe-label" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;pointer-events:none;letter-spacing:.3px;">Slide to acknowledge</div>
+      <div id="cack-swipe-thumb" style="position:absolute;left:4px;top:4px;width:50px;height:50px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;color:#FF3B30;font-weight:900;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:grab;">&rsaquo;</div>
+    </div>
+    <button onclick="closeCurrencyAck()" style="width:100%;background:none;border:none;color:rgba(255,255,255,.4);font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;font-family:'DM Sans',sans-serif;">Cancel</button>
   </div>
 </div>
 
@@ -6525,6 +6542,78 @@ function closeSBShortfall() {
   _shortfallSelectedPack = null;
 }
 
+// ── v34-1o: currency-change acknowledgment slide ────────────────────────────
+// Gates any counter/accept that lands in a currency different from how the item was
+// listed — an explicit "slide to acknowledge" beyond the warning badge. Reuses the
+// exact swipe physics as the SB-shortfall pill.
+let _cackCallback = null;
+let _cackSwipeInited = false;
+function curName(c) { return c === 'USD' ? 'USD Cash' : 'SwapBucks'; }
+function showCurrencyAck(detailText, onConfirm) {
+  _cackCallback = onConfirm;
+  document.getElementById('cack-detail').textContent = detailText;
+  document.getElementById('modal-currency-ack').style.display = 'flex';
+  if (!_cackSwipeInited) { initCackSwipe(); _cackSwipeInited = true; }
+  resetCackSwipe();
+}
+function closeCurrencyAck() {
+  document.getElementById('modal-currency-ack').style.display = 'none';
+  _cackCallback = null; // cancel — the gated action does NOT run
+}
+function resetCackSwipe() {
+  const thumb = document.getElementById('cack-swipe-thumb'), fill = document.getElementById('cack-swipe-fill'),
+        label = document.getElementById('cack-swipe-label'), track = document.getElementById('cack-swipe');
+  if (!thumb || !track) return;
+  thumb.style.transition = 'left .25s ease'; fill.style.transition = 'width .25s ease';
+  thumb.style.left = '4px'; fill.style.width = '50px'; label.style.opacity = '1';
+  label.textContent = 'Slide to acknowledge'; thumb.innerHTML = '\u203A'; thumb.style.cursor = 'grab';
+  track.dataset.done = '';
+}
+function initCackSwipe() {
+  const track = document.getElementById('cack-swipe'), thumb = document.getElementById('cack-swipe-thumb'),
+        fill = document.getElementById('cack-swipe-fill'), label = document.getElementById('cack-swipe-label');
+  if (!track || !thumb) return;
+  let dragging = false, startX = 0, startLeft = 4, maxLeft = 0;
+  const pointX = (e) => e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX;
+  function down(e) {
+    if (track.dataset.done === '1') return;
+    dragging = true; startX = pointX(e); startLeft = parseFloat(thumb.style.left) || 4;
+    maxLeft = track.getBoundingClientRect().width - 50 - 4;
+    thumb.style.transition = 'none'; fill.style.transition = 'none'; thumb.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
+  function move(e) {
+    if (!dragging) return;
+    const dx = pointX(e) - startX;
+    const nl = Math.min(Math.max(4, startLeft + dx), maxLeft);
+    thumb.style.left = nl + 'px'; fill.style.width = (nl + 46) + 'px';
+    label.style.opacity = String(Math.max(0, 1 - (nl / maxLeft) * 1.4));
+    e.preventDefault();
+  }
+  function up() {
+    if (!dragging) return;
+    dragging = false;
+    const nl = parseFloat(thumb.style.left) || 4;
+    if (nl >= maxLeft * 0.9) {
+      track.dataset.done = '1';
+      thumb.style.transition = 'left .15s ease'; fill.style.transition = 'width .15s ease';
+      thumb.style.left = maxLeft + 'px'; fill.style.width = 'calc(100% - 8px)';
+      label.style.opacity = '0'; thumb.innerHTML = '\u2713'; thumb.style.cursor = 'default';
+      const cb = _cackCallback; _cackCallback = null;
+      document.getElementById('modal-currency-ack').style.display = 'none';
+      if (cb) cb();
+    } else {
+      resetCackSwipe();
+    }
+  }
+  thumb.addEventListener('touchstart', down, { passive: false });
+  document.addEventListener('touchmove', move, { passive: false });
+  document.addEventListener('touchend', up);
+  thumb.addEventListener('mousedown', down);
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', up);
+}
+
 function resetShortfallSwipe() {
   const thumb = document.getElementById('shortfall-swipe-thumb');
   const fill = document.getElementById('shortfall-swipe-fill');
@@ -6873,10 +6962,16 @@ function acceptAndCheckout(offerId) {
   }
 }
 
-async function acceptCounter(offerId) {
+async function acceptCounter(offerId, _ackd) {
   const offer = OFFERS.find(o => o.id === offerId);
   if (!offer) return;
   if (!offer.dbId) { showError('This offer has no DB id.'); return; }
+  // v34-1o: accepting a counter that lands in a non-listing currency requires the slide.
+  if ((offer.currency !== offer.listedCurrency) && !_ackd) {
+    document.getElementById('modal-offer-response').style.display = 'none';
+    showCurrencyAck('Accept in ' + curName(offer.currency) + ' · listed in ' + curName(offer.listedCurrency), () => acceptCounter(offerId, true));
+    return;
+  }
   document.getElementById('modal-offer-response').style.display = 'none';
   // v34-1e: buyer accepting the seller's counter must CREATE the AwaitingPayment order first
   // (accept_offer is now buyer-callable when it's a seller counter). Checkout then PAYS that order
@@ -6926,7 +7021,7 @@ function openCounterOffer(offerId) {
   document.getElementById('modal-counter-offer').style.display = 'flex';
 }
 
-function submitCounter() {
+function submitCounter(_ackd) {
   const offer = OFFERS.find(o => o.id === currentCounterOfferId);
   if (!offer) return;
   const amount = parseFloat(document.getElementById('counter-amount').value);
@@ -6948,6 +7043,12 @@ function submitCounter() {
     return;
   }
   const curChanged = (chosenCur !== offer.listedCurrency); // v34-1n: warning reflects deal-vs-listing currency
+  // v34-1o: a counter in a non-listing currency requires an explicit slide-to-acknowledge.
+  if (curChanged && !_ackd) {
+    document.getElementById('modal-counter-offer').style.display = 'none';
+    showCurrencyAck('Counter in ' + curName(chosenCur) + ' · listed in ' + curName(offer.listedCurrency), () => submitCounter(true));
+    return;
+  }
   offer.offerAmount = amount;
   offer.counterAmount = null;
   offer.currency = chosenCur;          // v34-1n: the deal currency follows the counter
@@ -7456,13 +7557,18 @@ async function markShipped(offerId) {
   renderReceivedOffers();
 }
 
-async function respondToOffer(offerId, action) {
+async function respondToOffer(offerId, action, _ackd) {
   const o = RECEIVED_OFFERS.find(x => x.id === offerId);
   if (!o) return;
   if (action === 'accepted') {
     // v34-1b: accept_offer RPC atomically sets offer→Accepted AND creates the AwaitingPayment
     // order (fee captured). Item leaves inventory via derived availability — no manual sold flip.
     if (!o.dbId) { showError('This offer has no DB id — cannot accept.'); return; }
+    // v34-1o: accepting an offer/counter in a non-listing currency requires the slide.
+    if ((o.currency !== o.listedCurrency) && !_ackd) {
+      showCurrencyAck('Accept in ' + curName(o.currency) + ' · listed in ' + curName(o.listedCurrency), () => respondToOffer(offerId, 'accepted', true));
+      return;
+    }
     const { data: order, error } = await ossRpc('accept_offer', { p_offer_id: o.dbId }, 'accept_offer');
     if (error) return; // red toast + tx-log already surfaced (e.g. "offer is not open")
     o.status = 'Accepted';
@@ -7538,7 +7644,7 @@ async function respondToOffer(offerId, action) {
   }
 }
 
-function submitSellerCounter() {
+function submitSellerCounter(_ackd) {
   const o = RECEIVED_OFFERS.find(x => x.id === window._sellerCounterOfferId);
   if (!o) return;
   const amt = parseFloat(document.getElementById('seller-counter-amount').value);
@@ -7554,6 +7660,12 @@ function submitSellerCounter() {
     return;
   }
   const curChanged = (chosenCur !== o.listedCurrency); // v34-1n: warning reflects deal-vs-listing currency
+  // v34-1o: a seller counter in a non-listing currency requires an explicit slide-to-acknowledge.
+  if (curChanged && !_ackd) {
+    document.getElementById('modal-seller-counter').style.display = 'none';
+    showCurrencyAck('Counter in ' + curName(chosenCur) + ' · listed in ' + curName(o.listedCurrency), () => submitSellerCounter(true));
+    return;
+  }
   o.status = 'Countered';
   o.sellerCounter = amt;
   o.counterAmount = amt;
