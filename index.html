@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1t</title>
+<title>OneStopSwap v34-1v</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1t';
+window._OSS_BUILD = 'v34-1v';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -6920,6 +6920,46 @@ function showOfferResponse(offerId) {
   document.getElementById('modal-offer-response').style.display = 'flex';
 }
 
+// v34-1u: seller's rich response card for a buyer counter-back — parity with the buyer's
+// showOfferResponse. Reuses the SAME modal container (only one shows at a time). Shows the
+// buyer's counter-back prominently + listed price + currency note, with Decline/Counter/Accept.
+// (The seller's prior counter is intentionally NOT shown as an X→Y comparison: it can be in a
+// different currency than the buyer's counter-back, and we don't yet track the prior-bound currency,
+// so a comparison would mis-display. The actionable number — the buyer's counter — is always correct.)
+function showSellerOfferResponse(offerId) {
+  const o = RECEIVED_OFFERS.find(x => x.id === offerId);
+  if (!o) return;
+  const isUSD = o.currency === 'USD';
+  const fmt = v => isUSD ? '$' + v : v + ' SB';
+  const currencyNote = o.currencyChanged ? `
+    <div style="background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:8px 14px;margin-bottom:12px;text-align:left;">
+      <div style="color:#FF3B30;font-size:12px;font-weight:700;">⚠️ Currency Change</div>
+      <div style="color:rgba(255,255,255,.5);font-size:11px;margin-top:2px;">Listed in ${curName(o.listedCurrency)} → buyer's offer in ${curName(o.currency)}.</div>
+    </div>` : '';
+  const content = `
+      <div style="text-align:center;padding:10px 0 20px;">
+        ${currencyNote}
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+          <button onclick="document.getElementById('modal-offer-response').style.display='none';showToast('Saved — find it in Received Offers')" style="background:none;border:none;color:rgba(255,59,48,.6);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Decide Later ›</button>
+        </div>
+        <div style="font-size:48px;margin-bottom:12px;">🔄</div>
+        <div style="color:#FFB347;font-weight:900;font-size:22px;margin-bottom:8px;">Counter Offer!</div>
+        <div style="color:rgba(255,255,255,.5);font-size:14px;margin-bottom:16px;">@${o.buyer} countered back</div>
+        <div style="margin-bottom:6px;">
+          <div style="color:rgba(255,255,255,.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Their counter</div>
+          <div style="color:#FFB347;font-weight:900;font-size:32px;">${fmt(o.offerAmount)}</div>
+        </div>
+        <div style="color:rgba(255,255,255,.35);font-size:12px;margin-bottom:24px;">Listed ${o.listedCurrency==='USD'?'$'+o.listedPrice:o.listedPrice+' SB'}</div>
+        <div style="display:flex;gap:10px;">
+          <button onclick="document.getElementById('modal-offer-response').style.display='none';respondToOffer('${o.id}','declined')" style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Decline</button>
+          <button onclick="document.getElementById('modal-offer-response').style.display='none';respondToOffer('${o.id}','countered')" style="flex:1;background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.3);border-radius:14px;padding:14px;color:#FFB347;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
+          <button onclick="document.getElementById('modal-offer-response').style.display='none';respondToOffer('${o.id}','accepted')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:14px;padding:14px;color:#fff;font-weight:800;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Accept ✓</button>
+        </div>
+      </div>`;
+  document.getElementById('offer-response-content').innerHTML = content;
+  document.getElementById('modal-offer-response').style.display = 'flex';
+}
+
 function acceptAndCheckout(offerId) {
   const offer = OFFERS.find(o => o.id === offerId);
   if (!offer) return;
@@ -7078,7 +7118,13 @@ function submitCounter(_ackd) {
   offer.status = 'Countered'; // v31-32: stay in the Countered negotiation (was 'Pending')
   offer.lastActivityTs = Date.now(); // v31-34: bump to top of its tab on action
   // counter_amount=null = ball back to the seller; offer_currency carries the (possibly new) deal currency.
-  if (offer.dbId) sb.from('offers').update({ status: 'Countered', offer_amount: amount, counter_amount: null, offer_currency: chosenCur, currency_changed: curChanged }).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer counter persist:', error); });
+  if (offer.dbId) {
+    const _upd = { status: 'Countered', offer_amount: amount, counter_amount: null, offer_currency: chosenCur, currency_changed: curChanged };
+    // v34-1v: a currency switch resets the seller's walk-up ceiling — sellerPrevCounter was set in the
+    // OLD currency, so it can't constrain a counter in the new one (Dean's rule: switch resets the floor).
+    if (!sameCur) _upd.seller_prev_counter = null;
+    sb.from('offers').update(_upd).eq('id', offer.dbId).then(({ error }) => { if (error) console.error('buyer counter persist:', error); });
+  }
   document.getElementById('modal-counter-offer').style.display = 'none';
   showToast('🔄 Counter offer sent!');
   // v31-11: notify the seller of the buyer's counter-back (best-effort, never blocks).
@@ -7546,13 +7592,9 @@ function receivedOfferCard(o) {
           <span style="background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:3px 10px;color:#4FC3F7;font-size:11px;font-weight:700;">🔄 Counter Sent: ${o.currency==='USD'?'$'+o.sellerCounter:o.sellerCounter+' SB'}</span>
           <span style="color:rgba(255,255,255,.3);font-size:12px;">Waiting for buyer...</span>
         </div>` : `
-        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;">
-          <div style="background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);border-radius:10px;padding:8px 12px;margin-bottom:10px;color:#4FC3F7;font-size:12px;font-weight:700;">🔄 @${o.buyer} countered back: ${fmt(o.offerAmount)}</div>
-          <div style="display:flex;gap:8px;">
-            <button onclick="respondToOffer('${o.id}','declined')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.6);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Decline</button>
-            <button onclick="respondToOffer('${o.id}','countered')" style="flex:1;background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.3);border-radius:10px;padding:8px;color:#FFB347;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
-            <button onclick="respondToOffer('${o.id}','accepted')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:10px;padding:8px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;">Accept ✓</button>
-          </div>
+        <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <span style="color:#4FC3F7;font-size:12px;font-weight:700;">🔄 @${o.buyer} countered: ${fmt(o.offerAmount)}</span>
+          <button onclick="showSellerOfferResponse('${o.id}')" style="background:rgba(79,195,247,.15);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:6px 14px;color:#4FC3F7;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
         </div>`) :
         `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
