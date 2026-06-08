@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1r</title>
+<title>OneStopSwap v34-1s</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1r';
+window._OSS_BUILD = 'v34-1s';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -4122,7 +4122,7 @@ async function loadOffersFromDb() {
           productId: o.listing_id, title: o.listing_title, img: img,
           buyer: o.buyer_username, buyerId: o.buyer_id,
           buyerInitials: (o.buyer_username||'').substring(0,2).toUpperCase(),
-          buyerColor: '#1a0000', listedPrice: o.listed_price,
+          buyerColor: '#1a0000', listedPrice: o.listed_price, listedCurrency: o.listed_currency,
           offerAmount: o.offer_amount, currency: o.offer_currency,
           counterAmount: o.counter_amount, sellerCounter: o.counter_amount,
           sellerPrevCounter: o.seller_prev_counter,
@@ -6845,7 +6845,7 @@ function showOfferResponse(offerId) {
   const currencyNote = offer.currencyChanged ? `
     <div style="background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:8px 14px;margin-bottom:12px;text-align:left;">
       <div style="color:#FF3B30;font-size:12px;font-weight:700;">⚠️ Currency Change</div>
-      <div style="color:rgba(255,255,255,.5);font-size:11px;margin-top:2px;">Buyer offered in ${offer.currency} instead of ${offer.listedCurrency}. Seller was notified.</div>
+      <div style="color:rgba(255,255,255,.5);font-size:11px;margin-top:2px;">Listed in ${curName(offer.listedCurrency)} → your offer in ${curName(offer.currency)}.</div>
     </div>` : '';
 
   let content = '';
@@ -6984,7 +6984,7 @@ async function acceptCounter(offerId, _ackd) {
   // v34-1o: accepting a counter that lands in a non-listing currency requires the slide.
   if ((offer.currency !== offer.listedCurrency) && !_ackd) {
     document.getElementById('modal-offer-response').style.display = 'none';
-    showCurrencyAck('Accept in ' + curName(offer.currency) + ' · listed in ' + curName(offer.listedCurrency), () => acceptCounter(offerId, true));
+    showCurrencyAck('Listed in ' + curName(offer.listedCurrency) + ' → accept in ' + curName(offer.currency), () => acceptCounter(offerId, true));
     return;
   }
   document.getElementById('modal-offer-response').style.display = 'none';
@@ -7062,7 +7062,7 @@ function submitCounter(_ackd) {
   // non-listing-currency deal, even same-currency). currency_changed (deal-vs-listing) still drives the badge.
   if (!sameCur && !_ackd) {
     document.getElementById('modal-counter-offer').style.display = 'none';
-    showCurrencyAck('Counter in ' + curName(chosenCur) + ' · listed in ' + curName(offer.listedCurrency), () => submitCounter(true));
+    showCurrencyAck('Listed in ' + curName(offer.listedCurrency) + ' → counter in ' + curName(chosenCur), () => submitCounter(true));
     return;
   }
   offer.offerAmount = amount;
@@ -7426,7 +7426,7 @@ function sentOfferCard(o) {
               <span style="color:rgba(255,255,255,.4);font-size:12px;">Listed: <span style="color:#fff;font-weight:600;">${o.listedCurrency==='USD'?'$'+o.listedPrice:o.listedPrice+' SB'}</span></span>
               <span style="color:rgba(255,255,255,.3);">·</span>
               <span style="color:rgba(255,255,255,.4);font-size:12px;">Your offer: <span style="color:#FF3B30;font-weight:700;">${fmt(o.offerAmount)}</span></span>
-              ${o.currencyChanged ? '<span style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:1px 6px;color:#FF3B30;font-size:10px;font-weight:700;">Currency changed</span>' : ''}
+              ${o.currencyChanged ? '<span style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:1px 6px;color:#FF3B30;font-size:10px;font-weight:700;white-space:nowrap;">Currency changed</span>' : ''}
             </div>
             ${expiry && (o.status==='Pending'||o.status==='Countered') ? `<div style="color:${expiry==='Expired'?'#FF3B30':'rgba(255,179,71,.7)'};font-size:11px;margin-top:4px;font-weight:600;">⏱ ${expiry}</div>` : ''}
           </div>
@@ -7498,9 +7498,9 @@ function receivedOfferCard(o) {
               <span style="color:rgba(255,255,255,.5);font-size:12px;">@${o.buyer} · ${o.date}</span>
             </div>
             <div style="color:rgba(255,255,255,.4);font-size:12px;">
-              Listed: <span style="color:#fff;font-weight:600;">${p?.currency==='USD'?'$'+o.listedPrice:o.listedPrice+' SB'}</span>
+              Listed: <span style="color:#fff;font-weight:600;">${o.listedCurrency==='USD'?'$'+o.listedPrice:o.listedPrice+' SB'}</span>
               &nbsp;·&nbsp; Offer: <span style="color:#FF3B30;font-weight:700;">${fmt(o.offerAmount)}</span>
-              ${o.currencyChanged ? '&nbsp;<span style="background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.3);border-radius:5px;padding:1px 6px;color:#FFB347;font-size:10px;font-weight:700;">⚠️ Different currency</span>' : ''}
+              ${o.currencyChanged ? '&nbsp;<span style="background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.3);border-radius:5px;padding:1px 6px;color:#FFB347;font-size:10px;font-weight:700;white-space:nowrap;">⚠️ Different currency</span>' : ''}
             </div>
             ${expiry && o.status==='Pending' ? `<div style="color:rgba(255,179,71,.7);font-size:11px;margin-top:4px;font-weight:600;">⏱ ${expiry}</div>` : ''}
             ${o.message ? `<div style="color:rgba(255,255,255,.5);font-size:12px;font-style:italic;margin-top:4px;">"${o.message}"</div>` : ''}
@@ -7582,7 +7582,7 @@ async function respondToOffer(offerId, action, _ackd) {
     if (!o.dbId) { showError('This offer has no DB id — cannot accept.'); return; }
     // v34-1o: accepting an offer/counter in a non-listing currency requires the slide.
     if ((o.currency !== o.listedCurrency) && !_ackd) {
-      showCurrencyAck('Accept in ' + curName(o.currency) + ' · listed in ' + curName(o.listedCurrency), () => respondToOffer(offerId, 'accepted', true));
+      showCurrencyAck('Listed in ' + curName(o.listedCurrency) + ' → accept in ' + curName(o.currency), () => respondToOffer(offerId, 'accepted', true));
       return;
     }
     const { data: order, error } = await ossRpc('accept_offer', { p_offer_id: o.dbId }, 'accept_offer');
@@ -7679,7 +7679,7 @@ function submitSellerCounter(_ackd) {
   // v34-1p: slide only on an ACTUAL currency switch THIS step (not every counter in a non-listing deal).
   if (!sameCur && !_ackd) {
     document.getElementById('modal-seller-counter').style.display = 'none';
-    showCurrencyAck('Counter in ' + curName(chosenCur) + ' · listed in ' + curName(o.listedCurrency), () => submitSellerCounter(true));
+    showCurrencyAck('Listed in ' + curName(o.listedCurrency) + ' → counter in ' + curName(chosenCur), () => submitSellerCounter(true));
     return;
   }
   o.status = 'Countered';
