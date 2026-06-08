@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1k</title>
+<title>OneStopSwap v34-1l</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1k';
+window._OSS_BUILD = 'v34-1l';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3589,7 +3589,7 @@ async function setupRealtimeSubscriptions(myUsername) {
     .on('postgres_changes', {
       event: '*', schema: 'public', table: 'listings'
     }, payload => {
-      try { txlog('ok', 'listings RT', payload.eventType + ' ' + String((payload.new && payload.new.id) || (payload.old && payload.old.id) || '').slice(0,8)); showToast('📡 listings ' + payload.eventType); } catch(_){} // v34-1j DIAG (temp)
+      try { txlog('ok', 'listings RT', payload.eventType + ' ' + String((payload.new && payload.new.id) || (payload.old && payload.old.id) || '').slice(0,8)); } catch(_){} // DIAG (temp, v34-1l: TX-log only, no toast)
       const l = payload.new;
       // v33-17: live-drop a listing the moment it sells / goes inactive (complements the v33-16
       // staleness guard — the stale card now disappears on its own instead of only erroring at buy).
@@ -3616,8 +3616,7 @@ async function setupRealtimeSubscriptions(myUsername) {
     })
     .subscribe((status, err) => {
       const detail = status + (err ? (' · ' + (err.message || (typeof err === 'string' ? err : JSON.stringify(err)))) : '');
-      txlog(status === 'SUBSCRIBED' ? 'ok' : 'err', 'listings-feed SUB', detail); // v34-1k DIAG (temp): now includes err.message
-      if (status !== 'SUBSCRIBED') showError('listings RT: ' + detail);
+      txlog(status === 'SUBSCRIBED' ? 'ok' : 'err', 'listings-feed SUB', detail); // DIAG (temp): err.message → TX log only (v34-1l: was spamming a tap-blocking red toast every ~30s flap)
       if (status === 'SUBSCRIBED') _scheduleListingsCatchup(); // v34-1k: re-pull on (re)subscribe so a flap can't lose a new listing
     });
   _realtimeChannels.push(listingCh);
@@ -9157,7 +9156,7 @@ function showError(msg) {
   if (!t) {
     t = document.createElement('div');
     t.id = 'toast-err';
-    t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(60,12,10,.98);border:1px solid rgba(255,59,48,.55);border-radius:14px;padding:12px 20px;color:#FF6B5E;font-size:14px;font-weight:700;font-family:"DM Sans",sans-serif;z-index:10000;max-width:88%;text-align:center;line-height:1.4;backdrop-filter:blur(20px);transition:opacity .3s;';
+    t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(60,12,10,.98);border:1px solid rgba(255,59,48,.55);border-radius:14px;padding:12px 20px;color:#FF6B5E;font-size:14px;font-weight:700;font-family:"DM Sans",sans-serif;z-index:10000;max-width:88%;text-align:center;line-height:1.4;backdrop-filter:blur(20px);transition:opacity .3s;pointer-events:none;';
     document.body.appendChild(t);
   }
   t.textContent = '⚠️ ' + msg;
