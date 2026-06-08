@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1ad</title>
+<title>OneStopSwap v34-1ac</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1ad';
+window._OSS_BUILD = 'v34-1ac';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -4351,7 +4351,6 @@ async function sellerCancelOrder(orderId) {
   if (error) return; // e.g. "too late to cancel (Shipped)."
   showToast('Order cancelled — item back in your inventory.');
   broadcastFeed('available', data && data.listing_id); // v34-1h: returned listing reappears live in other feeds
-  if (data && data.listing_id) readdToFeed(data.listing_id); // v34-1ad: re-hydrate OUR OWN feed too — the broadcast is self:false (won't echo to the actor), so the seller's Shop feed wasn't updating until a hard-refresh
   try {
     if (data?.buyer_id) notifyUser(data.buyer_id, { type:'order', icon:'⚠️', title:'Order cancelled', body:'@' + (currentProfile?.username || 'The seller') + ' cancelled the order. Any payment is refunded.', actionLabel:'View', actionTarget:'my-orders' });
     const ov = document.getElementById('sale-manage-overlay'); if (ov) ov.remove();
