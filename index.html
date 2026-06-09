@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2d2</title>
+<title>OneStopSwap v34-2e</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2d2';
+window._OSS_BUILD = 'v34-2e';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2431,7 +2431,7 @@ function aucMoney(n, a) { return (a && a.currency === 'USD') ? ('$' + n) : (n + 
 function renderAuctionList() {
   const el = document.getElementById('auction-list');
   if (!el) return;
-  const liveList = AUCTIONS.filter(a => (a.endTime || 0) > Date.now() && itemMatchesFilters({ ...a, _isAuction: true, currency: a.currency || 'SB' })); // v33-2: expired drop out; v33-4: shared filters apply to Live
+  const liveList = AUCTIONS.filter(a => itemMatchesFilters({ ...a, _isAuction: true, currency: a.currency || 'SB' })); // v34-2e: keep recently-expired auctions visible as "settling" until the cron closes them (≤60s) and they drop from available_listings; was also gated on endTime > now (client-side hide), which the cron now owns
   { const _cnt = document.getElementById('live-active-count'); if (_cnt) _cnt.textContent = liveList.length + (liveList.length === 1 ? ' auction' : ' auctions') + ' ending soon'; } // v34-2b: real count (was a hardcoded "4")
   if (!liveList.length) {
     el.innerHTML = '<div style="text-align:center;padding:60px 20px;"><div style="font-size:56px;margin-bottom:16px;">⚡</div><div style="color:#fff;font-weight:800;font-size:20px;margin-bottom:8px;">No Live Auctions</div><div style="color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;">Be the first to list something for auction!</div><button onclick=\"go(\'new-listing\');setTimeout(()=>setSellMode(\'auction\'),300)\" style=\"background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px 28px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;\">⚡ Start an Auction</button></div>';
@@ -2439,6 +2439,7 @@ function renderAuctionList() {
   }
   el.innerHTML = liveList.map(a => {
     const cd = formatCountdown(a.endTime - Date.now());
+    const expired = (a.endTime || 0) <= Date.now(); // v34-2e: timer ran out, awaiting server cron settle
     return `<div onclick="openAuction('${a.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;overflow:hidden;cursor:pointer;transition:transform .15s;" onmousedown="this.style.transform='scale(.98)'" onmouseup="this.style.transform=''">
       <div style="display:flex;gap:0;">
         <div style="width:110px;height:110px;flex-shrink:0;position:relative;background:#111;">
@@ -2458,8 +2459,8 @@ function renderAuctionList() {
               <div style="color:#FF3B30;font-weight:900;font-size:18px;font-family:'Space Grotesk',sans-serif;">${a.currentBid} <span style="font-size:11px;color:rgba(255,59,48,.6);">${aucUnit(a)}</span></div>
             </div>
             <div style="text-align:right;">
-              <div style="color:rgba(255,255,255,.4);font-size:10px;">Ends in</div>
-              <div id="timer-${a.id}" class="${cd.urgent?'auction-timer-urgent':''}" style="color:${cd.urgent?'#FF3B30':'#fff'};font-weight:800;font-size:15px;font-family:'Space Grotesk',sans-serif;">${cd.text}</div>
+              <div style="color:rgba(255,255,255,.4);font-size:10px;">${expired ? 'Status' : 'Ends in'}</div>
+              <div id="timer-${a.id}" class="${(!expired && cd.urgent)?'auction-timer-urgent':''}" style="color:${expired ? '#FFB347' : (cd.urgent?'#FF3B30':'#fff')};font-weight:800;font-size:${expired ? '12' : '15'}px;font-family:'Space Grotesk',sans-serif;">${expired ? 'Ending — settling…' : cd.text}</div>
             </div>
           </div>
           <div style="margin-top:6px;color:rgba(255,255,255,.3);font-size:11px;">${a.bidCount} bids · @${a.seller}</div>
@@ -2491,16 +2492,25 @@ function startAuctionTimers() {
       if (currentAuctionId === a.id) {
         const detailEl = document.getElementById('detail-timer-' + a.id);
         if (detailEl) {
-          detailEl.textContent = cd.text;
-          detailEl.style.color = cd.urgent ? '#FF3B30' : '#fff';
-          detailEl.className = cd.urgent ? 'auction-timer-urgent' : '';
+          if (cd.ended) { // v34-2e: awaiting server cron settle (≤60s); display-only
+            detailEl.textContent = 'Ending — settling…';
+            detailEl.style.color = '#FFB347';
+            detailEl.style.fontSize = '15px';
+            detailEl.className = '';
+          } else {
+            detailEl.textContent = cd.text;
+            detailEl.style.color = cd.urgent ? '#FF3B30' : '#fff';
+            detailEl.className = cd.urgent ? 'auction-timer-urgent' : '';
+          }
         }
       }
 
       if (cd.ended) {
         clearInterval(auctionTimers[a.id]);
-        renderAuctionList(); // v33-2: the just-expired auction drops out of Live for everyone
-        settleExpiredOwnAuctions(); // if it's the viewer's own, settle it → lands in their tab
+        // v34-2e: display-only. The server cron (close_expired_auctions, runs ≤60s) settles expired
+        // auctions server-side; the client never settles. renderAuctionList repaints so the just-
+        // expired auction shows "Ending — settling…" until it drops out of available_listings.
+        renderAuctionList();
       }
     }, 1000);
   });
@@ -2508,59 +2518,10 @@ function startAuctionTimers() {
 
 let _auctionOpening = false;
 
-// v33-2: settle the CURRENT user's own auctions whose timer expired while nobody ended them.
-// Has bids → settle_auction (winner charged, order created → seller's Sold tab; winner notified).
-// No bids → status='ended' (→ seller's Removed tab). Buyers just see expired ones vanish from Live
-// (renderAuctionList/browsePool already filter by endTime). Idempotent + in-flight guarded.
-async function settleExpiredOwnAuctions() {
-  if (!currentUser || window._settlingExpired) return;
-  const now = Date.now();
-  const mine = AUCTIONS.filter(a =>
-    (a.endTime || 0) <= now &&
-    a.sellerId === currentUser.id &&
-    /^[0-9a-f-]{36}$/i.test(String(a.dbId || a.id))
-  );
-  if (!mine.length) return;
-  window._settlingExpired = true;
-  let changed = false;
-  for (const a of mine) {
-    const id = a.dbId || a.id;
-    try {
-      // v34-1av: branch on the DB bid_count, NOT the stale in-memory snapshot. The in-memory
-      // bidCount is captured once at list-load and is never bumped when a remote bid lands, so a
-      // late bid (the normal case) could mis-route a real winner into the no-bids branch → the
-      // auction gets stamped 'ended' without ever settling (no winner, no charge, no order), then
-      // can't self-heal because it's no longer 'live'. Re-read the row so the decision is
-      // authoritative + idempotent (skip anything another path already moved off 'live').
-      const { data: _fresh } = await sb.from('auctions').select('bid_count,status').eq('id', id).maybeSingle();
-      if (_fresh && _fresh.status !== 'live') continue;
-      const _liveBids = _fresh ? (_fresh.bid_count || 0) : (a.bidCount || 0);
-      if (_liveBids > 0) {
-        const { data, error } = await sb.rpc('settle_auction', { p_auction_id: id });
-        if (!error) {
-          const row = Array.isArray(data) ? data[0] : data;
-          if (row && row.winner_id) {
-            const money = (a.currency === 'USD') ? ('$' + (row.final_amount ?? a.currentBid)) : ((row.final_amount ?? a.currentBid) + ' SB');
-            notifyUser(row.winner_id, { type:'auction', icon:'🎉', title:'You won the auction!',
-              body:'You won "' + a.title + '" for ' + money + '. Head to My Orders to track it.',
-              actionLabel:'View order', actionTarget:'my-orders' });
-          }
-          changed = true;
-        } else { console.error('settleExpired settle_auction:', error); }
-      } else {
-        const { error } = await sb.from('auctions').update({ status: 'ended' }).eq('id', id).eq('seller_id', currentUser.id);
-        if (!error) changed = true; else console.error('settleExpired end-no-bids:', error);
-      }
-    } catch (e) { console.error('settleExpired:', e); }
-  }
-  // Drop the now-settled auctions from the local list either way + refresh Live.
-  for (let i = AUCTIONS.length - 1; i >= 0; i--) {
-    const a = AUCTIONS[i];
-    if ((a.endTime || 0) <= now && a.sellerId === currentUser.id) AUCTIONS.splice(i, 1);
-  }
-  window._settlingExpired = false;
-  if (changed) { renderAuctionList(); showToast('🏁 An expired auction was settled — check My Listings.'); }
-}
+
+// v34-2e: settleExpiredOwnAuctions REMOVED. Expiry is settled server-side by the cron
+// (close_expired_auctions, runs ≤60s); the client never settles. The countdown's cd.ended
+// branch is now display-only. Seller-initiated early end is handled by end_auction (doEndAuction).
 
 async function openAuction(id) {
   if (_auctionOpening) return;
@@ -2611,8 +2572,8 @@ async function openAuction(id) {
             <div id="auction-current-bid" style="color:#FF3B30;font-weight:900;font-size:36px;font-family:'Space Grotesk',sans-serif;line-height:1;">${a.currentBid} <span style="font-size:16px;color:rgba(255,59,48,.7);">${aucUnit(a)}</span></div>
           </div>
           <div style="text-align:right;">
-            <div style="color:rgba(255,255,255,.6);font-size:11px;margin-bottom:2px;">Ends in</div>
-            <div id="detail-timer-${a.id}" class="${cd.urgent?'auction-timer-urgent':''}" style="color:${cd.urgent?'#FF3B30':'#fff'};font-weight:900;font-size:24px;font-family:'Space Grotesk',sans-serif;">${cd.text}</div>
+            <div style="color:rgba(255,255,255,.6);font-size:11px;margin-bottom:2px;">${cd.ended ? 'Status' : 'Ends in'}</div>
+            <div id="detail-timer-${a.id}" class="${(!cd.ended && cd.urgent)?'auction-timer-urgent':''}" style="color:${cd.ended ? '#FFB347' : (cd.urgent?'#FF3B30':'#fff')};font-weight:900;font-size:${cd.ended ? '15' : '24'}px;font-family:'Space Grotesk',sans-serif;">${cd.ended ? 'Ending — settling…' : cd.text}</div>
           </div>
         </div>
       </div>
@@ -2660,7 +2621,7 @@ async function openAuction(id) {
         </div>
         <div style="text-align:center;margin-top:8px;color:rgba(255,255,255,.35);font-size:12px;">Your auction · ${a.bidCount} bids · ${aucMoney(a.currentBid, a)} high bid</div>
       ` : cd.ended ? `
-        <div style="background:rgba(255,255,255,.06);border-radius:16px;padding:16px;text-align:center;color:rgba(255,255,255,.4);font-weight:700;">Auction Ended</div>
+        <div style="background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:16px;padding:16px;text-align:center;color:#FFB347;font-weight:700;">Auction ended · settling…</div>
       ` : `
         ${a.buyNowPrice > 0 && a.bidCount === 0 ? `
         <div id="bin-wrap-${a.id}">
@@ -5433,7 +5394,6 @@ async function loadAuctionsFromDb() {
 
   startAuctionTimers();
   renderAuctionList(); // always render after load
-  settleExpiredOwnAuctions(); // v33-2: settle any of the viewer's own auctions that expired while away
   primeAvatars(AUCTIONS.map(a => a.seller));
 }
 
@@ -9253,7 +9213,8 @@ async function saveAuctionEdits() {
 }
 
 // v32-21: End-auction flow with a seller warning. With bids → settle to the highest bidder
-// (settle_auction RPC: set winner, charge winner, create order). No bids → simple cancel.
+// v34-2e: seller manual end. Reads warning data from the live model (available_listings + bids),
+// then doEndAuction calls the ownership-gated end_auction RPC (server settles to high bidder, or voids no-bid).
 async function confirmEndAuction(id) {
   const a = AUCTIONS.find(x => x.id === id || x.dbId === id);
   if (!a) { showToast('Auction not found'); return; }
@@ -9262,10 +9223,10 @@ async function confirmEndAuction(id) {
   let bidCount = a.bidCount || 0, winner = null, finalAmt = a.currentBid || a.startPrice;
   if (/^[0-9a-f-]{36}$/i.test(String(dbId))) {
     try {
-      const { data: fr } = await sb.from('auctions').select('bid_count,current_bid').eq('id', dbId).single();
-      if (fr) { bidCount = fr.bid_count || 0; if (fr.current_bid != null) finalAmt = fr.current_bid; }
-      const { data: top } = await sb.from('auction_bids').select('bidder_username,amount')
-        .eq('auction_id', dbId).order('amount', { ascending: false }).order('created_at', { ascending: true }).limit(1);
+      const { data: fr } = await sb.from('available_listings').select('bid_count,current_bid,start_price').eq('id', dbId).single();
+      if (fr) { bidCount = fr.bid_count || 0; if (fr.current_bid != null) finalAmt = fr.current_bid; else if (fr.start_price != null) finalAmt = fr.start_price; }
+      const { data: top } = await sb.from('bids').select('bidder_username,amount')
+        .eq('listing_id', dbId).order('amount', { ascending: false }).order('created_at', { ascending: true }).limit(1);
       if (top && top.length) { winner = top[0].bidder_username; finalAmt = top[0].amount; }
     } catch (e) { console.error('confirmEndAuction lookup:', e); }
   }
@@ -9303,28 +9264,25 @@ async function confirmEndAuction(id) {
 async function doEndAuction() {
   const info = window._endAuc; if (!info) return;
   const ov = document.getElementById('end-auction-overlay'); if (ov) ov.remove();
-  if (info.settle) {
-    const { data, error } = await sb.rpc('settle_auction', { p_auction_id: info.dbId });
-    if (error) { showToast('❌ ' + (error.message || 'Could not end the auction')); return; }
-    const row = Array.isArray(data) ? data[0] : data;
-    const wname = (row && row.winner_username) || info.winner || 'the winner';
-    const money = (info.currency === 'USD') ? ('$' + (row?.final_amount ?? info.finalAmt)) : ((row?.final_amount ?? info.finalAmt) + ' SB');
-    if (row && row.winner_id) {
-      notifyUser(row.winner_id, { type:'auction', icon:'🎉', title:'You won the auction!',
-        body:'You won "' + info.title + '" for ' + money + '. Head to My Orders to track it.',
-        actionLabel:'View order', actionTarget:'my-orders' });
-    }
-    showToast('🏆 Sold to @' + wname + ' for ' + money + '!');
+  // v34-2e: one server-authoritative path. end_auction(p_listing_id) checks ownership, then
+  // delegates to close_auction — settles to the highest eligible bidder (charge-on-win) or voids
+  // a no-bid auction. Returns the Paid order on a sale, null on a void. Winner + seller
+  // notifications are emitted server-side by close_auction; the client does not notify.
+  const { data, error } = await sb.rpc('end_auction', { p_listing_id: info.dbId });
+  if (error) { showToast('❌ ' + (error.message || 'Could not end the auction')); return; }
+  const order = Array.isArray(data) ? data[0] : data;
+  const wasSale = !!order;
+  if (wasSale) {
+    const money = (info.currency === 'USD') ? ('$' + info.finalAmt) : (info.finalAmt + ' SB');
+    showToast('🏆 Sold to @' + (info.winner || 'the winner') + ' for ' + money + '!');
   } else {
-    const { error } = await sb.from('auctions').update({ status: 'ended' }).eq('id', info.dbId).eq('seller_id', currentUser.id);
-    if (error) { showToast('❌ ' + error.message); return; }
-    showToast('⏹️ Auction ended');
+    showToast('⏹️ Auction ended — no completed sale. You can relist it.');
   }
   const idx = AUCTIONS.findIndex(x => x.id === info.dbId || x.dbId === info.dbId);
   if (idx > -1) AUCTIONS.splice(idx, 1);
   window._endAuc = null;
   renderAuctionList();
-  go('my-listings'); setMyListingsView('removed'); // v34-1ak: won auctions live under Removed (temp, until v34-2); no-bid ended auctions too
+  go('my-listings'); setMyListingsView(wasSale ? 'sold' : 'removed'); // v34-2e: won auction = real Paid order → Sold tab; no-bid void → Removed/relistable
 }
 
 // v32-22: slide-to-confirm for the End sheet (same physics as the shortfall pill).
