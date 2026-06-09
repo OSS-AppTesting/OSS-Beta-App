@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2c</title>
+<title>OneStopSwap v34-2d</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2c';
+window._OSS_BUILD = 'v34-2d';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2686,11 +2686,11 @@ async function openAuction(id) {
   go('auction');
 }
 
-// BIN (v32-8): instant-buy an auction at its Buy It Now price. Two-tap confirm (matches the
-// End/Remove patterns). Ends the auction via the buy_now_auction RPC — the buyer can't update the
-// seller's auction row directly (auctions UPDATE RLS = seller_id), so the SECURITY DEFINER function
-// does it and re-checks the BIN rules server-side. Then deducts SB (SB auctions) + creates an order,
-// mirroring confirmSBCheckout. BIN is gated to bidCount===0 both in the UI and in the RPC.
+// BIN (v34-2d): instant-buy an auction at its Buy It Now price. Two-tap confirm. Calls the
+// buy_it_now(p_listing_id) SECURITY DEFINER RPC, which re-checks the BIN rules server-side
+// (bid_count=0, active, not ended, not own listing), debits the buyer, creates the Paid order,
+// closes the listing, and notifies the seller — atomically. BIN is gated to bid_count===0 in the UI
+// (the card only renders while bid_count===0) and re-enforced in the RPC.
 async function buyNowAuction(auctionId) {
   if (!requirePayment('buy now')) return;
   const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
@@ -2706,24 +2706,21 @@ async function buyNowAuction(auctionId) {
     return;
   }
   window._binConfirm = null;
+  // v34-2d: buy_it_now (SECURITY DEFINER) does it all server-side — re-validates BIN is still open
+  // (bid_count=0, active, not ended, not own), debits the buyer, creates the Paid order, closes the
+  // listing, AND notifies the seller. Returns the order row. So the client no longer makes the order
+  // (saveOrderToDb) or sends the seller notif — those would duplicate.
+  let order = null;
   if (a.dbId) {
-    const { error } = await sb.rpc('buy_now_auction', { p_auction_id: a.dbId });
-    if (error) { showToast('❌ ' + error.message); return; }
+    const res = await sb.rpc('buy_it_now', { p_listing_id: a.dbId });
+    if (res.error) { showToast('❌ ' + res.error.message); return; } // surfaces "bidding has started" / "not enough SwapBucks" / ended
+    order = res.data;
   }
   const fee = Math.round(price * 0.06);
-  if (!isUSD) { SB -= price; updateAllSBDisplays(); }
+  if (!isUSD) { SB -= price; updateAllSBDisplays(); } // mirror the server-side SB debit locally (the RPC is the source of truth)
   addTransaction('spent', '⚡', 'Bought Now: ' + a.title, '@' + a.seller + (isUSD ? ' · USD' : ''), -price);
-  if (currentUser) {
-    const dbOrder = await saveOrderToDb(a.title, price, isUSD ? 'USD' : 'SB', a.location || a.seller, a.seller, a.sellerId || null, a.img, a.id);
-    if (dbOrder) ORDERS.unshift({ id: dbOrder.id, item: a.title, img: a.img, price, currency: isUSD ? 'USD' : 'SB', seller: a.seller, status: 'Processing', date: new Date().toLocaleDateString(), timeline: buildTimeline('Processing') });
-    // BIN (v32-9): notify the seller their item sold outright (best-effort, never blocks)
-    const _binSaleNotif = {
-      type: 'order', icon: '⚡',
-      title: 'Sold via Buy It Now!',
-      body: '@' + (currentProfile?.username || 'A buyer') + ' bought ' + a.title + ' outright for ' + (isUSD ? '$' + price : price + ' SB') + '. Prep it for shipment!',
-      actionLabel: 'View', actionTarget: 'my-listings:removed'
-    };
-    if (a.sellerId) notifyUser(a.sellerId, _binSaleNotif); else notifyUsername(a.seller, _binSaleNotif);
+  if (order && order.id) {
+    ORDERS.unshift({ id: order.id, item: a.title, img: a.img, price: order.price, currency: order.currency || (isUSD ? 'USD' : 'SB'), seller: a.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
   }
   const idx = AUCTIONS.findIndex(x => x.id === auctionId || x.dbId === auctionId);
   if (idx > -1) AUCTIONS.splice(idx, 1);
