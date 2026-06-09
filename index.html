@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1ap</title>
+<title>OneStopSwap v34-1ar</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1ap';
+window._OSS_BUILD = 'v34-1ar';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -5668,7 +5668,20 @@ function fitChatToViewport() {
   const sc = document.getElementById('s-chat');
   if (!sc) return;
   const vv = window.visualViewport;
-  sc.style.height = (vv ? vv.height : window.innerHeight) + 'px';
+  if (vv) {
+    // v34-1aq: PIN the chat to the visual viewport — not just size it. When the iOS keyboard opens it
+    // also scrolls the layout viewport up (vv.offsetTop > 0); a static-flow element slides up with it
+    // and the header goes off the top (the "lost top of screen" bug). position:fixed + top=offsetTop +
+    // height=vv.height keeps the whole chat locked over exactly the visible area, keyboard or not.
+    sc.style.position = 'fixed';
+    sc.style.left = '0';
+    sc.style.right = '0';
+    sc.style.top = Math.max(0, vv.offsetTop) + 'px';
+    sc.style.height = vv.height + 'px';
+    sc.style.zIndex = '400';
+  } else {
+    sc.style.height = window.innerHeight + 'px';
+  }
 }
 if (window.visualViewport) {
   const _onVV = () => {
@@ -6148,13 +6161,11 @@ async function submitReview() {
       return;
     }
     showToast('⭐ Review saved! Thanks for your feedback.');
-    // v31: notify the seller of the new review (best-effort, never blocks)
-    notifyUsername(sellerName, {
-      type: 'review', icon: '⭐',
-      title: 'New review!',
-      body: '@' + reviewer + ' left you ' + selectedStars + '★ on ' + itemName,
-      actionLabel: 'View', actionTarget: 'profile'
-    });
+    // v34-1ar: review notification REMOVED (Dean's call) — a "you got a review" ping is the one
+    // non-actionable notification, so it belongs with engagement notifs (reviews/likes/follows) in the
+    // SwapBucks-flywheel / discovery-&-social pillar, not the transaction core. Wiring it up there will
+    // also need the `notifications.type` CHECK relaxed to allow 'review' (it currently rejects it — the
+    // reason this never fired). The review itself still saves + shows on the seller profile / My Reviews.
     await loadReviews();
     await loadSellerRating(sellerName);
     const drEl = document.getElementById('detail-seller-rating');
