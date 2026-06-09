@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2g</title>
+<title>OneStopSwap v34-2g2</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2g';
+window._OSS_BUILD = 'v34-2g2';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2561,10 +2561,25 @@ let _auctionOpening = false;
 // (close_expired_auctions, runs ≤60s); the client never settles. The countdown's cd.ended
 // branch is now display-only. Seller-initiated early end is handled by end_auction (doEndAuction).
 
+// v34-2g2: the in-memory AUCTIONS array is only populated when the Live tab loads. If the user lands
+// straight on My Listings (or deep-links), the auction action readers (View/Edit/End) find nothing →
+// dead button. This pulls the live auctions once when the target isn't already present. Returns true
+// if the auction is now in AUCTIONS. (loadAuctionsFromDb pulls available_listings = active auctions,
+// which is exactly what View/Edit/End operate on.)
+async function _ensureAuctionLoaded(id) {
+  if (AUCTIONS.some(x => x.id === id || x.dbId === id)) return true;
+  try { await loadAuctionsFromDb(); } catch (e) { console.error('_ensureAuctionLoaded:', e); }
+  return AUCTIONS.some(x => x.id === id || x.dbId === id);
+}
+
 async function openAuction(id) {
   if (_auctionOpening) return;
   _auctionOpening = true;
-  const a = AUCTIONS.find(x => x.id === id || x.dbId === id);
+  let a = AUCTIONS.find(x => x.id === id || x.dbId === id);
+  if (!a) { // v34-2g2: cold-load (straight to My Listings / notif deep-link) — pull once, then re-find
+    if (!(await _ensureAuctionLoaded(id))) { _auctionOpening = false; showToast('That auction is no longer available'); return; }
+    a = AUCTIONS.find(x => x.id === id || x.dbId === id);
+  }
   if (!a) { _auctionOpening = false; return; }
   currentAuctionId = id;
 
@@ -8816,24 +8831,8 @@ async function deleteListing(id, title, btn) {
   setTimeout(() => { if (btn.dataset.confirming) { btn.dataset.confirming = ''; btn.textContent = 'Remove'; btn.style.background = 'rgba(255,59,48,.1)'; } }, 3000);
 }
 
-async function deleteAuction(id, title, btn) {
-  showToast('Tap End again to end this auction');
-  if (btn.dataset.confirming === 'true') {
-    btn.textContent = '...';
-    btn.disabled = true;
-    const { error } = await sb.from('auctions').update({ status: 'ended' }).eq('id', id).eq('seller_id', currentUser.id);
-    if (error) { showToast('❌ ' + error.message); btn.textContent = 'End'; btn.disabled = false; return; }
-    const idx = AUCTIONS.findIndex(x => x.id === id || x.dbId === id);
-    if (idx > -1) AUCTIONS.splice(idx, 1);
-    showToast('⏹️ Auction ended');
-    renderMyListings();
-    return;
-  }
-  btn.dataset.confirming = 'true';
-  btn.textContent = 'Confirm?';
-  btn.style.background = 'rgba(255,59,48,.3)';
-  setTimeout(() => { if (btn.dataset.confirming) { btn.dataset.confirming = ''; btn.textContent = 'End'; btn.style.background = 'rgba(255,59,48,.1)'; } }, 3000);
-}
+// v34-2g1: deleteAuction REMOVED (Step-8 prep) — zero callers, hit the dead `auctions` table. The
+// seller End flow is confirmEndAuction → doEndAuction → end_auction RPC (v34-2e).
 
 // ── OWNER LISTING CONTROLS (edit / sold / relist / remove) ────────────────────
 let editingListingId = null;
@@ -9141,6 +9140,7 @@ function aeCustomDur() {
 }
 
 async function openEditAuction(id) {
+  if (!(await _ensureAuctionLoaded(id))) { showToast('Auction not found'); return; } // v34-2g2: cold-load pull
   const a = AUCTIONS.find(x => x.id === id || x.dbId === id);
   if (!a) { showToast('Auction not found'); return; }
   editingAuctionId = a.dbId || a.id;
@@ -9280,6 +9280,7 @@ async function saveAuctionEdits() {
 // v34-2e: seller manual end. Reads warning data from the live model (available_listings + bids),
 // then doEndAuction calls the ownership-gated end_auction RPC (server settles to high bidder, or voids no-bid).
 async function confirmEndAuction(id) {
+  if (!(await _ensureAuctionLoaded(id))) { showToast('Auction not found'); return; } // v34-2g2: cold-load pull
   const a = AUCTIONS.find(x => x.id === id || x.dbId === id);
   if (!a) { showToast('Auction not found'); return; }
   const dbId = a.dbId || a.id;
@@ -9470,22 +9471,8 @@ async function endAuctionFromScreen(id) {
   return confirmEndAuction(id); // v32-21: unified warning + settle flow
 }
 
-async function _endAuctionFromScreen_legacy(id) {
-  if (window._endAucConfirm !== id) {
-    window._endAucConfirm = id;
-    showToast('Tap End again to confirm ending');
-    setTimeout(() => { if (window._endAucConfirm === id) window._endAucConfirm = null; }, 3000);
-    return;
-  }
-  window._endAucConfirm = null;
-  const { error } = await sb.from('auctions').update({ status: 'ended' }).eq('id', id).eq('seller_id', currentUser.id);
-  if (error) { showToast('❌ ' + error.message); return; }
-  const idx = AUCTIONS.findIndex(x => x.id === id || x.dbId === id);
-  if (idx > -1) AUCTIONS.splice(idx, 1);
-  showToast('⏹️ Auction ended');
-  renderAuctionList();
-  go('my-listings');
-}
+// v34-2g1: _endAuctionFromScreen_legacy REMOVED (Step-8 prep) — zero callers, hit the dead `auctions`
+// table. The live path is endAuctionFromScreen → confirmEndAuction → doEndAuction → end_auction RPC.
 
 function showAccountCompletion() {
   // Hide all auth screens
