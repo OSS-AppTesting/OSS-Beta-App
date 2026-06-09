@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2e</title>
+<title>OneStopSwap v34-2e1</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2e';
+window._OSS_BUILD = 'v34-2e1';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2428,6 +2428,41 @@ function formatCountdown(ms) {
 function aucUnit(a) { return (a && a.currency === 'USD') ? 'USD' : 'SB'; }
 function aucMoney(n, a) { return (a && a.currency === 'USD') ? ('$' + n) : (n + ' SB'); }
 
+// v34-2e1: self-healing drop of settled auctions from the Live list. When an auction's timer
+// expires it stays listed as "Ending — settling…" until the server cron (close_expired_auctions)
+// flips is_active=false and it leaves available_listings. Nothing client-side re-checked that, so on
+// the SELLER's screen the card lingered until a manual navigate forced a re-pull (the buyer's list
+// happened to re-pull on its own). This poller runs ONLY while ≥1 expired auction is still in
+// AUCTIONS: every few seconds it asks available_listings which of those ids are still live and
+// splices out any the cron has already closed, then re-renders. Self-stops when none remain.
+// Targeted id-scoped select — no full reload, no timer/realtime disruption. Idempotent (one timer).
+let _settlingPollTimer = null;
+function scheduleSettlingDrop() {
+  if (_settlingPollTimer) return; // already polling
+  const tick = async () => {
+    const now = Date.now();
+    const expired = AUCTIONS.filter(a => (a.endTime || 0) <= now && /^[0-9a-f-]{36}$/i.test(String(a.dbId || a.id)));
+    if (!expired.length) { clearInterval(_settlingPollTimer); _settlingPollTimer = null; return; }
+    try {
+      const ids = expired.map(a => a.dbId || a.id);
+      const { data, error } = await sb.from('available_listings').select('id').in('id', ids);
+      if (error) return; // transient — try again next tick
+      const stillLive = new Set((data || []).map(r => r.id));
+      let changed = false;
+      for (let i = AUCTIONS.length - 1; i >= 0; i--) {
+        const a = AUCTIONS[i];
+        const id = a.dbId || a.id;
+        if ((a.endTime || 0) <= now && /^[0-9a-f-]{36}$/i.test(String(id)) && !stillLive.has(id)) {
+          AUCTIONS.splice(i, 1); changed = true; // cron closed it → drop the settling card
+        }
+      }
+      if (changed) renderAuctionList();
+    } catch (e) { console.error('settling poll:', e); }
+  };
+  _settlingPollTimer = setInterval(tick, 6000);
+  tick(); // immediate first check (an auction may already be settled by the time we arm)
+}
+
 function renderAuctionList() {
   const el = document.getElementById('auction-list');
   if (!el) return;
@@ -2468,6 +2503,9 @@ function renderAuctionList() {
       </div>
     </div>`;
   }).join('');
+  // v34-2e1: if any expired-but-still-listed auction is on screen ("Ending — settling…"), arm the
+  // poller so the card drops the moment the cron closes it (no manual navigate needed).
+  if (liveList.some(a => (a.endTime || 0) <= Date.now())) scheduleSettlingDrop();
 }
 
 function startAuctionTimers() {
