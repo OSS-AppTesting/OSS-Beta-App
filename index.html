@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1aj</title>
+<title>OneStopSwap v34-1ak</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1aj';
+window._OSS_BUILD = 'v34-1ak';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -776,9 +776,6 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     </div>
     <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;">
       <button id="ml-tab-active" onclick="setMyListingsView('active')" style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.4);border-radius:20px;padding:6px 16px;color:#FF3B30;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;white-space:nowrap;">Active</button>
-      <button id="ml-tab-sold" onclick="setMyListingsView('sold')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;white-space:nowrap;">✓ Sold</button>
-      <button id="ml-tab-shipped" onclick="setMyListingsView('shipped')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;white-space:nowrap;">📦 Shipped</button>
-      <button id="ml-tab-delivered" onclick="setMyListingsView('delivered')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;white-space:nowrap;">🎉 Delivered</button>
       <button id="ml-tab-removed" onclick="setMyListingsView('removed')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 16px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;white-space:nowrap;">🚫 Removed</button>
     </div>
     <div style="position:relative;margin-bottom:14px;">
@@ -2286,7 +2283,7 @@ async function confirmSBCheckout() {
   if (order && order.id) {
     ORDERS.unshift({ id: order.id, item: p.title, img: p.img, price: order.price, currency: order.currency || 'SB', seller: p.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
   }
-  const _saleNotif = { type:'order', icon:'🎉', title:'You made a sale!', body:'@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + ' for ' + p.price + ' SB. Prep it for shipment!', actionLabel:'View', actionTarget:'my-listings:sold' };
+  const _saleNotif = { type:'order', icon:'🎉', title:'You made a sale!', body:'@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + ' for ' + p.price + ' SB. Prep it for shipment!', actionLabel:'View', actionTarget:'my-sales' };
   if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
   // Drop the now-sold item from the buyer's local feed (already excluded server-side via the view).
   { const i = PRODS.findIndex(x => String(x.id) === String(p.id)); if (i > -1) PRODS.splice(i, 1); renderAll(); }
@@ -2714,7 +2711,7 @@ async function buyNowAuction(auctionId) {
       type: 'order', icon: '⚡',
       title: 'Sold via Buy It Now!',
       body: '@' + (currentProfile?.username || 'A buyer') + ' bought ' + a.title + ' outright for ' + (isUSD ? '$' + price : price + ' SB') + '. Prep it for shipment!',
-      actionLabel: 'View', actionTarget: 'my-listings:sold'
+      actionLabel: 'View', actionTarget: 'my-listings:removed'
     };
     if (a.sellerId) notifyUser(a.sellerId, _binSaleNotif); else notifyUsername(a.seller, _binSaleNotif);
   }
@@ -3283,7 +3280,7 @@ async function confirmCheckout() {
     type: 'order', icon: '🎉',
     title: 'You made a sale!',
     body: '@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + '. Prep it for shipment!',
-    actionLabel: 'View', actionTarget: 'my-listings:sold'
+    actionLabel: 'View', actionTarget: 'my-sales'
   };
   if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
   // Drop the now-sold item from the buyer's local feed (already excluded server-side via the view).
@@ -3888,7 +3885,7 @@ async function completeOrderPayment(orderId, currency, amount) {
   if (currency === 'SB') { SB -= amount; updateAllSBDisplays(); addTransaction('spent', '🏷️', 'Paid: ' + itemLabel, '', -amount); }
   else { addTransaction('spent', '💳', 'Paid: ' + itemLabel, '', -amount); }
   if (lo) { lo.status = 'Paid'; lo.timeline = buildTimeline(data || { status: 'Paid' }); }
-  if (data?.seller_id) notifyUser(data.seller_id, { type:'order', icon:'💰', title:'Paid — ship it!', body:'@' + (currentProfile?.username || 'A buyer') + ' paid for ' + itemLabel + '. Mark it shipped when it\'s on the way.', actionLabel:'View', actionTarget:'my-listings:sold' });
+  if (data?.seller_id) notifyUser(data.seller_id, { type:'order', icon:'💰', title:'Paid — ship it!', body:'@' + (currentProfile?.username || 'A buyer') + ' paid for ' + itemLabel + '. Mark it shipped when it\'s on the way.', actionLabel:'View', actionTarget:'my-sales' });
   showToast('🎉 Payment complete — seller will ship soon!');
   if (typeof renderOrders === 'function') renderOrders(window._ordersFilter || 'all');
   return true;
@@ -3969,6 +3966,13 @@ function notifActionFor(n) {
   // Buyer-facing offer updates (accepted / declined / countered) live in My Offers —
   // refresh from the DB first so the seller's persisted response actually shows.
   if (target === 'my-offers') return () => openMyOffersFresh();
+  // v34-1ak: My Sales is the seller's transaction history now. New fixed-price sale notifs target
+  // 'my-sales'; legacy rows that still say my-listings:sold/shipped/delivered are routed here too
+  // (those fixed-price stages moved out of My Listings). my-listings:active/removed stay on My Listings
+  // (removed = the temp home for won auctions until v34-2).
+  if (target === 'my-sales' || target === 'my-listings:sold' || target === 'my-listings:shipped' || target === 'my-listings:delivered') {
+    return () => go('my-sales');
+  }
   // BIN / sale (v32-10): a sale lands the seller on My Listings → Sold where the SOLD card shows.
   // v32-14: generalized — any `my-listings:<tab>` target routes to that tab (sold/shipped/delivered/removed/active).
   if (target.indexOf('my-listings:') === 0) {
@@ -7673,7 +7677,7 @@ function receivedOfferCard(o) {
           </div>
           <div style="display:flex;gap:8px;">
             <button onclick="openChat('${o.buyer}','${o.buyerColor}','#00C864','${o.buyerInitials}')" style="flex:1;background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.25);border-radius:10px;padding:8px;color:#00C864;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Message Buyer</button>
-            <button onclick="go('my-listings'); setMyListingsView('sold');" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Track in My Listings →</button>
+            <button onclick="go('my-sales')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Track in My Sales →</button>
           </div>
         </div>`;
         })() :
@@ -8326,6 +8330,13 @@ async function renderMySales() {
   MY_SALES_ROWS = res.data || [];
   // v34-1aj.1: orders carry no image/title (RPCs don't copy them — no drift). Hydrate via the same
   // join-on-read the buyer My Orders uses: build a listings map from listing_ids, attach orderDisplay.
+  // v34-1ak: exclude legacy/off-vocab orders — won-auction settle (settle_auction/buy_now_auction)
+  // persists orders with legacy 'Processing' status and a polymorphic (auction) listing_id. Those are
+  // NOT on the v34 order model, so they stay in My Listings (Option A), not here. Filtering to the
+  // known v34 status vocab keeps My Sales clean and is forward-compatible: when v34-2 puts auctions on
+  // the order model with real statuses, they flow in automatically.
+  const MS_VOCAB = ['AwaitingPayment','Paid','Shipped','Delivered','Completed','Cancelled','Refunded'];
+  MY_SALES_ROWS = MY_SALES_ROWS.filter(o => MS_VOCAB.includes(o.status));
   const lmap = await fetchListingsMap(MY_SALES_ROWS.map(o => o.listing_id));
   MY_SALES_ROWS.forEach(o => { o._disp = orderDisplay(o, lmap); });
   renderMySalesList();
@@ -8423,7 +8434,11 @@ async function renderMyListings() {
     auctions = auctions.filter(a => a.winner_username && stageOf(a.id, true) === view); // won auction defaults to 'sold'
   } else { // removed
     listings = listings.filter(l => !l.is_active && !hasOrder(l.id));
-    auctions = auctions.filter(a => !a.winner_username);
+    // v34-1ak: won auctions are NOT on the order model yet (legacy winner_username/'Processing' path),
+    // so they can't live in My Sales (orders-only). They stay here under Removed — labeled
+    // "✓ Sold to @winner" with a Manage/ship button — as an explicit temp exception until v34-2
+    // migrates auctions onto orders, at which point they flow into My Sales naturally.
+    auctions = auctions; // keep all ended auctions (won + unsold); auctionsQ already restricts to status='ended'
   }
 
   // v33-10: in-account search is TAB-SPECIFIC — filter the current tab's items by the query (was cross-tab in v33-8/9).
@@ -9204,7 +9219,7 @@ async function doEndAuction() {
   if (idx > -1) AUCTIONS.splice(idx, 1);
   window._endAuc = null;
   renderAuctionList();
-  go('my-listings'); setMyListingsView(info.settle ? 'sold' : 'removed');
+  go('my-listings'); setMyListingsView('removed'); // v34-1ak: won auctions live under Removed (temp, until v34-2); no-bid ended auctions too
 }
 
 // v32-22: slide-to-confirm for the End sheet (same physics as the shortfall pill).
