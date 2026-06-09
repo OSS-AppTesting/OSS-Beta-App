@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2r</title>
+<title>OneStopSwap v34-2s</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2r';
+window._OSS_BUILD = 'v34-2s';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -6663,11 +6663,16 @@ let _shortfallCallback = null;
 let _shortfallSelectedPack = null;
 
 function showSBShortfall(needed, onSuccess) {
+  const have = SB;
+  // v34-2s: live-balance guard. NEVER open the bank when already funded (e.g. a stale button that
+  // wasn't re-rendered, or any ungated caller) — run the intended action instead of showing a bogus
+  // negative "short". This is the shared funnel for buy-now / BIN / bidding / offers / order-pay, so
+  // they all inherit the clamped, live-balance check.
+  if (have >= needed) { if (typeof onSuccess === 'function') onSuccess(); return; }
   _shortfallCallback = onSuccess;
   _shortfallSelectedPack = null;
 
-  const have = SB;
-  const diff = needed - have;
+  const diff = Math.max(0, needed - have); // v34-2s: clamp — short is never negative
 
   // Populate info bar
   document.getElementById('shortfall-have').textContent = have + ' SB';
