@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2d</title>
+<title>OneStopSwap v34-2d2</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2d';
+window._OSS_BUILD = 'v34-2d2';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2699,14 +2699,30 @@ async function buyNowAuction(auctionId) {
   const price = a.buyNowPrice;
   const isUSD = a.currency === 'USD';
   if (!isUSD && SB < price) { showSBShortfall(price, () => buyNowAuction(auctionId)); return; }
-  if (window._binConfirm !== auctionId) {
-    window._binConfirm = auctionId;
-    showToast('Tap Buy It Now again to confirm — ' + (isUSD ? '$' + price : price + ' SB'));
-    setTimeout(() => { if (window._binConfirm === auctionId) window._binConfirm = null; }, 3000);
-    return;
-  }
-  window._binConfirm = null;
-  // v34-2d: buy_it_now (SECURITY DEFINER) does it all server-side — re-validates BIN is still open
+  // v34-2d2: replace the two-tap confirm with a slide-to-confirm pill (same UX as the End/shortfall
+  // sheets). Tapping Buy It Now swaps the button for a "Slide to buy" pill; completing the slide runs
+  // doBuyItNow. Falls back to an immediate buy if the detail/bin-wrap isn't on screen.
+  const wrap = document.getElementById('bin-wrap-' + auctionId);
+  if (!wrap) { doBuyItNow(auctionId); return; }
+  const priceLabel = isUSD ? '$' + price : price + ' SB';
+  window._binSwipe.auctionId = auctionId;
+  wrap.innerHTML =
+    '<div id="bin-swipe" style="position:relative;width:100%;height:58px;border-radius:16px;background:rgba(0,165,80,.12);border:1px solid rgba(0,165,80,.35);overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none;margin-bottom:10px;">' +
+      '<div id="bin-swipe-fill" style="position:absolute;left:4px;top:4px;height:50px;width:50px;border-radius:12px;background:linear-gradient(135deg,#00A550,#007A3D);"></div>' +
+      '<div id="bin-swipe-label" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;pointer-events:none;letter-spacing:.3px;">Slide to buy — ' + priceLabel + '</div>' +
+      '<div id="bin-swipe-thumb" style="position:absolute;left:4px;top:4px;width:50px;height:50px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;color:#00A550;font-weight:900;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:grab;">&rsaquo;</div>' +
+    '</div>';
+  initBinSwipe();
+}
+
+// v34-2d2: runs the actual Buy-It-Now purchase once the slide completes (re-validates defensively).
+async function doBuyItNow(auctionId) {
+  const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
+  if (!a || !a.buyNowPrice) return;
+  if (a.bidCount > 0) { showToast('Buy It Now is no longer available — bidding has started'); return; }
+  const price = a.buyNowPrice;
+  const isUSD = a.currency === 'USD';
+  // buy_it_now (SECURITY DEFINER) does it all server-side — re-validates BIN is still open
   // (bid_count=0, active, not ended, not own), debits the buyer, creates the Paid order, closes the
   // listing, AND notifies the seller. Returns the order row. So the client no longer makes the order
   // (saveOrderToDb) or sends the seller notif — those would duplicate.
@@ -9370,6 +9386,61 @@ function initEndAuctionSwipe() {
     document.addEventListener('touchend', _endSwipeUp);
     document.addEventListener('mousemove', _endSwipeMove);
     document.addEventListener('mouseup', _endSwipeUp);
+  }
+}
+
+// v34-2d2: slide-to-confirm for Buy-It-Now (same physics as the End-sheet / shortfall pills).
+// State is module-level; handlers re-query by id; document listeners bind exactly once.
+window._binSwipe = { dragging: false, startX: 0, startLeft: 4, maxLeft: 0, auctionId: null };
+function _binSwipePointX(e) { return (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX; }
+function _binSwipeDown(e) {
+  const track = document.getElementById('bin-swipe'), thumb = document.getElementById('bin-swipe-thumb'), fill = document.getElementById('bin-swipe-fill');
+  if (!track || !thumb || !fill || track.dataset.done === '1') return;
+  const s = window._binSwipe;
+  s.dragging = true; s.startX = _binSwipePointX(e); s.startLeft = parseFloat(thumb.style.left) || 4;
+  s.maxLeft = track.getBoundingClientRect().width - 50 - 4; // thumb 50 + 4px gutter
+  thumb.style.transition = 'none'; fill.style.transition = 'none'; thumb.style.cursor = 'grabbing';
+  e.preventDefault();
+}
+function _binSwipeMove(e) {
+  const s = window._binSwipe; if (!s.dragging) return;
+  const thumb = document.getElementById('bin-swipe-thumb'), fill = document.getElementById('bin-swipe-fill'), label = document.getElementById('bin-swipe-label');
+  if (!thumb || !fill) return;
+  const dx = _binSwipePointX(e) - s.startX;
+  const nl = Math.min(Math.max(4, s.startLeft + dx), s.maxLeft);
+  thumb.style.left = nl + 'px'; fill.style.width = (nl + 46) + 'px';
+  if (label) label.style.opacity = String(Math.max(0, 1 - (nl / s.maxLeft) * 1.4));
+  e.preventDefault();
+}
+function _binSwipeUp() {
+  const s = window._binSwipe; if (!s.dragging) return; s.dragging = false;
+  const track = document.getElementById('bin-swipe'), thumb = document.getElementById('bin-swipe-thumb'), fill = document.getElementById('bin-swipe-fill'), label = document.getElementById('bin-swipe-label');
+  if (!track || !thumb || !fill) return;
+  const nl = parseFloat(thumb.style.left) || 4;
+  if (nl >= s.maxLeft * 0.9) {
+    track.dataset.done = '1';
+    thumb.style.transition = 'left .15s ease'; fill.style.transition = 'width .15s ease';
+    thumb.style.left = s.maxLeft + 'px'; fill.style.width = 'calc(100% - 8px)';
+    if (label) label.style.opacity = '0';
+    thumb.innerHTML = '\u2713'; thumb.style.cursor = 'default';
+    doBuyItNow(s.auctionId);
+  } else {
+    thumb.style.transition = 'left .25s ease'; fill.style.transition = 'width .25s ease';
+    thumb.style.left = '4px'; fill.style.width = '50px';
+    if (label) label.style.opacity = '1'; thumb.style.cursor = 'grab';
+  }
+}
+function initBinSwipe() {
+  const thumb = document.getElementById('bin-swipe-thumb'); if (!thumb) return;
+  window._binSwipe.dragging = false;
+  thumb.addEventListener('touchstart', _binSwipeDown, { passive: false });
+  thumb.addEventListener('mousedown', _binSwipeDown);
+  if (!window._binSwipeDocBound) {
+    window._binSwipeDocBound = true;
+    document.addEventListener('touchmove', _binSwipeMove, { passive: false });
+    document.addEventListener('touchend', _binSwipeUp);
+    document.addEventListener('mousemove', _binSwipeMove);
+    document.addEventListener('mouseup', _binSwipeUp);
   }
 }
 
