@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2j</title>
+<title>OneStopSwap v34-2k</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2j';
+window._OSS_BUILD = 'v34-2k';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2450,27 +2450,30 @@ let _settlingPollTimer = null;
 function scheduleSettlingDrop() {
   if (_settlingPollTimer) return; // already polling
   const tick = async () => {
-    const now = Date.now();
-    const expired = AUCTIONS.filter(a => (a.endTime || 0) <= now && /^[0-9a-f-]{36}$/i.test(String(a.dbId || a.id)));
-    if (!expired.length) { clearInterval(_settlingPollTimer); _settlingPollTimer = null; return; }
+    // v34-2k: reconcile the WHOLE Live list against available_listings while the Live tab is visible.
+    // Drops any auction that has left the feed for ANY reason — sold via Buy-It-Now, ended by the
+    // seller, or settled by the cron — so it disappears on its own with no navigation. (Was expired-
+    // only, which missed instant BIN/close: the card lingered until the viewer navigated away/back.)
+    const el = document.getElementById('auction-list');
+    const liveShowing = !!(el && el.offsetParent !== null); // Live screen actually visible
+    const ids = AUCTIONS.filter(a => /^[0-9a-f-]{36}$/i.test(String(a.dbId || a.id))).map(a => a.dbId || a.id);
+    if (!liveShowing || !ids.length) { clearInterval(_settlingPollTimer); _settlingPollTimer = null; return; }
     try {
-      const ids = expired.map(a => a.dbId || a.id);
       const { data, error } = await sb.from('available_listings').select('id').in('id', ids);
       if (error) return; // transient — try again next tick
       const stillLive = new Set((data || []).map(r => r.id));
       let changed = false;
       for (let i = AUCTIONS.length - 1; i >= 0; i--) {
-        const a = AUCTIONS[i];
-        const id = a.dbId || a.id;
-        if ((a.endTime || 0) <= now && /^[0-9a-f-]{36}$/i.test(String(id)) && !stillLive.has(id)) {
-          AUCTIONS.splice(i, 1); changed = true; // cron closed it → drop the settling card
+        const id = AUCTIONS[i].dbId || AUCTIONS[i].id;
+        if (/^[0-9a-f-]{36}$/i.test(String(id)) && !stillLive.has(id)) {
+          AUCTIONS.splice(i, 1); changed = true; // left the feed (BIN / ended / settled) → drop the card
         }
       }
       if (changed) renderAuctionList();
-    } catch (e) { console.error('settling poll:', e); }
+    } catch (e) { console.error('live reconcile:', e); }
   };
-  _settlingPollTimer = setInterval(tick, 6000);
-  tick(); // immediate first check (an auction may already be settled by the time we arm)
+  _settlingPollTimer = setInterval(tick, 5000);
+  tick(); // immediate first check
 }
 
 function renderAuctionList() {
@@ -2515,7 +2518,9 @@ function renderAuctionList() {
   }).join('');
   // v34-2e1: if any expired-but-still-listed auction is on screen ("Ending — settling…"), arm the
   // poller so the card drops the moment the cron closes it (no manual navigate needed).
-  if (liveList.some(a => (a.endTime || 0) <= Date.now())) scheduleSettlingDrop();
+  // v34-2k: while any auction is shown, run the reconcile poller so sold/ended/settled cards drop on
+  // their own (BIN, seller end, or cron) without navigating. Self-stops when Live isn't visible / empty.
+  if (liveList.length) scheduleSettlingDrop();
 }
 
 // v34-2i: live countdown on the My-Listings auction cards. The card timer is a static render; this
