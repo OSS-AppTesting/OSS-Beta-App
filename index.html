@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1av</title>
+<title>OneStopSwap v34-2a</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1av';
+window._OSS_BUILD = 'v34-2a';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2433,7 +2433,7 @@ function renderAuctionList() {
   if (!el) return;
   const liveList = AUCTIONS.filter(a => (a.endTime || 0) > Date.now() && itemMatchesFilters({ ...a, _isAuction: true, currency: a.currency || 'SB' })); // v33-2: expired drop out; v33-4: shared filters apply to Live
   if (!liveList.length) {
-    el.innerHTML = '<div style="text-align:center;padding:60px 20px;"><div style="font-size:56px;margin-bottom:16px;">⚡</div><div style="color:#fff;font-weight:800;font-size:20px;margin-bottom:8px;">No Live Auctions</div><div style="color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;">Be the first to list something for auction!</div><button onclick=\'go(\'new-listing\');setTimeout(()=>setSellMode(\'auction\'),300)\' style=\"background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px 28px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;\">⚡ Start an Auction</button></div>';
+    el.innerHTML = '<div style="text-align:center;padding:60px 20px;"><div style="font-size:56px;margin-bottom:16px;">⚡</div><div style="color:#fff;font-weight:800;font-size:20px;margin-bottom:8px;">No Live Auctions</div><div style="color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;">Be the first to list something for auction!</div><button onclick=\"go(\'new-listing\');setTimeout(()=>setSellMode(\'auction\'),300)\" style=\"background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px 28px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;\">⚡ Start an Auction</button></div>';
     return;
   }
   el.innerHTML = liveList.map(a => {
@@ -3764,7 +3764,7 @@ async function loadListings() {
   // v34-1c: feed reads the DERIVED available_listings view — present iff active AND no non-cancelled
   // order. No sold-flag filter, no won-item reconciliation hack (the view excludes anything with an
   // active order, for every buyer). Nothing to go stale.
-  const { data, error } = await sb.from('available_listings').select('*').order('created_at', { ascending: false });
+  const { data, error } = await sb.from('available_listings').select('*').eq('sale_type', 'fixed').order('created_at', { ascending: false }); // v34-2a: Shop/Home = fixed only; auctions render via the Live tab (renderAuctionList)
   if (error || !data || !data.length) { PRODS.length = 0; return; }
   const now = Date.now();
   const mapped = data.map(l => ({
@@ -5394,9 +5394,12 @@ async function postAuction(title, desc, category, condition) {
 }
 
 async function loadAuctionsFromDb() {
-  const { data, error } = await sb.from('auctions')
+  // v34-2a: auctions are now listings rows (sale_type='auction') surfaced by the derived
+  // available_listings view. Repointed off the dead `auctions` table onto the order model.
+  // status filter dropped — presence in the view already means live + unsold (no status column).
+  const { data, error } = await sb.from('available_listings')
     .select('*')
-    .eq('status', 'live')
+    .eq('sale_type', 'auction')
     .order('created_at', { ascending: false });
 
   console.log('loadAuctions:', data, error);
@@ -5427,14 +5430,14 @@ async function loadAuctionsFromDb() {
       size: a.size || '',
       gender: a.gender || '',
       startPrice: a.start_price,
-      currentBid: a.current_bid || a.start_price,
-      reservePrice: a.reserve_price,
+      currentBid: a.current_bid ?? a.start_price, // v34-2a: current_bid is null until the first bid
+      // v34-2a: reserve_price intentionally NOT mapped — available_listings hides it from bidders.
+      //         status dropped too (the view has no status column; presence == live + unsold).
       currency: a.currency || 'SB',
       buyNowPrice: a.buy_now_price || 0,
       bidCount: a.bid_count || 0,
-      watchers: a.watchers || 0,
+      watchers: 0, // v34-2a: listings has no watchers column
       endTime: new Date(a.ends_at).getTime(),
-      status: a.status,
       bids: [] // load separately when auction opened
     });
   });
