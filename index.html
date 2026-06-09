@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2b1</title>
+<title>OneStopSwap v34-2c</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2b1';
+window._OSS_BUILD = 'v34-2c';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2596,7 +2596,7 @@ async function openAuction(id) {
         <div style="color:#fff;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.title}</div>
         <div style="display:flex;align-items:center;gap:5px;margin-top:2px;">
           <div style="width:6px;height:6px;border-radius:50%;background:#FF3B30;animation:livePulse 1.2s infinite;"></div>
-          <span style="color:#FF3B30;font-size:11px;font-weight:700;">LIVE · ${a.bidCount} bids · ${a.watchers} watching</span>
+          <span id="auc-meta-${a.id}" style="color:#FF3B30;font-size:11px;font-weight:700;">LIVE · ${a.bidCount} bids · ${a.watchers} watching</span>
         </div>
       </div>
     </div>
@@ -5309,20 +5309,26 @@ async function postAuction(title, desc, category, condition) {
 
   // Save to Supabase
   if (currentUser) {
-    const { data, error } = await sb.from('auctions').insert({
+    // v34-2c: auctions are now listings rows (sale_type='auction'), NOT the dead `auctions` table.
+    // current_bid starts NULL (no bids yet — place_bid's first-bid rule floors at start_price); price
+    // mirrors current_bid ?? start_price; reserve stays hidden via the view; no status column.
+    const { data, error } = await sb.from('listings').insert({
       seller_id: currentUser.id,
       seller_username: sellerName,
       title, description: desc, category, condition,
-      image_url: imgUrl || aiPreviewDataUrl || '', // v32-1: carry existing image when relisting a listing → auction
+      image_url: imgUrl || aiPreviewDataUrl || '', // carry existing image when relisting a listing → auction
+      sale_type: 'auction',
+      price: startBid,          // denormalized mirror = current_bid ?? start_price (no bids yet)
       start_price: startBid,
-      current_bid: startBid,
+      current_bid: null,        // null until the first bid (matches the model + place_bid first-bid rule)
+      bid_count: 0,
       reserve_price: reserve || null,
+      buy_now_price: buyNow || null,
+      ends_at: endsAt.toISOString(),
       currency: auctionCurrency,
       size: size || null,
       gender: gender || null,
-      buy_now_price: buyNow || null,
-      ends_at: endsAt.toISOString(),
-      status: 'live'
+      is_active: true
     }).select().single();
 
     if (error) { console.error('Auction save error:', error); showToast('❌ ' + error.message); }
@@ -5472,6 +5478,8 @@ async function refreshAuctionState(a) {
   if (currentAuctionId === a.id || currentAuctionId === a.dbId) {
     const bidEl = document.getElementById('auction-current-bid');
     if (bidEl) { bidEl.innerHTML = a.currentBid + ' <span style="font-size:16px;color:rgba(255,59,48,.7);">' + aucUnit(a) + '</span>'; bidEl.classList.add('bid-pop'); setTimeout(() => bidEl.classList.remove('bid-pop'), 300); }
+    const meta = document.getElementById('auc-meta-' + (a.dbId || a.id)); // v34-2c: keep the header "N bids" line live too
+    if (meta) meta.textContent = 'LIVE · ' + a.bidCount + ' bids · ' + a.watchers + ' watching';
     if (document.getElementById('bid-history')) renderBidHistory(a);
   }
   if (a.bidCount > 0) { const bw = document.getElementById('bin-wrap-' + (a.dbId || a.id)); if (bw) bw.style.display = 'none'; }
