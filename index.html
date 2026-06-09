@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2i</title>
+<title>OneStopSwap v34-2j</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2i';
+window._OSS_BUILD = 'v34-2j';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2353,7 +2353,7 @@ function showDetail(id) {
     <div style="padding:20px;background:#0A0A0A;padding-bottom:140px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         ${priceDisplay}
-        <div style="display:flex;gap:12px;"><span style="color:rgba(255,255,255,.4);font-size:13px;">👁 ${p.views}</span><span style="color:rgba(255,255,255,.4);font-size:13px;">♥ ${p.likes}</span></div>
+        <div style="display:flex;gap:12px;"><span style="color:rgba(255,255,255,.4);font-size:13px;">👁 ${p.views}</span><span style="color:rgba(255,255,255,.4);font-size:13px;">♥ ${p.likes}</span><span id="detail-viewing" style="color:#FF3B30;font-size:13px;font-weight:700;">👀 1 viewing</span></div>
       </div>
       <h2 style="color:#fff;font-weight:800;font-size:22px;line-height:1.2;margin-bottom:16px;">${p.title}</h2>
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:20px;cursor:pointer;" onclick="openSellerProfile('${p.seller}')">
@@ -2400,6 +2400,7 @@ function showDetail(id) {
     primeAvatars([p.seller]).then(() => { if (document.getElementById('s-detail')?.classList.contains('active')) showDetail(id); });
   }
   go('detail');
+  enterProductPresence(p.id); // v34-2j (#5): start the live "viewing now" count
 }
 
 // ── LIVE AUCTIONS ─────────────────────────────────────────────────────────────
@@ -5572,6 +5573,30 @@ function leaveWatching(auctionId) {
 }
 function leaveWatchingCurrent() { if (_currentWatchId) leaveWatching(_currentWatchId); }
 
+// v34-2j (#5): live "viewing now" presence on the product DETAIL page. One channel per open product
+// (cheap — unlike subscribing every feed card). Counts the viewer themselves, so solo = "1 viewing".
+let _productCh = null;
+let _productWatchId = null;
+function enterProductPresence(pid) {
+  if (_productWatchId === pid) return; // already tracking this product (showDetail may re-render)
+  leaveProductPresence();
+  _productWatchId = pid;
+  _productCh = sb.channel('product-' + pid, { config: { presence: { key: _watchKey() } } })
+    .on('presence', { event: 'sync' }, () => {
+      if (!_productCh) return;
+      let n = 0; try { n = Object.keys(_productCh.presenceState() || {}).length; } catch (e) { return; }
+      const el = document.getElementById('detail-viewing');
+      if (el) el.textContent = '👀 ' + n + ' viewing';
+    })
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED' && _productCh) { try { await _productCh.track({ at: Date.now() }); } catch (e) {} }
+    });
+}
+function leaveProductPresence() {
+  if (_productCh) { try { _productCh.untrack(); } catch (e) {} try { sb.removeChannel(_productCh); } catch (e) {} _productCh = null; }
+  _productWatchId = null;
+}
+
 // v34-2b1: authoritative re-read of an auction's live state. Reads current_bid/bid_count straight
 // from available_listings + reloads the bid history, then repaints the detail if open. Used by BOTH
 // placeBid-success and the realtime bids-echo. It SETS absolute values (never increments), so running
@@ -6515,12 +6540,20 @@ function styleCurrencyToggle(usdEl, sbEl, type) {
 function setCounterCurrency(type) {
   counterChosenCurrency = type;
   styleCurrencyToggle(document.getElementById('counter-toggle-usd'), document.getElementById('counter-toggle-sb'), type);
-  document.getElementById('counter-currency-symbol').textContent = (type === 'USD') ? '$' : 'SB';
+  const sym = document.getElementById('counter-currency-symbol');
+  sym.textContent = (type === 'USD') ? '$' : 'SB';
+  sym.style.color = (type === 'USD') ? '#00A550' : '#FF3B30'; // v34-2j: currency-tint the amount line
+  const inp = document.getElementById('counter-amount');
+  if (inp) inp.style.border = '1px solid ' + ((type === 'USD') ? 'rgba(0,165,80,.5)' : 'rgba(255,59,48,.5)');
 }
 function setSellerCounterCurrency(type) {
   sellerCounterChosenCurrency = type;
   styleCurrencyToggle(document.getElementById('seller-counter-toggle-usd'), document.getElementById('seller-counter-toggle-sb'), type);
-  document.getElementById('seller-counter-currency').textContent = (type === 'USD') ? '$' : 'SB';
+  const sym = document.getElementById('seller-counter-currency');
+  sym.textContent = (type === 'USD') ? '$' : 'SB';
+  sym.style.color = (type === 'USD') ? '#00A550' : '#FF3B30'; // v34-2j: currency-tint the amount line
+  const inp = document.getElementById('seller-counter-amount');
+  if (inp) inp.style.border = '1px solid ' + ((type === 'USD') ? 'rgba(0,165,80,.5)' : 'rgba(255,59,48,.5)');
 }
 
 function setOfferCurrency(type) {
@@ -6629,7 +6662,7 @@ function showSBShortfall(needed, onSuccess) {
   document.getElementById('shortfall-need').textContent = needed + ' SB';
   document.getElementById('shortfall-diff').textContent = diff + ' SB';
   document.getElementById('shortfall-subtitle').textContent =
-    `You're ${diff} SB short — top up to complete this`;
+    `You're ${diff} SB short — top up, then finish when you're ready`;
 
   // Render packs — highlight the smartest one (smallest that covers the gap)
   const packs = SB_PACKS;
@@ -6732,17 +6765,15 @@ async function processShortfallPayment() {
   document.getElementById('shortfall-processing').style.display = 'none';
   document.getElementById('shortfall-success').style.display = 'block';
   document.getElementById('shortfall-success-msg').textContent =
-    pack.sb + ' SB added! Completing your purchase...';
+    pack.sb + ' SB added! You\'re funded — tap to finish when you\'re ready.';
 
-  // Wait then fire callback
+  // v34-2j: do NOT auto-complete the original action. A top-up is its own step; closing the sheet
+  // returns the user to exactly where they were (checkout / auction / offer) with their new balance,
+  // and THEY confirm the purchase/bid. Prevents a surprise spend right after buying SB.
   await new Promise(r => setTimeout(r, 1500));
-
   document.getElementById('modal-sb-shortfall').style.display = 'none';
-
-  if (_shortfallCallback) {
-    _shortfallCallback();
-    _shortfallCallback = null;
-  }
+  _shortfallCallback = null;
+  updateAllSBDisplays();
 }
 
 function closeSBShortfall() {
@@ -9975,6 +10006,7 @@ async function fetchListingsMap(listingIds) {
 function go(name) {
   if (_currentWatchId && name !== 'auction') leaveWatchingCurrent(); // v34-2g3: leave "watching" when exiting the auction detail
   if (_mlTimerInterval && name !== 'my-listings') { clearInterval(_mlTimerInterval); _mlTimerInterval = null; } // v34-2i: stop the My-Listings countdown ticker
+  if (_productWatchId && name !== 'detail') leaveProductPresence(); // v34-2j (#5): leave product "viewing" presence
   document.querySelectorAll('.screen').forEach(s => s.style.display = '');
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
