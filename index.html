@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2g3</title>
+<title>OneStopSwap v34-2h</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2g3';
+window._OSS_BUILD = 'v34-2h';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2140,7 +2140,7 @@ function renderAll() {
     const mwViews = document.getElementById('mw-views');
     if (mwViews) mwViews.textContent = '👁 ' + mwItem.views + ' views';
     const mwPrice = document.getElementById('mw-price');
-    if (mwPrice) mwPrice.textContent = mwItem.currency === 'USD' ? '$' + mwItem.price : mwItem.price;
+    if (mwPrice) mwPrice.textContent = mwItem.currency === 'USD' ? '$' + (Number(mwItem.price) || 0).toFixed(2) : String(mwItem.price);
     const mwCurr = document.getElementById('mw-currency');
     if (mwCurr) mwCurr.textContent = mwItem.currency === 'USD' ? 'USD' : 'SB';
     const mwBadge = document.getElementById('mw-badge');
@@ -2281,7 +2281,7 @@ async function confirmSBCheckout() {
   updateAllSBDisplays();
   addTransaction('spent', '🛍️', 'Purchased: ' + p.title, '@' + p.seller, -p.price);
   if (order && order.id) {
-    ORDERS.unshift({ id: order.id, item: p.title, img: p.img, price: order.price, currency: order.currency || 'SB', seller: p.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
+    ORDERS.unshift({ id: order.id, item: p.title, img: p.img, price: _num(order.price), currency: order.currency || 'SB', seller: p.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
   }
   const _saleNotif = { type:'order', icon:'🎉', title:'You made a sale!', body:'@' + (currentProfile?.username || 'A buyer') + ' bought ' + p.title + ' for ' + p.price + ' SB. Prep it for shipment!', actionLabel:'View', actionTarget:'my-sales' };
   if (p.sellerId) notifyUser(p.sellerId, _saleNotif); else notifyUsername(p.seller, _saleNotif);
@@ -2382,7 +2382,7 @@ function showDetail(id) {
               <div style="height:110px;overflow:hidden;position:relative;background:#111;">
                 <img src="${r.img}" style="width:100%;height:100%;object-fit:cover;">
                 <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.7) 100%);"></div>
-                <div style="position:absolute;bottom:6px;left:6px;background:${r.currency==='USD'?'linear-gradient(135deg,#00A550,#007A3D)':'linear-gradient(135deg,#FF3B30,#C0392B)'};border-radius:8px;padding:2px 8px;font-size:11px;font-weight:800;color:#fff;">${r.currency==='USD'?'$'+r.price:r.price+' SB'}</div>
+                <div style="position:absolute;bottom:6px;left:6px;background:${r.currency==='USD'?'linear-gradient(135deg,#00A550,#007A3D)':'linear-gradient(135deg,#FF3B30,#C0392B)'};border-radius:8px;padding:2px 8px;font-size:11px;font-weight:800;color:#fff;">${fmtMoney(r.price, r.currency)}</div>
               </div>
               <div style="padding:8px 8px 10px;"><div style="color:#fff;font-weight:700;font-size:11px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${r.title}</div></div>
             </div>`).join('')}
@@ -2426,7 +2426,16 @@ function formatCountdown(ms) {
 
 // v32-17: auction currency display helpers (auctions can be SB or USD; bid math still runs on the SB wallet).
 function aucUnit(a) { return (a && a.currency === 'USD') ? 'USD' : 'SB'; }
-function aucMoney(n, a) { return (a && a.currency === 'USD') ? ('$' + n) : (n + ' SB'); }
+// v34-2h: money helpers for the 2-decimal cutover. _num coerces a money value to a Number — required
+// because once the DB money columns become numeric(12,2), supabase-js returns them as STRINGS, which
+// would break arithmetic/comparisons. fmtMoney renders a value+currency: SB stays whole (no decimals,
+// per policy), every other currency (USD/any fiat) shows 2 decimals with a $ symbol.
+function _num(v) { return (v === null || v === undefined || v === '') ? v : Number(v); }
+function fmtMoney(v, cur) {
+  const n = Number(v) || 0;
+  return (cur === 'SB') ? (Math.round(n) + ' SB') : ('$' + n.toFixed(2));
+}
+function aucMoney(n, a) { return (a && a.currency === 'USD') ? ('$' + (Number(n) || 0).toFixed(2)) : ((Number(n) || 0) + ' SB'); } // v34-2h: USD 2dp, SB whole
 
 // v34-2e1: self-healing drop of settled auctions from the Live list. When an auction's timer
 // expires it stays listed as "Ending — settling…" until the server cron (close_expired_auctions)
@@ -2679,7 +2688,7 @@ async function openAuction(id) {
       ` : `
         ${a.buyNowPrice > 0 && a.bidCount === 0 ? `
         <div id="bin-wrap-${a.id}">
-        <button onclick="buyNowAuction('${a.id}')" style="width:100%;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:16px;padding:14px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;">⚡ Buy It Now — ${a.currency === 'USD' ? '$' + a.buyNowPrice : a.buyNowPrice + ' SB'}</button>
+        <button onclick="buyNowAuction('${a.id}')" style="width:100%;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:16px;padding:14px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;">⚡ Buy It Now — ${fmtMoney(a.buyNowPrice, a.currency)}</button>
         <div style="text-align:center;color:rgba(255,255,255,.25);font-size:11px;margin-bottom:10px;letter-spacing:.5px;">— or place a bid —</div>
         </div>
         ` : ''}
@@ -2751,7 +2760,7 @@ async function doBuyItNow(auctionId) {
   if (!isUSD) { SB -= price; updateAllSBDisplays(); } // mirror the server-side SB debit locally (the RPC is the source of truth)
   addTransaction('spent', '⚡', 'Bought Now: ' + a.title, '@' + a.seller + (isUSD ? ' · USD' : ''), -price);
   if (order && order.id) {
-    ORDERS.unshift({ id: order.id, item: a.title, img: a.img, price: order.price, currency: order.currency || (isUSD ? 'USD' : 'SB'), seller: a.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
+    ORDERS.unshift({ id: order.id, item: a.title, img: a.img, price: _num(order.price), currency: order.currency || (isUSD ? 'USD' : 'SB'), seller: a.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
   }
   const idx = AUCTIONS.findIndex(x => x.id === auctionId || x.dbId === auctionId);
   if (idx > -1) AUCTIONS.splice(idx, 1);
@@ -3281,7 +3290,7 @@ async function confirmCheckout() {
   if (error) return;
   addTransaction('spent', '💳', 'Purchased: ' + p.title, '@' + p.seller + ' · ' + (p.currency || 'USD'), -p.price);
   if (order && order.id) {
-    ORDERS.unshift({ id: order.id, item: p.title, img: p.img, price: order.price, currency: order.currency || p.currency || 'USD', seller: p.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
+    ORDERS.unshift({ id: order.id, item: p.title, img: p.img, price: _num(order.price), currency: order.currency || p.currency || 'USD', seller: p.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
   }
   const _saleNotif = {
     type: 'order', icon: '🎉',
@@ -3392,7 +3401,7 @@ async function loadUserProfile(user) {
   const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
   if (profile && profile.username) {
     currentProfile = profile;
-    SB = profile.sb_balance || 125;
+    SB = _num(profile.sb_balance) || 125;
     updateAllSBDisplays();
     // If they haven't completed account setup yet, show it
     if (!profile.payment_verified) {
@@ -3469,7 +3478,7 @@ async function completeProfileSetup() {
 
   // Load the new profile and go to account completion
   const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  if (profile) { currentProfile = profile; SB = profile.sb_balance || 125; updateAllSBDisplays(); }
+  if (profile) { currentProfile = profile; SB = _num(profile.sb_balance) || 125; updateAllSBDisplays(); }
   document.getElementById('s-profile-setup').style.display = 'none';
   showAccountCompletion();
 }
@@ -3689,7 +3698,7 @@ async function setupRealtimeSubscriptions(myUsername) {
       if (l.seller_username === myUsername) return; // own listing already added
       const now = Date.now();
       const newProd = {
-        id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
+        id: l.id, title: l.title, price: _num(l.price), currency: l.currency || 'SB',
         seller: l.seller_username || 'user', location: l.location || '',
         img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
         likes: 0, views: 0, hot: false,
@@ -3766,7 +3775,7 @@ async function loadListings() {
   if (error || !data || !data.length) { PRODS.length = 0; return; }
   const now = Date.now();
   const mapped = data.map(l => ({
-    id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
+    id: l.id, title: l.title, price: _num(l.price), currency: l.currency || 'SB',
     seller: l.seller_username || 'user', sellerId: l.seller_id, location: l.location || '',
     img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
     condition: l.condition || '', sold: false, size: l.size || '', gender: l.gender || '',
@@ -3825,7 +3834,7 @@ async function readdToFeed(id) {
     const { data: l, error } = await sb.from('available_listings').select('*').eq('id', id).maybeSingle();
     if (error || !l) return; // not actually available (re-sold, removed) → skip
     PRODS.unshift({
-      id: l.id, title: l.title, price: l.price, currency: l.currency || 'SB',
+      id: l.id, title: l.title, price: _num(l.price), currency: l.currency || 'SB',
       seller: l.seller_username || 'user', sellerId: l.seller_id, location: l.location || '',
       img: l.image_url || I['gold_shirt'], category: l.category || 'Other',
       condition: l.condition || '', sold: false, size: l.size || '', gender: l.gender || '',
@@ -3861,7 +3870,7 @@ async function loadOrders() {
       existing.timeline = tl;
     } else {
       fresh.push({
-        id: o.id, item: d.title, img: d.img, price: o.price, currency: o.currency || 'SB',
+        id: o.id, item: d.title, img: d.img, price: _num(o.price), currency: o.currency || 'SB',
         seller: d.seller, status: o.status, date: new Date(o.created_at).toLocaleDateString(),
         tracking: o.tracking_number, carrier: o.carrier || 'USPS',
         shipFrom: o.ship_from, shipTo: o.ship_to,
@@ -4164,8 +4173,8 @@ async function loadOffersFromDb() {
       const existing = RECEIVED_OFFERS.find(x => x.dbId === o.id);
       if (existing) {
         existing.status = o.status;
-        existing.counterAmount = o.counter_amount;
-        existing.sellerCounter = o.counter_amount;
+        existing.counterAmount = _num(o.counter_amount);
+        existing.sellerCounter = _num(o.counter_amount);
         existing.offerAmount = o.offer_amount;
         existing.currency = o.offer_currency;          // v34-1t: sync deal currency (buyer counter-back can switch it)
         existing.currencyChanged = o.currency_changed;  // v34-1t: keep the badge in sync
@@ -4182,8 +4191,8 @@ async function loadOffersFromDb() {
           buyer: o.buyer_username, buyerId: o.buyer_id,
           buyerInitials: (o.buyer_username||'').substring(0,2).toUpperCase(),
           buyerColor: '#1a0000', listedPrice: o.listed_price, listedCurrency: o.listed_currency,
-          offerAmount: o.offer_amount, currency: o.offer_currency,
-          counterAmount: o.counter_amount, sellerCounter: o.counter_amount,
+          offerAmount: _num(o.offer_amount), currency: o.offer_currency,
+          counterAmount: _num(o.counter_amount), sellerCounter: _num(o.counter_amount),
           sellerPrevCounter: o.seller_prev_counter, sellerPrevCounterCurrency: o.seller_prev_counter_currency,
           currencyChanged: o.currency_changed, message: o.message,
           status: o.status, date: new Date(o.created_at).toLocaleDateString(),
@@ -4194,7 +4203,7 @@ async function loadOffersFromDb() {
       const existing = OFFERS.find(x => x.dbId === o.id);
       if (existing) {
         existing.status = o.status;
-        existing.counterAmount = o.counter_amount;
+        existing.counterAmount = _num(o.counter_amount);
         existing.offerAmount = o.offer_amount; // v31-32: keep buyer's amount in sync (counter-backs change it)
         existing.buyerPrevOffer = o.buyer_prev_offer;  // v34-1w: sync the buyer-floor bound (seller switch nulls it)
         existing.buyerOfferCurrency = o.buyer_offer_currency; // v34-1y
@@ -4209,11 +4218,11 @@ async function loadOffersFromDb() {
           lastActivityTs: actTs,
           productId: o.listing_id, title: o.listing_title, img: img,
           seller: o.seller_username, listedPrice: o.listed_price,
-          listedCurrency: o.listed_currency, offerAmount: o.offer_amount,
+          listedCurrency: o.listed_currency, offerAmount: _num(o.offer_amount),
           buyerPrevOffer: o.buyer_prev_offer,
           buyerOfferCurrency: o.buyer_offer_currency, // v34-1y
           currency: o.offer_currency, currencyChanged: o.currency_changed,
-          counterAmount: o.counter_amount,
+          counterAmount: _num(o.counter_amount),
           message: o.message, status: o.status,
           date: new Date(o.created_at).toLocaleDateString(),
           expiresAt: o.expires_at ? new Date(o.expires_at).getTime() : null
@@ -4275,7 +4284,7 @@ async function openSaleManage(itemId, title) {
 function renderSaleManage(order, title) {
   const ex = document.getElementById('sale-manage-overlay'); if (ex) ex.remove();
   const status = order ? (order.status || 'Processing') : null;
-  const cur = order ? (order.currency === 'USD' ? '$' + order.price : order.price + ' SB') : '';
+  const cur = order ? (fmtMoney(order.price, order.currency)) : '';
   const shipped = ['Shipped', 'Out for Delivery'].includes(status);
   const delivered = ['Delivered', 'Completed'].includes(status);
   let actions;
@@ -4335,7 +4344,7 @@ function renderInvoiceSheet(ord, d, isSeller, buyerName) {
   const dateStr = ord.created_at ? new Date(ord.created_at).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' }) : '';
   const ss = STATUS_STYLES[ord.status] || STATUS_STYLES['Paid'];
   const gross = ord.price;
-  const fee = (ord.platform_fee != null) ? ord.platform_fee : Math.round(gross * 0.06);
+  const fee = Number((ord.platform_fee != null) ? ord.platform_fee : (Number(gross) * 0.06)) || 0; // v34-2h: coerce numeric; exact (display 2dp below)
   const net = gross - fee;
   // Self-contained receipt block (light theme; export-ready).
   const block =
@@ -4350,10 +4359,10 @@ function renderInvoiceSheet(ord, d, isSeller, buyerName) {
     + '<div style="font-weight:700;font-size:14px;color:#111;margin-bottom:12px;">' + d.title + '</div>'
     + (isSeller
         ? '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Gross sale</span><span>' + money(gross) + '</span></div>'
-          + '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Platform fee (6%' + (isUSD ? '' : ', paid in cash') + ')</span><span style="color:#c0392b;">' + (isUSD ? '−$' + fee : '$' + fee) + '</span></div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Platform fee (6%' + (isUSD ? '' : ', paid in cash') + ')</span><span style="color:#c0392b;">' + (isUSD ? '−$' + fee.toFixed(2) : '$' + fee.toFixed(2)) + '</span></div>'
           + '<div style="border-top:1px solid #eee;margin:10px 0;"></div>'
           + '<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:900;color:#111;"><span>Net payout</span><span>' + (isUSD ? '$' + (gross - fee) : gross + ' SB') + '</span></div>'
-          + '<div style="font-size:11px;color:#aaa;margin-top:6px;">' + (isUSD ? 'Amount you receive after the 6% platform fee.' : 'You keep the full ' + gross + ' SB. The 6% platform fee ($' + fee + ', at 1 SB = $1) is billed separately in cash.') + '</div>'
+          + '<div style="font-size:11px;color:#aaa;margin-top:6px;">' + (isUSD ? 'Amount you receive after the 6% platform fee.' : 'You keep the full ' + gross + ' SB. The 6% platform fee ($' + fee.toFixed(2) + ', at 1 SB = $1) is billed separately in cash.') + '</div>'
         : '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Item price</span><span>' + money(gross) + '</span></div>'
           + '<div style="display:flex;justify-content:space-between;font-size:14px;color:#444;margin-bottom:8px;"><span>Shipping</span><span style="color:#00A550;font-weight:700;">Free</span></div>'
           + '<div style="border-top:1px solid #eee;margin:10px 0;"></div>'
@@ -5220,7 +5229,7 @@ async function postListing() {
     return;
   }
 
-  const price = parseInt(document.getElementById('f-price').value) || 25;
+  const price = parseFloat(document.getElementById('f-price').value) || 25;
   const location = document.getElementById('f-location').value.trim() || 'Nashville, TN';
   const currency = selectedCurrency || 'SB';
   const size = (document.getElementById('f-size') || {}).value || '';
@@ -5298,12 +5307,12 @@ async function postListing() {
 
 async function postAuction(title, desc, category, condition) {
   if (!requirePayment('start an auction')) return;
-  const startBid = parseInt(document.getElementById('f-start-bid').value) || 10;
-  const reserve = parseInt(document.getElementById('f-reserve').value) || 0;
+  const startBid = parseFloat(document.getElementById('f-start-bid').value) || 10;
+  const reserve = parseFloat(document.getElementById('f-reserve').value) || 0;
   const location = document.getElementById('f-auction-location').value.trim() || currentProfile?.location || 'USA';
   const size = (document.getElementById('f-size') || {}).value || '';
   const gender = categoryHasGender(category) ? _listingGender : null; // v32-24
-  const buyNow = parseInt((document.getElementById('f-buy-now') || {}).value) || 0; // BIN (v32-8): optional
+  const buyNow = parseFloat((document.getElementById('f-buy-now') || {}).value) || 0; // BIN (v32-8): optional
   if (buyNow > 0 && buyNow <= startBid) { showToast('Buy It Now must be higher than the starting bid'); return; }
   const sellerName = currentProfile?.username || 'user';
 
@@ -5448,8 +5457,8 @@ async function loadAuctionsFromDb() {
       category: a.category, condition: a.condition,
       size: a.size || '',
       gender: a.gender || '',
-      startPrice: a.start_price,
-      currentBid: a.current_bid ?? a.start_price, // v34-2a: current_bid is null until the first bid
+      startPrice: _num(a.start_price),
+      currentBid: _num(a.current_bid ?? a.start_price), // v34-2a: current_bid is null until the first bid
       // v34-2a: reserve_price intentionally NOT mapped — available_listings hides it from bidders.
       //         status dropped too (the view has no status column; presence == live + unsold).
       currency: a.currency || 'SB',
@@ -6039,7 +6048,7 @@ function renderSellerProfile(seller) {
             <div style="height:120px;position:relative;background:#111;">
               <img src="${p.img}" style="width:100%;height:100%;object-fit:cover;">
               <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.7));"></div>
-              <div style="position:absolute;bottom:6px;left:6px;background:${p.currency==='USD'?'linear-gradient(135deg,#00A550,#007A3D)':'linear-gradient(135deg,#FF3B30,#C0392B)'};border-radius:8px;padding:2px 8px;font-size:11px;font-weight:800;color:#fff;">${p.currency==='USD'?'$'+p.price:p.price+' SB'}</div>
+              <div style="position:absolute;bottom:6px;left:6px;background:${p.currency==='USD'?'linear-gradient(135deg,#00A550,#007A3D)':'linear-gradient(135deg,#FF3B30,#C0392B)'};border-radius:8px;padding:2px 8px;font-size:11px;font-weight:800;color:#fff;">${fmtMoney(p.price, p.currency)}</div>
             </div>
             <div style="padding:8px 10px;"><div style="color:#fff;font-weight:600;font-size:12px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.title}</div></div>
           </div>`).join('')}
@@ -7302,7 +7311,7 @@ function submitCounter(_ackd) {
   // v34-1w: floor compares against buyerPrevOffer (a dedicated bound nulled when the SELLER switches
   // currency) — so after a seller currency switch the buyer can re-offer freely (symmetric to the seller).
   if (sameCur && offer.buyerPrevOffer != null && amount <= offer.buyerPrevOffer) {
-    showToast('Counter must be higher than your previous offer of ' + (offer.currency === 'USD' ? '$' + offer.buyerPrevOffer : offer.buyerPrevOffer + ' SB'));
+    showToast('Counter must be higher than your previous offer of ' + (fmtMoney(offer.buyerPrevOffer, offer.currency)));
     return;
   }
   // v31-12 / v34-1n: must be able to afford an SB counter — checked against the CHOSEN currency.
@@ -7345,7 +7354,7 @@ function submitCounter(_ackd) {
   notifyUsername(offer.seller, {
     type: 'offer', icon: '🔄',
     title: 'Counter offer received',
-    body: '@' + (currentProfile?.username || 'The buyer') + ' countered with ' + (offer.currency==='USD'?'$'+amount:amount+' SB') + ' on ' + offer.title,
+    body: '@' + (currentProfile?.username || 'The buyer') + ' countered with ' + (fmtMoney(amount, offer.currency)) + ' on ' + offer.title,
     actionLabel: 'Respond', actionTarget: 'my-offers:received'
   });
   // v31-11 BUG 1 FIX: only simulate a seller response for DEMO personas (consistent with
@@ -7402,7 +7411,7 @@ function openOrderTracking(orderId) {
         <div style="flex:1;min-width:0;">
           <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.item}</div>
           <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:4px;">@${o.seller} · Ordered ${o.date}</div>
-          <div style="color:${o.currency==='USD'?'#00A550':'#FF3B30'};font-weight:800;font-size:14px;">${o.currency==='USD'?'$'+o.price:o.price+' SB'}</div>
+          <div style="color:${o.currency==='USD'?'#00A550':'#FF3B30'};font-weight:800;font-size:14px;">${fmtMoney(o.price, o.currency)}</div>
         </div>
       </div>
 
@@ -7779,7 +7788,7 @@ function receivedOfferCard(o) {
         </div>
         ${o.status === 'Pending' ? `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-          <span style="color:#FFB347;font-size:12px;font-weight:700;">🏷️ @${o.buyer} offered ${o.currency==='USD'?'$'+o.offerAmount:o.offerAmount+' SB'}</span>
+          <span style="color:#FFB347;font-size:12px;font-weight:700;">🏷️ @${o.buyer} offered ${fmtMoney(o.offerAmount, o.currency)}</span>
           <button onclick="showSellerOfferResponse('${o.id}')" style="background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.3);border-radius:8px;padding:6px 14px;color:#FFB347;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
         </div>` :
         o.status === 'Accepted' ? (() => {
@@ -7807,7 +7816,7 @@ function receivedOfferCard(o) {
         })() :
         o.status === 'Countered' ? (o.sellerCounter != null ? `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
-          <span style="background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:3px 10px;color:#4FC3F7;font-size:11px;font-weight:700;">🔄 Counter Sent: ${o.currency==='USD'?'$'+o.sellerCounter:o.sellerCounter+' SB'}</span>
+          <span style="background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:3px 10px;color:#4FC3F7;font-size:11px;font-weight:700;">🔄 Counter Sent: ${fmtMoney(o.sellerCounter, o.currency)}</span>
           <span style="color:rgba(255,255,255,.3);font-size:12px;">Waiting for buyer...</span>
         </div>` : `
         <div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -7873,13 +7882,13 @@ async function respondToOffer(offerId, action, _ackd) {
     showToast('✅ Offer accepted! Order created — waiting for buyer payment.');
     addNotification('offer','✅','rgba(0,200,100,.15)','rgba(0,200,100,.3)',
       'You accepted an offer',
-      '@' + o.buyer + '\'s offer of ' + (o.currency==='USD'?'$'+o.offerAmount:o.offerAmount+' SB') + ' on ' + o.title + '. Order created!',
+      '@' + o.buyer + '\'s offer of ' + (fmtMoney(o.offerAmount, o.currency)) + ' on ' + o.title + '. Order created!',
       'View Order', () => go('my-orders'));
     // v31: notify the buyer their offer was accepted (best-effort, never blocks)
     const _accNotif = {
       type: 'offer', icon: '✅',
       title: 'Offer accepted!',
-      body: 'Your offer of ' + (o.currency==='USD'?'$'+o.offerAmount:o.offerAmount+' SB') + ' on ' + o.title + ' was accepted.',
+      body: 'Your offer of ' + (fmtMoney(o.offerAmount, o.currency)) + ' on ' + o.title + ' was accepted.',
       actionLabel: 'Complete Purchase', actionTarget: 'my-offers'
     };
     if (o.buyerId) notifyUser(o.buyerId, _accNotif); else notifyUsername(o.buyer, _accNotif);
@@ -7892,7 +7901,7 @@ async function respondToOffer(offerId, action, _ackd) {
     const _decNotif = {
       type: 'offer', icon: '❌',
       title: 'Offer declined',
-      body: 'Your offer of ' + (o.currency==='USD'?'$'+o.offerAmount:o.offerAmount+' SB') + ' on ' + o.title + ' was declined.',
+      body: 'Your offer of ' + (fmtMoney(o.offerAmount, o.currency)) + ' on ' + o.title + ' was declined.',
       actionLabel: 'View', actionTarget: 'my-offers'
     };
     if (o.buyerId) notifyUser(o.buyerId, _decNotif); else notifyUsername(o.buyer, _decNotif);
@@ -7961,12 +7970,12 @@ function submitSellerCounter(_ackd) {
   // old currency and can't constrain a counter in the new one (symmetric to the buyer-switch ceiling reset).
   if (!sameCur && o.dbId) sb.from('offers').update({ buyer_prev_offer: null }).eq('id', o.dbId).then(({ error }) => { if (error) console.error('buyer_prev_offer reset persist:', error); });
   document.getElementById('modal-seller-counter').style.display = 'none';
-  showToast('🔄 Counter offer of ' + (o.currency==='USD'?'$'+amt:amt+' SB') + ' sent to @' + o.buyer + '!');
+  showToast('🔄 Counter offer of ' + (fmtMoney(amt, o.currency)) + ' sent to @' + o.buyer + '!');
   // v31: notify the buyer of the counter offer (best-effort, never blocks)
   const _ctrNotif = {
     type: 'offer', icon: '🔄',
     title: 'Counter offer received',
-    body: '@' + (currentProfile?.username || 'The seller') + ' countered with ' + (o.currency==='USD'?'$'+amt:amt+' SB') + ' on ' + o.title,
+    body: '@' + (currentProfile?.username || 'The seller') + ' countered with ' + (fmtMoney(amt, o.currency)) + ' on ' + o.title,
     actionLabel: 'Respond', actionTarget: 'my-offers'
   };
   if (o.buyerId) notifyUser(o.buyerId, _ctrNotif); else notifyUsername(o.buyer, _ctrNotif);
@@ -8298,11 +8307,11 @@ function renderOrders(filter) {
           <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:6px;">@${o.seller} · ${o.date}</div>
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <span style="background:${ss.bg};border:1px solid ${ss.border};border-radius:8px;padding:3px 10px;color:${ss.color};font-size:11px;font-weight:700;">${ss.icon} ${o.status}</span>
-            <span style="color:${o.currency==='USD'?'#00A550':'#FF3B30'};font-weight:800;font-size:14px;">${o.currency==='USD'?'$'+o.price:o.price+' SB'}</span>
+            <span style="color:${o.currency==='USD'?'#00A550':'#FF3B30'};font-weight:800;font-size:14px;">${fmtMoney(o.price, o.currency)}</span>
           </div>
         </div>
       </div>
-      ${o.status === 'AwaitingPayment' ? `<div style="border-top:1px solid rgba(255,255,255,.05);padding:12px 14px;"><button onclick="completeOrderPayment('${o.id}','${o.currency}',${o.price})" style="width:100%;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:12px;padding:11px;color:#fff;font-weight:800;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">💳 Complete Purchase · ${o.currency==='USD'?'$'+o.price:o.price+' SB'}</button></div>` : o.tracking ? `<div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+      ${o.status === 'AwaitingPayment' ? `<div style="border-top:1px solid rgba(255,255,255,.05);padding:12px 14px;"><button onclick="completeOrderPayment('${o.id}','${o.currency}',${o.price})" style="width:100%;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:12px;padding:11px;color:#fff;font-weight:800;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">💳 Complete Purchase · ${fmtMoney(o.price, o.currency)}</button></div>` : o.tracking ? `<div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
         <span style="color:rgba(255,255,255,.4);font-size:11px;">📦 ${o.carrier||'USPS'} · ${o.tracking.slice(-8)}</span>
         <button onclick="openOrderTracking('${o.id}')" style="background:linear-gradient(135deg,rgba(255,59,48,.2),rgba(255,59,48,.1));border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:4px 12px;color:#FF3B30;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Track →</button>
       </div>` : `<div style="border-top:1px solid rgba(255,255,255,.05);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
@@ -8583,8 +8592,8 @@ async function renderMyListings() {
   const _earn = {};
   (ordersRes.data || []).forEach(o => {
     if (o.status !== 'Completed') return;
-    const price = o.price || 0;
-    const fee = (o.platform_fee != null) ? o.platform_fee : Math.round(price * 0.06);
+    const price = Number(o.price) || 0;
+    const fee = Number((o.platform_fee != null) ? o.platform_fee : (price * 0.06)) || 0;
     const cur = o.currency || 'SB';
     // SB sales: seller keeps the FULL SB (the 6% fee is billed separately in cash, 1 SB = $1).
     // USD sales: take-home is net of the fee.
@@ -8592,7 +8601,7 @@ async function renderMyListings() {
     _earn[cur] = (_earn[cur] || 0) + take;
   });
   const earnedStr = Object.keys(_earn).length
-    ? ' · 💰 ' + Object.entries(_earn).map(([c, v]) => c === 'USD' ? '$' + v : v + ' SB').join(' + ') + ' earned'
+    ? ' · 💰 ' + Object.entries(_earn).map(([c, v]) => c === 'USD' ? '$' + (Number(v) || 0).toFixed(2) : (Math.round(Number(v) || 0) + ' SB')).join(' + ') + ' earned'
     : '';
   const stageOf = (id, soldByDefault) => {
     const ord = orderByListing[String(id)];
@@ -9084,7 +9093,7 @@ async function relistEditAuction(id) {
 
 async function saveListingEdits(title, desc, category, condition) {
   const id = editingListingId;
-  const price = parseInt(document.getElementById('f-price').value) || 0;
+  const price = parseFloat(document.getElementById('f-price').value) || 0;
   const location = document.getElementById('f-location').value.trim();
   const currency = selectedCurrency || 'SB';
   const btn = document.getElementById('post-listing-btn');
@@ -9275,12 +9284,12 @@ async function saveAuctionEdits() {
     const startEl = document.getElementById('ae-start');
     const resEl = document.getElementById('ae-reserve');
     if (startEl && startEl.value !== '') {
-      const sp = parseInt(startEl.value) || 0;
+      const sp = parseFloat(startEl.value) || 0;
       update.start_price = sp;
       update.current_bid = sp; // no bids yet, so current bid tracks the new start
       update.price = sp;       // v34-2f1: keep the price mirror (price = current_bid ?? start_price) consistent
     }
-    if (resEl && resEl.value !== '') update.reserve_price = parseInt(resEl.value) || 0;
+    if (resEl && resEl.value !== '') update.reserve_price = parseFloat(resEl.value) || 0;
     // Duration (pre-bid only): preset resets from now, or exact custom end time
     let newEndsAt = null;
     if (aeDurCustom) newEndsAt = new Date(aeDurCustom);
