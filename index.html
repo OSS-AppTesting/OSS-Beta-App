@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1at</title>
+<title>OneStopSwap v34-1au</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1at';
+window._OSS_BUILD = 'v34-1au';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -733,8 +733,8 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div><div id="prof-name" style="color:#fff;font-weight:800;font-size:20px;">Dino Bravo</div><div id="prof-username" style="color:rgba(255,255,255,.4);font-size:13px;">@dinobravo · Store Open 🟢</div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#fff;font-weight:900;font-size:22px;">24</div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:2px;">Listings</div></div>
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div style="color:#fff;font-weight:900;font-size:22px;">138</div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:2px;">Sold</div></div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div id="profile-listings" style="color:#fff;font-weight:900;font-size:22px;">—</div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:2px;">Listings</div></div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div id="profile-sold" style="color:#fff;font-weight:900;font-size:22px;">—</div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:2px;">Sold</div></div>
       <div onclick="go('my-reviews')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;cursor:pointer;"><div id="profile-rating" style="color:#FF3B30;font-weight:900;font-size:19px;">—</div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:2px;">Reviews</div></div>
     </div>
     <div onclick="document.getElementById('modal-sb').style.display='flex'" style="background:linear-gradient(135deg,#1A0000,#2D0000);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:20px;margin-bottom:20px;cursor:pointer;position:relative;overflow:hidden;">
@@ -7991,15 +7991,37 @@ function updateAllSBDisplays() {
   if (liveEl) liveEl.textContent = '💰 ' + SB + ' SB';
 }
 
-// v34-1at: the Profile "Reviews" stat shows the user's REAL seller rating (was hardcoded 4.9 ⭐ and
-// never moved with real reviews). Pulls the same real data My Reviews uses (loadReviews → SELLER_RATINGS[me]).
-async function refreshProfileRating() {
-  const el = document.getElementById('profile-rating');
-  if (!el) return;
-  try { await loadReviews(); } catch (e) {}
+// v34-1at/1au: Profile stats show REAL data (were hardcoded 4.9 ⭐ / 24 / 138). Reviews = the user's
+// real seller rating; Listings = active inventory (available fixed-price via the derived view + live
+// auctions); Sold = real sales (non-cancelled orders where I'm the seller). Listings & Sold are
+// complementary — a fixed-price item is either available (Listings) or has a non-cancelled order (Sold).
+async function refreshProfileStats() {
   const me = currentProfile?.username || '';
-  const sr = SELLER_RATINGS[me] || { avg: 0, count: 0 };
-  el.textContent = sr.count ? (Number(sr.avg).toFixed(1) + ' ⭐') : 'New';
+  const uid = currentUser?.id;
+  const rEl = document.getElementById('profile-rating');
+  if (rEl) {
+    try { await loadReviews(); } catch (e) {}
+    const sr = SELLER_RATINGS[me] || { avg: 0, count: 0 };
+    rEl.textContent = sr.count ? (Number(sr.avg).toFixed(1) + ' ⭐') : 'New';
+  }
+  if (!uid) return;
+  const lEl = document.getElementById('profile-listings');
+  if (lEl) {
+    try {
+      const [lc, ac] = await Promise.all([
+        sb.from('available_listings').select('id', { count: 'exact', head: true }).or(`seller_id.eq.${uid},seller_username.eq.${me}`),
+        sb.from('auctions').select('id', { count: 'exact', head: true }).or(`seller_id.eq.${uid},seller_username.eq.${me}`).eq('status', 'live')
+      ]);
+      lEl.textContent = String((lc.count || 0) + (ac.count || 0));
+    } catch (e) {}
+  }
+  const sEl = document.getElementById('profile-sold');
+  if (sEl) {
+    try {
+      const sc = await sb.from('orders').select('id', { count: 'exact', head: true }).eq('seller_id', uid).not('status', 'in', '(Cancelled,Refunded)');
+      sEl.textContent = String(sc.count || 0);
+    } catch (e) {}
+  }
 }
 
 function renderReviews() {
@@ -9829,7 +9851,7 @@ function go(name) {
   if (name === 'my-listings') { MY_LISTINGS_QUERY = ''; const mli = document.getElementById('ml-search'); if (mli) mli.value = ''; const mlc = document.getElementById('ml-search-clear'); if (mlc) mlc.style.display = 'none'; setMyListingsView('active'); } // v31-38: land on Active; v33-8: reset in-account search
   if (name === 'sb-wallet') renderWallet();
   if (name === 'my-reviews') loadReviews().then(() => renderReviews()).catch(() => renderReviews());
-  if (name === 'profile') refreshProfileRating();
+  if (name === 'profile') refreshProfileStats();
   if (name === 'acct-settings') loadProfileSettings();
   if (name === 'support') renderFaq();
   if (name === 'new-listing') {
