@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2e1</title>
+<title>OneStopSwap v34-2f</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2e1';
+window._OSS_BUILD = 'v34-2f';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -8346,8 +8346,9 @@ function clearMyOffersSearch() {
 // ── MY SALES (v34-1aj) — seller order history; the seller mirror of buyer My Orders.
 // Pure read over orders where seller_id = me (the v34 order model is the single source of truth).
 // All order states incl Cancelled/Refunded are permanent records here, newest-first.
-// Won auctions are NOT on the order model yet (legacy winner_username/'Processing' path) — they
-// stay visible in My Listings as a temporary exception until v34-2 puts auctions onto orders.
+// Won auctions ARE on the order model (v34-2): a settled/BIN auction is a Paid order with
+// source='auction', so it flows into My Sales here automatically (and the buyer's My Orders),
+// exactly like a sold fixed listing — no special-casing needed.
 let MY_SALES_QUERY = '';
 let MY_SALES_ROWS = []; // cached seller-order rows for in-tab search re-render without a refetch
 const MS_PILL = {
@@ -8489,11 +8490,15 @@ async function renderMyListings() {
 
   // v34-1c: bucket by DERIVED order state (no listings.sold source of truth). Fetch ALL the seller's
   // listings + auctions + their orders, then split: has a non-cancelled order → sold-family (stage by
-  // order status); active = is_active & no order; removed = !is_active & no order. Auctions stay on the
-  // winner_username path (v34-2) but read the same order map for their fulfillment stage.
-  const baseL = sb.from('listings').select('*').or(`seller_id.eq.${currentUser.id},seller_username.eq.${myUsername}`).order('created_at', { ascending: false });
-  const baseA = sb.from('auctions').select('*').or(`seller_id.eq.${currentUser.id},seller_username.eq.${myUsername}`).order('created_at', { ascending: false });
-  const auctionsQ = wantActive ? baseA.eq('status', 'live') : baseA.eq('status', 'ended');
+  // order status); active = is_active & no order; removed = !is_active & no order.
+  // v34-2f: auctions are now `listings` rows (sale_type='auction'). The fixed array is sale_type='fixed'
+  // only (was pulling auctions in too → they mis-rendered as "Fixed Price"); the auction array is pulled
+  // from `listings` where sale_type='auction' (was the dead `auctions` table) and bucketed by is_active +
+  // order presence (was the legacy winner_username/status='ended' path). Won auctions = a Paid order →
+  // they also surface in My Sales (orders), exactly like a sold fixed listing.
+  const baseL = sb.from('listings').select('*').or(`seller_id.eq.${currentUser.id},seller_username.eq.${myUsername}`).eq('sale_type', 'fixed').order('created_at', { ascending: false });
+  const baseA = sb.from('listings').select('*').or(`seller_id.eq.${currentUser.id},seller_username.eq.${myUsername}`).eq('sale_type', 'auction').order('created_at', { ascending: false });
+  const auctionsQ = wantActive ? baseA.eq('is_active', true) : baseA.eq('is_active', false);
   const ordersQ = sb.from('orders').select('listing_id,status,price,currency,platform_fee,created_at,shipped_at,delivered_at').eq('seller_id', currentUser.id).order('created_at', { ascending: false });
   const [listingsRes, auctionsRes, ordersRes] = await Promise.all([baseL, auctionsQ, ordersQ]);
 
@@ -8534,14 +8539,14 @@ async function renderMyListings() {
     listings = listings.filter(l => l.is_active && !hasOrder(l.id));
   } else if (soldFamily) {
     listings = listings.filter(l => stageOf(l.id, false) === view);                  // fixed-price: must have an order
-    auctions = auctions.filter(a => a.winner_username && stageOf(a.id, true) === view); // won auction defaults to 'sold'
+    auctions = auctions.filter(a => hasOrder(a.id) && stageOf(a.id, false) === view); // v34-2f: won auction = has a Paid order (was a.winner_username); stage off the same order map
   } else { // removed
     listings = listings.filter(l => !l.is_active && !hasOrder(l.id));
-    // v34-1ak: won auctions are NOT on the order model yet (legacy winner_username/'Processing' path),
-    // so they can't live in My Sales (orders-only). They stay here under Removed — labeled
-    // "✓ Sold to @winner" with a Manage/ship button — as an explicit temp exception until v34-2
-    // migrates auctions onto orders, at which point they flow into My Sales naturally.
-    auctions = auctions; // keep all ended auctions (won + unsold); auctionsQ already restricts to status='ended'
+    // v34-2f: an unsold/voided auction is a `listings` row sale_type='auction', is_active=false, with NO
+    // order (close_auction/end_auction void it). It lives here under Removed, relistable — same as a removed
+    // fixed listing. Won auctions (is_active=false + Paid order) go to the sold-family above + My Sales, NOT
+    // here. (Replaces the v34-1ak placeholder that parked legacy winner_username auctions under Removed.)
+    auctions = auctions.filter(a => !hasOrder(a.id)); // auctionsQ already restricts to is_active=false
   }
 
   // v33-10: in-account search is TAB-SPECIFIC — filter the current tab's items by the query (was cross-tab in v33-8/9).
@@ -8674,9 +8679,10 @@ async function renderMyListings() {
   // Render auction listings
   const auctionItems = auctions.map(a => {
     if (!wantActive) {
-      // v32-2: ended-auction card in the Removed tab. v32-9: a winner means it SOLD (BIN/won) — show it as a sale.
+      // v32-2: ended-auction card in the Removed tab. v34-2f: a won auction = it has a Paid order
+      // (was a.winner_username on the dead table); unsold/voided = no order → relistable.
       const hadBids = (a.bid_count || 0) > 0;
-      const sold = !!a.winner_username;
+      const sold = hasOrder(a.id);
       return { ts: sortTs(a.id, a.created_at), html: `
     <div style="background:#1A1A1A;border-radius:18px;overflow:hidden;border:1px solid ${sold ? 'rgba(0,200,100,.25)' : 'rgba(255,255,255,.08)'};display:flex;align-items:stretch;">
       <div style="width:90px;flex-shrink:0;background:#111;position:relative;">
@@ -8691,7 +8697,7 @@ async function renderMyListings() {
         <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:8px;">${a.category} · ${a.bid_count || 0} bids</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           ${sold
-            ? `<div style="background:${wantShipped?'rgba(79,195,247,.12)':'rgba(0,200,100,.12)'};border:1px solid ${wantShipped?'rgba(79,195,247,.3)':'rgba(0,200,100,.3)'};border-radius:8px;padding:3px 10px;"><span style="color:${wantShipped?'#4FC3F7':'#00C864'};font-weight:800;font-size:12px;">${wantShipped?'📦 Shipped':wantDelivered?'🎉 Delivered':'✓ Sold'} to @${a.winner_username}</span></div>`
+            ? `<div style="background:${wantShipped?'rgba(79,195,247,.12)':'rgba(0,200,100,.12)'};border:1px solid ${wantShipped?'rgba(79,195,247,.3)':'rgba(0,200,100,.3)'};border-radius:8px;padding:3px 10px;"><span style="color:${wantShipped?'#4FC3F7':'#00C864'};font-weight:800;font-size:12px;">${wantShipped?'📦 Shipped':wantDelivered?'🎉 Delivered':'✓ Sold'}</span></div>`
             : `<div style="background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.3);border-radius:8px;padding:3px 10px;"><span style="color:#FFB347;font-weight:800;font-size:12px;">⚡ Auction</span></div>`}
           <span style="color:rgba(255,255,255,.4);font-size:11px;">${sold ? 'Sold for' : 'Final:'} ${a.current_bid || a.start_price} ${a.currency || 'SB'}</span>
         </div>
