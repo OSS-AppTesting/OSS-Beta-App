@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2s</title>
+<title>OneStopSwap v34-2t</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2s';
+window._OSS_BUILD = 'v34-2t';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -61,6 +61,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 .nb-dot{width:4px;height:4px;border-radius:50%;background:#FF3B30;opacity:0;}
 .nb.active .nb-dot{opacity:1;}
 .live-pip{position:absolute;top:2px;right:calc(50% - 18px);width:8px;height:8px;background:#FF3B30;border-radius:50%;animation:lp 1.5s infinite;}
+.nb-badge{position:absolute;top:-1px;right:calc(50% - 22px);min-width:16px;height:16px;padding:0 4px;background:#FF3B30;border:2px solid #0a0a0a;border-radius:9px;color:#fff;font-size:9px;font-weight:800;display:none;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;line-height:1;box-sizing:border-box;}
 @keyframes lp{0%,100%{box-shadow:0 0 0 0 rgba(255,59,48,.4)}70%{box-shadow:0 0 0 6px rgba(255,59,48,0)}}
 
 /* CARDS */
@@ -1879,7 +1880,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </button>
   <button class="nb" onclick="go('messages')" id="nb-messages">
     <svg viewBox="0 0 24 24" fill="none"><path d="M21 15C21 16.1 20.1 17 19 17H7L3 21V5C3 3.9 3.9 3 5 3H19C20.1 3 21 3.9 21 5V15Z" stroke="#FF3B30" stroke-width="2" stroke-linejoin="round" fill="rgba(255,59,48,.1)"/></svg>
-    <span>Messages</span><div class="nb-dot"></div>
+    <span>Messages</span><div class="nb-dot"></div><div class="nb-badge" id="messages-badge"></div>
   </button>
   <button class="nb" onclick="go('profile')" id="nb-profile">
     <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#FF3B30" stroke-width="2" fill="rgba(255,59,48,.15)"/><path d="M4 20c0-3 3.6-6 8-6s8 3 8 6" stroke="#FF3B30" stroke-width="2" stroke-linecap="round"/></svg>
@@ -3593,6 +3594,36 @@ function _refreshMessagesLive() {
     openChat(currentChatSeller, currentChatColor, currentChatAccent);
   }
   if (document.getElementById('s-messages')?.classList.contains('active')) renderMessages();
+  updateMessagesBadge(); // v34-2t
+}
+
+// v34-2t: iPhone-style Messages unread badge. Source of truth = messages.read_at (added via
+// OSS_v34-2t_message_read.sql). Count = my received messages with read_at null. Fail-soft so
+// deploying before the SQL runs just hides the badge (the .is(read_at,null) query errors -> hide).
+async function updateMessagesBadge() {
+  const badge = document.getElementById('messages-badge');
+  if (!badge) return;
+  if (!currentUser) { badge.style.display = 'none'; return; }
+  const myUsername = currentProfile?.username || '';
+  try {
+    const { count, error } = await sb.from('messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('receiver_username', myUsername)
+      .is('read_at', null);
+    if (error) { badge.style.display = 'none'; return; } // column not added yet
+    const n = count || 0;
+    if (n > 0) { badge.textContent = n > 9 ? '9+' : String(n); badge.style.display = 'flex'; }
+    else { badge.style.display = 'none'; }
+  } catch (e) { badge.style.display = 'none'; }
+}
+async function markChatRead(partner) {
+  if (!currentUser || !partner) return;
+  const myUsername = currentProfile?.username || '';
+  try {
+    await sb.from('messages').update({ read_at: new Date().toISOString() })
+      .eq('receiver_username', myUsername).eq('sender_username', partner).is('read_at', null);
+  } catch (e) { /* read_at column may not exist yet */ }
+  updateMessagesBadge();
 }
 
 // v34-1k: catch-up for LISTINGS (the feed). The listings-feed channel flaps (CHANNEL_ERRORs every
@@ -3662,6 +3693,9 @@ async function setupRealtimeSubscriptions(myUsername) {
       }
       // Refresh messages inbox if open
       if (document.getElementById('s-messages')?.classList.contains('active')) renderMessages();
+      // v34-2t: live unread badge. If this chat is open, we've seen it -> mark read; else bump count.
+      if (currentChatSeller === m.sender_username && document.getElementById('s-chat')?.classList.contains('active')) markChatRead(m.sender_username);
+      else updateMessagesBadge();
     })
     .subscribe((status) => { if (status === 'SUBSCRIBED') _scheduleMessagesCatchup(); });
   _realtimeChannels.push(msgCh);
@@ -5727,6 +5761,7 @@ async function openChat(seller, color, accent, initials) {
     }
   }
 
+  if (currentUser) markChatRead(seller); // v34-2t: opening a chat marks that partner's messages read
   if (!chatHistory[seller]) {
     const seed = CHAT_DATA[seller] || [{f:'them',t:"Hey! Happy to answer any questions 😊",ts:"Just now"}];
     chatHistory[seller] = seed.map(m => ({ role: m.f === 'me' ? 'user' : 'assistant', content: m.t }));
