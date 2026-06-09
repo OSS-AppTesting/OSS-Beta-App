@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1ar</title>
+<title>OneStopSwap v34-1as</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1ar';
+window._OSS_BUILD = 'v34-1as';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -5648,16 +5648,14 @@ function nowTime() {
 }
 
 function scrollChatToBottom() {
-  // v34-1an: #chat-messages has no overflow/height — it's NOT a scroll container, so setting its
-  // scrollTop was a no-op (new messages piled up below the fold). The chat page scrolls via the
-  // WINDOW (same context go() resets with window.scrollTo), so pin the window to the document bottom.
-  // The container's padding-bottom:110px keeps the newest bubble clear of the fixed input bar.
+  // v34-1as: scroll ONLY #chat-messages (the flex column's internal scroller). The old window.scrollTo
+  // + s-chat.scrollTop lines (1an/1ap leftovers from the window-scroll era) fired a visualViewport
+  // 'scroll' event, which the 1aq VisualViewport listener handled by calling scrollChatToBottom again
+  // → window.scrollTo → loop = the flicker. An internal element scroll fires no viewport event, so the
+  // loop is gone. The chat is a pinned flex column now; the window never scrolls here.
   const doScroll = () => {
     const el = document.getElementById('chat-messages');
-    if (el) el.scrollTop = el.scrollHeight; // v34-1ap: #chat-messages is now the flex scroller
-    const sc = document.getElementById('s-chat');
-    if (sc) sc.scrollTop = sc.scrollHeight;
-    window.scrollTo(0, document.documentElement.scrollHeight); // window fallback (whichever actually scrolls)
+    if (el) el.scrollTop = el.scrollHeight;
   };
   requestAnimationFrame(() => requestAnimationFrame(doScroll)); // after layout settles
   setTimeout(doScroll, 100); // belt-and-suspenders for async-rendered bubbles
