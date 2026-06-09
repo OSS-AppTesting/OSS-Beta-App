@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2a</title>
+<title>OneStopSwap v34-2b</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2a';
+window._OSS_BUILD = 'v34-2b';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2432,6 +2432,7 @@ function renderAuctionList() {
   const el = document.getElementById('auction-list');
   if (!el) return;
   const liveList = AUCTIONS.filter(a => (a.endTime || 0) > Date.now() && itemMatchesFilters({ ...a, _isAuction: true, currency: a.currency || 'SB' })); // v33-2: expired drop out; v33-4: shared filters apply to Live
+  { const _cnt = document.getElementById('live-active-count'); if (_cnt) _cnt.textContent = liveList.length + (liveList.length === 1 ? ' auction' : ' auctions') + ' ending soon'; } // v34-2b: real count (was a hardcoded "4")
   if (!liveList.length) {
     el.innerHTML = '<div style="text-align:center;padding:60px 20px;"><div style="font-size:56px;margin-bottom:16px;">⚡</div><div style="color:#fff;font-weight:800;font-size:20px;margin-bottom:8px;">No Live Auctions</div><div style="color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;">Be the first to list something for auction!</div><button onclick=\"go(\'new-listing\');setTimeout(()=>setSellMode(\'auction\'),300)\" style=\"background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px 28px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;\">⚡ Start an Auction</button></div>';
     return;
@@ -2585,8 +2586,8 @@ async function openAuction(id) {
     (currentProfile && currentProfile.username && a.seller &&
       a.seller.toLowerCase() === currentProfile.username.toLowerCase())
   );
-  const canBid = SB >= a.currentBid + 5;
-  const nextBid = a.currentBid + 5;
+  const canBid = SB >= a.currentBid + 1;
+  const nextBid = a.currentBid + 1; // v34-2b: flat +1 increment (matches the place_bid server rule)
 
   document.getElementById('auction-body').innerHTML = `
     <div style="position:sticky;top:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
@@ -2737,7 +2738,7 @@ function placeBidFromInput(auctionId) {
   const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
   if (!a) return;
   const inp = document.getElementById('bid-amount-input');
-  const minBid = a.currentBid + 5;
+  const minBid = a.currentBid + 1; // v34-2b: flat +1 increment (matches the place_bid server rule)
   const amount = parseInt(inp ? inp.value : '', 10);
   if (!amount || isNaN(amount)) { showToast('Enter a bid amount!'); return; }
   if (amount < minBid) { showToast('Bid must be at least ' + aucMoney(minBid, a)); return; }
@@ -2758,39 +2759,21 @@ async function placeBid(auctionId, amount) {
 
   const myUsername = currentProfile?.username || 'user';
 
-  // v32-21: charge-on-win. Bids no longer deduct SB (the old deduction was local-only and popped
-  // back on reload). Nothing moves at bid time; the winner is charged once at settlement
-  // (settle_auction RPC) for SB, or via the card for USD. The affordability check above still
-  // prevents bidding beyond your balance.
-
-  // Update local auction immediately
-  a.currentBid = amount;
-  a.bidCount += 1;
-  a.bids.unshift({user: myUsername, initials: myUsername.substring(0,2).toUpperCase(), color:'#FF3B30', amt:amount, ts:'Just now'});
-  { const bw = document.getElementById('bin-wrap-' + auctionId); if (bw) bw.style.display = 'none'; } // BIN (v32-8): gone after first bid
-
-
-  // Update UI
-  const bidEl = document.getElementById('auction-current-bid');
-  if (bidEl) {
-    bidEl.innerHTML = amount + ' <span style="font-size:16px;color:rgba(255,59,48,.7);">' + aucUnit(a) + '</span>';
-    bidEl.classList.add('bid-pop');
-    setTimeout(() => bidEl.classList.remove('bid-pop'), 300);
+  // v34-2b: SERVER-AUTHORITATIVE bid. Call place_bid FIRST (param p_listing_id — auctions are now
+  // listings rows). The bids-INSERT realtime echo (subscribeToAuction) is the SINGLE writer of
+  // current_bid / bid_count / history, so we do NOT optimistically mutate here — that caused the old
+  // "showed you winning, then errored" bug and would double-count against the echo.
+  const dbId = a.dbId || a.id;
+  const { error: bidError } = await sb.rpc('place_bid', { p_listing_id: dbId, p_amount: amount });
+  if (bidError) {
+    console.error('place_bid RPC error:', bidError);
+    showToast('❌ ' + (bidError.message || 'Bid failed')); // surfaces too-low / ended / insufficient SB / own-listing
+    return;
   }
 
-  // Refresh bid history
-  const histEl = document.getElementById('bid-history');
-  if (histEl) {
-    histEl.innerHTML = a.bids.map((b,i) => `
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${i===0?'rgba(255,59,48,.08)':'rgba(255,255,255,.03)'};border:1px solid ${i===0?'rgba(255,59,48,.2)':'rgba(255,255,255,.06)'};border-radius:12px;">
-        <div style="width:30px;height:30px;border-radius:8px;background:${b.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;color:#fff;flex-shrink:0;">${b.initials}</div>
-        <div style="flex:1;"><div style="color:#fff;font-weight:600;font-size:13px;">@${b.user}</div><div style="color:rgba(255,255,255,.35);font-size:11px;">${b.ts}</div></div>
-        <div style="color:${i===0?'#FF3B30':'rgba(255,255,255,.6)'};font-weight:800;font-size:14px;">${aucMoney(b.amt, a)}${i===0?' 🏆':''}</div>
-      </div>`).join('');
-  }
-
-  // Update bid button + reset the custom-amount input to the new minimum (Item 1, v32-3)
-  const nextBid = amount + 5;
+  // Success: snappy local feedback. current_bid / bid_count / bid-history repaint via the realtime echo.
+  { const bw = document.getElementById('bin-wrap-' + auctionId); if (bw) bw.style.display = 'none'; } // BIN gone after the first bid
+  const nextBid = amount + 1; // v34-2b: flat +1 increment (matches the place_bid server rule)
   const btnEl = document.getElementById('bid-btn-' + auctionId);
   if (btnEl) {
     btnEl.textContent = '⚡ Place Bid';
@@ -2803,33 +2786,18 @@ async function placeBid(auctionId, amount) {
   if (inpEl) { inpEl.min = nextBid; inpEl.value = nextBid; }
   const minLbl = document.getElementById('bid-min-label');
   if (minLbl) minLbl.textContent = aucMoney(nextBid, a);
-
-  // Update live-sb display
-  const liveEl = document.getElementById('live-sb-display');
-  if (liveEl) liveEl.textContent = '💰 ' + SB + ' SB';
-
   showToast(isUSD
     ? '🏆 You\'re the highest bidder! $' + amount + ' — your card is charged if you win.'
     : '🏆 You\'re the highest bidder! ' + amount + ' SB — charged if you win.');
 
-  // Save bid to Supabase via the place_bid RPC (SECURITY DEFINER): records the bid AND bumps the
-  // auction's current_bid/bid_count past the owner-only auctions UPDATE RLS — a direct
-  // `auctions.update()` from a bidder is silently blocked (they're not the seller), which left
-  // bid_count/current_bid stale (My Listings "0 bids", BIN never hid, edit-lock never engaged).
-  const dbId = a.dbId || a.id;
-  if (currentUser && !String(dbId).startsWith('local-')) {
-    const { error: bidError } = await sb.rpc('place_bid', { p_auction_id: dbId, p_amount: amount });
-    if (bidError) { console.error('place_bid RPC error:', bidError); showToast('❌ ' + (bidError.message || 'Bid failed')); }
-
-    // v31: notify the auction seller of the new bid (best-effort, never blocks the bid)
-    const _bidNotif = {
-      type: 'auction', icon: '⚡',
-      title: 'New bid on your auction',
-      body: '@' + myUsername + ' bid ' + aucMoney(amount, a) + ' on ' + a.title,
-      actionLabel: 'View Auction', actionTarget: 'my-listings'
-    };
-    if (a.sellerId) notifyUser(a.sellerId, _bidNotif); else notifyUsername(a.seller, _bidNotif);
-  }
+  // Notify the auction SELLER of the new bid (best-effort; NOT server-sent — only the outbid ping is).
+  const _bidNotif = {
+    type: 'auction', icon: '⚡',
+    title: 'New bid on your auction',
+    body: '@' + myUsername + ' bid ' + aucMoney(amount, a) + ' on ' + a.title,
+    actionLabel: 'View Auction', actionTarget: 'my-listings'
+  };
+  if (a.sellerId) notifyUser(a.sellerId, _bidNotif); else notifyUsername(a.seller, _bidNotif);
 
   // Simulate a competing bid after 8-15 seconds on close auctions
   if (a.id === 'a1' || a.id === 'a2') {
@@ -5449,9 +5417,9 @@ async function loadAuctionsFromDb() {
 }
 
 async function loadAuctionBids(auctionId) {
-  const { data } = await sb.from('auction_bids')
+  const { data } = await sb.from('bids') // v34-2b: bids now live in the `bids` child table, FK listing_id
     .select('*')
-    .eq('auction_id', auctionId)
+    .eq('listing_id', auctionId)
     .order('created_at', { ascending: false })
     .limit(20);
 
@@ -5472,8 +5440,8 @@ function subscribeToAuction(auctionId) {
   _subscribedAuctions.add(auctionId);
   const ch = sb.channel('auction-' + auctionId)
     .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'auction_bids',
-      filter: `auction_id=eq.${auctionId}`
+      event: 'INSERT', schema: 'public', table: 'bids', // v34-2b: repointed off dead auction_bids → bids
+      filter: `listing_id=eq.${auctionId}`
     }, payload => {
       const b = payload.new;
       const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
@@ -5491,13 +5459,8 @@ function subscribeToAuction(auctionId) {
         if (histEl) renderBidHistory(a);
       }
 
-      // Notify if outbid
-      if (currentUser && b.bidder_id !== currentUser.id) {
-        addNotification('auction','⚡','rgba(255,179,71,.15)','rgba(255,179,71,.3)',
-          "You've been outbid!",
-          '@' + b.bidder_username + ' bid ' + aucMoney(b.amount, a) + ' on ' + a.title,
-          'Bid Again', () => openAuction(auctionId));
-      }
+      // v34-2b: outbid notification is now sent SERVER-SIDE by place_bid (to the prior leader,
+      // skipping a self-rebid). The old client-side addNotification here double-notified — removed.
     })
     .subscribe();
   _realtimeChannels.push(ch);
