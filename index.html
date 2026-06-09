@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1ao</title>
+<title>OneStopSwap v34-1ap</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1ao';
+window._OSS_BUILD = 'v34-1ap';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -717,7 +717,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 </div>
 
 <!-- CHAT -->
-<div id="s-chat" class="screen" style="padding-bottom:0!important;"><div id="chat-body"></div></div>
+<div id="s-chat" class="screen" style="padding-bottom:0!important;overflow:hidden;min-height:0;"><div id="chat-body"></div></div>
 
 <!-- PROFILE -->
 <div id="s-profile" class="screen">
@@ -5598,7 +5598,7 @@ async function openChat(seller, color, accent, initials) {
   }
 
   document.getElementById('chat-body').innerHTML = `
-    <div style="position:fixed;top:0;left:0;right:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.08);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:60;">
+    <div style="flex-shrink:0;background:rgba(10,10,10,.97);border-bottom:1px solid rgba(255,255,255,.08);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;">
       <button onclick="go('messages')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">←</button>
       ${avatarHTML(seller, 36, 10)}
       <div style="flex:1;">
@@ -5609,10 +5609,10 @@ async function openChat(seller, color, accent, initials) {
         <span style="color:#FF3B30;font-size:10px;font-weight:800;">⚡ AI Seller</span>
       </div>` : ''}
     </div>
-    <div id="chat-messages" style="padding:104px 16px 110px;display:flex;flex-direction:column;gap:12px;">
+    <div id="chat-messages" style="flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:12px;">
       ${msgs.map(m=>chatBubble(m.f, m.t, m.ts)).join('')}
     </div>
-    <div style="position:fixed;bottom:0;left:0;right:0;padding:10px 16px 32px;background:rgba(10,10,10,.97);border-top:1px solid rgba(255,255,255,.08);">
+    <div style="flex-shrink:0;padding:10px 16px calc(env(safe-area-inset-bottom) + 10px);background:rgba(10,10,10,.97);border-top:1px solid rgba(255,255,255,.08);">
       <div style="display:flex;gap:10px;align-items:center;">
         <input id="chat-input" placeholder="Ask about shipping, condition, trades..." 
           style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:10px 16px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;"
@@ -5620,7 +5620,13 @@ async function openChat(seller, color, accent, initials) {
         <button id="chat-send-btn" onclick="sendChatMsg()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;width:42px;height:42px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:opacity .2s;">➤</button>
       </div>
     </div>`;
+  // v34-1ap: chat-body is a flex column filling s-chat; header (top) + input (bottom) are in-flow,
+  // only #chat-messages scrolls. s-chat is sized to the VISUAL viewport so the input rides just above
+  // the iOS keyboard instead of floating mid-screen.
+  const _cb = document.getElementById('chat-body');
+  if (_cb) _cb.style.cssText = 'display:flex;flex-direction:column;height:100%;min-height:0;';
   go('chat');
+  fitChatToViewport();
   scrollChatToBottom();
 }
 
@@ -5648,13 +5654,29 @@ function scrollChatToBottom() {
   // The container's padding-bottom:110px keeps the newest bubble clear of the fixed input bar.
   const doScroll = () => {
     const el = document.getElementById('chat-messages');
-    if (el) el.scrollTop = el.scrollHeight; // harmless fallback if it ever becomes a scroll container
-    const sc = document.getElementById('s-chat'); // .screen has overflow-y:auto — this is the real scroller
+    if (el) el.scrollTop = el.scrollHeight; // v34-1ap: #chat-messages is now the flex scroller
+    const sc = document.getElementById('s-chat');
     if (sc) sc.scrollTop = sc.scrollHeight;
     window.scrollTo(0, document.documentElement.scrollHeight); // window fallback (whichever actually scrolls)
   };
   requestAnimationFrame(() => requestAnimationFrame(doScroll)); // after layout settles
   setTimeout(doScroll, 100); // belt-and-suspenders for async-rendered bubbles
+}
+// v34-1ap: size the chat screen to the VISUAL viewport so the in-flow input bar sits just above the
+// iOS keyboard (the visual viewport shrinks when the keyboard opens; 100vh/100dvh do NOT).
+function fitChatToViewport() {
+  const sc = document.getElementById('s-chat');
+  if (!sc) return;
+  const vv = window.visualViewport;
+  sc.style.height = (vv ? vv.height : window.innerHeight) + 'px';
+}
+if (window.visualViewport) {
+  const _onVV = () => {
+    const sc = document.getElementById('s-chat');
+    if (sc && sc.classList.contains('active')) { fitChatToViewport(); scrollChatToBottom(); }
+  };
+  window.visualViewport.addEventListener('resize', _onVV);
+  window.visualViewport.addEventListener('scroll', _onVV);
 }
 
 function addChatBubble(from, text) {
@@ -9937,7 +9959,7 @@ async function ossDebug() {
     var b = document.createElement('div');
     b.id = 'oss-debug-badge';
     b.textContent = (window._OSS_BUILD || 'build') + ' 🐞';
-    b.style.cssText = 'position:fixed;left:8px;bottom:150px;z-index:99999;background:rgba(255,59,48,.9);color:#fff;font:700 11px -apple-system,sans-serif;padding:5px 9px;border-radius:8px;opacity:.9;box-shadow:0 2px 8px rgba(0,0,0,.4);';
+    b.style.cssText = 'position:fixed;left:8px;bottom:92px;z-index:99999;background:rgba(255,59,48,.9);color:#fff;font:700 11px -apple-system,sans-serif;padding:5px 9px;border-radius:8px;opacity:.9;box-shadow:0 2px 8px rgba(0,0,0,.4);';
     b.onclick = ossDebug;
     document.body.appendChild(b);
   }
@@ -9950,7 +9972,7 @@ async function ossDebug() {
     var b = document.createElement('div');
     b.id = 'oss-txlog-badge';
     b.textContent = '📋 TX';
-    b.style.cssText = 'position:fixed;left:8px;bottom:182px;z-index:99999;background:rgba(20,20,24,.92);border:1px solid rgba(255,255,255,.18);color:#fff;font:700 11px -apple-system,sans-serif;padding:5px 9px;border-radius:8px;opacity:.9;box-shadow:0 2px 8px rgba(0,0,0,.4);';
+    b.style.cssText = 'position:fixed;left:8px;bottom:124px;z-index:99999;background:rgba(20,20,24,.92);border:1px solid rgba(255,255,255,.18);color:#fff;font:700 11px -apple-system,sans-serif;padding:5px 9px;border-radius:8px;opacity:.9;box-shadow:0 2px 8px rgba(0,0,0,.4);';
     b.onclick = toggleTxLog;
     document.body.appendChild(b);
   }
