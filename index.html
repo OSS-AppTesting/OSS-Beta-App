@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2b</title>
+<title>OneStopSwap v34-2b1</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2b';
+window._OSS_BUILD = 'v34-2b1';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2571,7 +2571,7 @@ async function openAuction(id) {
 
   // Load real bids from DB if this is a DB auction
   const dbId = a.dbId || a.id;
-  if (!String(dbId).startsWith('local-') && !String(dbId).startsWith('a')) {
+  if (!String(dbId).startsWith('local-')) { // v34-2b1: dropped the bogus !startsWith('a') guard — it was for demo ids a1/a2, but ~1/16 real UUIDs start with 'a' and were silently skipped (no realtime, no bid history)
     const realBids = await loadAuctionBids(dbId);
     if (realBids.length) a.bids = realBids;
     subscribeToAuction(dbId);
@@ -2760,9 +2760,9 @@ async function placeBid(auctionId, amount) {
   const myUsername = currentProfile?.username || 'user';
 
   // v34-2b: SERVER-AUTHORITATIVE bid. Call place_bid FIRST (param p_listing_id — auctions are now
-  // listings rows). The bids-INSERT realtime echo (subscribeToAuction) is the SINGLE writer of
-  // current_bid / bid_count / history, so we do NOT optimistically mutate here — that caused the old
-  // "showed you winning, then errored" bug and would double-count against the echo.
+  // listings rows). On error, bail without touching the UI (no "showed you winning then errored").
+  // v34-2b1: on success, re-read truth via refreshAuctionState rather than trusting the realtime echo
+  // alone — the iOS websocket can drop the echo, which left the bid placed but the UI frozen.
   const dbId = a.dbId || a.id;
   const { error: bidError } = await sb.rpc('place_bid', { p_listing_id: dbId, p_amount: amount });
   if (bidError) {
@@ -2771,9 +2771,11 @@ async function placeBid(auctionId, amount) {
     return;
   }
 
-  // Success: snappy local feedback. current_bid / bid_count / bid-history repaint via the realtime echo.
-  { const bw = document.getElementById('bin-wrap-' + auctionId); if (bw) bw.style.display = 'none'; } // BIN gone after the first bid
-  const nextBid = amount + 1; // v34-2b: flat +1 increment (matches the place_bid server rule)
+  // Success: re-read authoritative state from the DB (current_bid/bid_count + history). Reliable
+  // regardless of websocket state, and idempotent vs the echo (sets absolute values). Fixes the
+  // "bid placed but current bid / history / count didn't update" bug.
+  await refreshAuctionState(a);
+  const nextBid = amount + 1; // flat +1 increment (matches the place_bid server rule)
   const btnEl = document.getElementById('bid-btn-' + auctionId);
   if (btnEl) {
     btnEl.textContent = '⚡ Place Bid';
@@ -5443,27 +5445,36 @@ function subscribeToAuction(auctionId) {
       event: 'INSERT', schema: 'public', table: 'bids', // v34-2b: repointed off dead auction_bids → bids
       filter: `listing_id=eq.${auctionId}`
     }, payload => {
-      const b = payload.new;
       const a = AUCTIONS.find(x => x.id === auctionId || x.dbId === auctionId);
       if (!a) return;
-      a.currentBid = b.amount;
-      a.bidCount += 1;
-      a.bids.unshift({ user: b.bidder_username, initials: (b.bidder_username||'').substring(0,2).toUpperCase(), color: '#1a0000', amt: b.amount, ts: 'Just now' });
-      { const bw = document.getElementById('bin-wrap-' + auctionId); if (bw) bw.style.display = 'none'; } // BIN (v32-8)
-
-      // Update UI if auction detail is open
-      if (currentAuctionId === auctionId) {
-        const bidEl = document.getElementById('auction-current-bid');
-        if (bidEl) { bidEl.innerHTML = b.amount + ' <span style="font-size:16px;color:rgba(255,59,48,.7);">SB</span>'; bidEl.classList.add('bid-pop'); setTimeout(() => bidEl.classList.remove('bid-pop'), 300); }
-        const histEl = document.getElementById('bid-history');
-        if (histEl) renderBidHistory(a);
-      }
-
-      // v34-2b: outbid notification is now sent SERVER-SIDE by place_bid (to the prior leader,
-      // skipping a self-rebid). The old client-side addNotification here double-notified — removed.
+      // v34-2b1: re-read authoritative state (absolute, idempotent) instead of incrementing locally,
+      // so a bidder's own bid (already applied by placeBid) is not double-counted by its own echo, and
+      // other bidders' bids land live. Outbid notif is server-side (place_bid → prior leader).
+      refreshAuctionState(a);
     })
     .subscribe();
   _realtimeChannels.push(ch);
+}
+
+// v34-2b1: authoritative re-read of an auction's live state. Reads current_bid/bid_count straight
+// from available_listings + reloads the bid history, then repaints the detail if open. Used by BOTH
+// placeBid-success and the realtime bids-echo. It SETS absolute values (never increments), so running
+// it twice (a bidder's own bid + that bid's own echo) is idempotent — no double-count — and the bidder
+// still gets instant, reliable feedback even when the iOS websocket drops the echo.
+async function refreshAuctionState(a) {
+  if (!a) return;
+  const dbId = a.dbId || a.id;
+  try {
+    const { data: row } = await sb.from('available_listings').select('current_bid,bid_count,start_price').eq('id', dbId).maybeSingle();
+    if (row) { a.currentBid = (row.current_bid != null ? row.current_bid : row.start_price); a.bidCount = row.bid_count || 0; }
+  } catch (e) { console.error('refreshAuctionState:', e); }
+  try { a.bids = await loadAuctionBids(dbId); } catch (e) {}
+  if (currentAuctionId === a.id || currentAuctionId === a.dbId) {
+    const bidEl = document.getElementById('auction-current-bid');
+    if (bidEl) { bidEl.innerHTML = a.currentBid + ' <span style="font-size:16px;color:rgba(255,59,48,.7);">' + aucUnit(a) + '</span>'; bidEl.classList.add('bid-pop'); setTimeout(() => bidEl.classList.remove('bid-pop'), 300); }
+    if (document.getElementById('bid-history')) renderBidHistory(a);
+  }
+  if (a.bidCount > 0) { const bw = document.getElementById('bin-wrap-' + (a.dbId || a.id)); if (bw) bw.style.display = 'none'; }
 }
 
 function renderBidHistory(a) {
