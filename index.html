@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-1ak</title>
+<title>OneStopSwap v34-1am</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-1ak';
+window._OSS_BUILD = 'v34-1am';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3603,9 +3603,10 @@ async function setupRealtimeSubscriptions(myUsername) {
       filter: `receiver_username=eq.${myUsername}`
     }, payload => {
       const m = payload.new;
-      addNotification('message','💬','rgba(255,59,48,.15)','rgba(255,59,48,.3)',
-        'New message from @' + m.sender_username, m.message, 'Reply',
-        () => openChat(m.sender_username, '#1a0000', '#FF3B30', m.sender_username.substring(0,2).toUpperCase()));
+      // v34-1al: the bell entry is now a persisted notification row (written on send), delivered via
+      // the notifications channel with catch-up — so we no longer fire a local-only addNotification here
+      // (that left messages with no bell on any missed live event). This handler keeps the LIVE chat
+      // append + inbox refresh; the notifications channel handles the bell.
       // If chat is open with this sender, append message live
       if (currentChatSeller === m.sender_username) {
         const chatMsgs = document.getElementById('chat-messages');
@@ -3966,6 +3967,11 @@ function notifActionFor(n) {
   // Buyer-facing offer updates (accepted / declined / countered) live in My Offers —
   // refresh from the DB first so the seller's persisted response actually shows.
   if (target === 'my-offers') return () => openMyOffersFresh();
+  // v34-1al: message notifications deep-link straight into the chat with the sender.
+  if (target.indexOf('chat:') === 0) {
+    const u = target.slice(5);
+    return () => openChat(u, '#1a0000', '#FF3B30', (u || '').substring(0, 2).toUpperCase());
+  }
   // v34-1ak: My Sales is the seller's transaction history now. New fixed-price sale notifs target
   // 'my-sales'; legacy rows that still say my-listings:sold/shipped/delivered are routed here too
   // (those fixed-price stages moved out of My Listings). my-listings:active/removed stay on My Listings
@@ -5705,6 +5711,11 @@ async function sendChatMsg() {
       sb.from('messages').insert([
         { sender_id: currentUser.id, sender_username: currentProfile?.username || 'user', receiver_username: currentChatSeller, message: text, is_ai_response: false }
       ]).then(({ error }) => { if (error) { console.error('Message save error:', error); showError('Message failed to send.'); } });
+      // v34-1al: persist a real notification row for the recipient (like offers/orders/reviews) so the
+      // bell + badge + on-resubscribe catch-up all work. Previously messages only fired a local-only
+      // addNotification in the messages channel handler — no DB row, so a missed live event = no bell.
+      const _sender = currentProfile?.username || 'someone';
+      notifyUsername(currentChatSeller, { type:'message', icon:'💬', title:'New message from @' + _sender, body:text, actionLabel:'Reply', actionTarget:'chat:' + _sender });
     }
     btn.style.opacity = '1'; btn.disabled = false; input.focus();
     return;
@@ -7941,14 +7952,23 @@ function updateAllSBDisplays() {
 }
 
 function renderReviews() {
-  const pcts = [78,15,5,1,1];
+  // v34-1am: show the seller's REAL received reviews (loadReviews populates SELLER_RATINGS[me].reviews),
+  // not the static REVIEWS_DATA seed + hardcoded 4.9/138 summary. Real avg/count + a live star distribution.
+  const me = currentProfile?.username || '';
+  const sr = SELLER_RATINGS[me] || { avg: 0, count: 0, reviews: [] };
+  const reviews = sr.reviews || [];
+  const count = sr.count || reviews.length;
+  const avg = count ? (sr.avg || Math.round((reviews.reduce((s, r) => s + (r.rating || r.stars || 0), 0) / count) * 10) / 10) : 0;
+  const dist = [0, 0, 0, 0, 0]; // index 0 = 5★ … index 4 = 1★
+  reviews.forEach(r => { const st = r.rating || r.stars || 0; if (st >= 1 && st <= 5) dist[5 - st]++; });
+  const pcts = dist.map(c => count ? Math.round((c / count) * 100) : 0);
   const summary = document.getElementById('reviews-summary');
   if (summary) summary.innerHTML = `
     <div style="display:flex;align-items:center;gap:20px;">
       <div style="text-align:center;">
-        <div style="color:#FF3B30;font-weight:900;font-size:52px;font-family:'Space Grotesk',sans-serif;line-height:1;">4.9</div>
-        <div style="color:#FFB347;font-size:18px;margin:4px 0;">⭐⭐⭐⭐⭐</div>
-        <div style="color:rgba(255,255,255,.4);font-size:12px;">138 reviews</div>
+        <div style="color:#FF3B30;font-weight:900;font-size:52px;font-family:'Space Grotesk',sans-serif;line-height:1;">${count ? avg.toFixed(1) : '—'}</div>
+        <div style="color:#FFB347;font-size:18px;margin:4px 0;">${count ? '⭐'.repeat(Math.max(1, Math.round(avg))) : '☆☆☆☆☆'}</div>
+        <div style="color:rgba(255,255,255,.4);font-size:12px;">${count} review${count !== 1 ? 's' : ''}</div>
       </div>
       <div style="flex:1;">
         ${[5,4,3,2,1].map((s,i) => `
@@ -7962,10 +7982,10 @@ function renderReviews() {
       </div>
     </div>`;
   const list = document.getElementById('reviews-list');
-  if (list) list.innerHTML = REVIEWS_DATA.map(r => `
+  if (list) list.innerHTML = reviews.length ? reviews.map(r => `
     <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-        <div style="width:36px;height:36px;border-radius:10px;background:${r.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0;">${r.initials}</div>
+        <div style="width:36px;height:36px;border-radius:10px;background:${r.color||'#FF3B30'};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0;">${r.initials}</div>
         <div style="flex:1;">
           <div style="color:#fff;font-weight:700;font-size:14px;">@${r.name}</div>
           <div style="color:rgba(255,255,255,.35);font-size:11px;">${r.item} · ${r.date}</div>
@@ -7973,7 +7993,12 @@ function renderReviews() {
         <div style="color:#FFB347;font-size:14px;">${'⭐'.repeat(r.rating || r.stars || 0)}</div>
       </div>
       <div style="color:rgba(255,255,255,.7);font-size:13px;line-height:1.5;">${r.text}</div>
-    </div>`).join('');
+    </div>`).join('') : `
+    <div style="text-align:center;padding:48px 20px;">
+      <div style="font-size:48px;margin-bottom:14px;">⭐</div>
+      <div style="color:#fff;font-weight:800;font-size:17px;margin-bottom:6px;">No reviews yet</div>
+      <div style="color:rgba(255,255,255,.4);font-size:13px;">Reviews buyers leave after a delivered order show up here.</div>
+    </div>`;
 }
 
 function renderFaq() {
@@ -9752,7 +9777,7 @@ function go(name) {
   if (name === 'notifications') renderNotifications(notifFilter);
   if (name === 'my-listings') { MY_LISTINGS_QUERY = ''; const mli = document.getElementById('ml-search'); if (mli) mli.value = ''; const mlc = document.getElementById('ml-search-clear'); if (mlc) mlc.style.display = 'none'; setMyListingsView('active'); } // v31-38: land on Active; v33-8: reset in-account search
   if (name === 'sb-wallet') renderWallet();
-  if (name === 'my-reviews') renderReviews();
+  if (name === 'my-reviews') loadReviews().then(() => renderReviews()).catch(() => renderReviews());
   if (name === 'acct-settings') loadProfileSettings();
   if (name === 'support') renderFaq();
   if (name === 'new-listing') {
