@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2f1</title>
+<title>OneStopSwap v34-2g</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2f1';
+window._OSS_BUILD = 'v34-2g';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3975,6 +3975,21 @@ function notifActionFor(n) {
   if (target.indexOf('my-listings:') === 0) {
     const v = target.split(':')[1] || 'active';
     return () => { go('my-listings'); setMyListingsView(v); };
+  }
+  // v34-2g: outbid ping — place_bid sends action_target='listing:<id>'. Open that auction's detail.
+  // The tap can come from anywhere (notifications screen, bell), so ensure the auction is loaded into
+  // AUCTIONS first — openAuction reads the in-memory array and silently no-ops if the row is missing,
+  // then go('auction') itself. If it's already settled/closed (gone from available_listings), land on
+  // Live with a note instead of a dead tap.
+  if (target.indexOf('listing:') === 0) {
+    const lid = target.slice(8);
+    return async () => {
+      if (!AUCTIONS.some(x => x.id === lid || x.dbId === lid)) {
+        try { await loadAuctionsFromDb(); } catch (e) { console.error('notif listing load:', e); }
+      }
+      if (AUCTIONS.some(x => x.id === lid || x.dbId === lid)) openAuction(lid);
+      else { go('live'); showToast('That auction has ended'); }
+    };
   }
   return () => go(target || 'home');
 }
