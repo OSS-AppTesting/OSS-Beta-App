@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2f</title>
+<title>OneStopSwap v34-2f1</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2f';
+window._OSS_BUILD = 'v34-2f1';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -8013,11 +8013,10 @@ async function refreshProfileStats() {
   const lEl = document.getElementById('profile-listings');
   if (lEl) {
     try {
-      const [lc, ac] = await Promise.all([
-        sb.from('available_listings').select('id', { count: 'exact', head: true }).or(`seller_id.eq.${uid},seller_username.eq.${me}`),
-        sb.from('auctions').select('id', { count: 'exact', head: true }).or(`seller_id.eq.${uid},seller_username.eq.${me}`).eq('status', 'live')
-      ]);
-      lEl.textContent = String((lc.count || 0) + (ac.count || 0));
+      // v34-2f1: available_listings is sale-type-aware (counts the seller's active fixed AND auction
+      // listings), so the separate dead-`auctions` count was redundant (added 0) — removed.
+      const lc = await sb.from('available_listings').select('id', { count: 'exact', head: true }).or(`seller_id.eq.${uid},seller_username.eq.${me}`);
+      lEl.textContent = String(lc.count || 0);
     } catch (e) {}
   }
   const sEl = document.getElementById('profile-sold');
@@ -9001,7 +9000,7 @@ async function relistEditListing(id) {
 // (editingListingId stays null, so postListing routes correctly). The old ended auction stays in Removed.
 async function relistEditAuction(id) {
   if (!currentUser) return;
-  const { data: a, error } = await sb.from('auctions').select('*').eq('id', id).eq('seller_id', currentUser.id).single();
+  const { data: a, error } = await sb.from('listings').select('*').eq('id', id).eq('sale_type', 'auction').eq('seller_id', currentUser.id).single(); // v34-2f1: auctions are listings rows now (was dead `auctions` table)
   if (error || !a) { showToast('Auction not found'); return; }
   editingListingId = null; window._relistMode = false; // creating a new item, not editing in place
   go('new-listing');
@@ -9141,8 +9140,13 @@ async function openEditAuction(id) {
   let bidCount = a.bidCount || 0;
   if (/^[0-9a-f-]{36}$/i.test(String(editingAuctionId))) {
     try {
-      const { data: fresh } = await sb.from('auctions').select('bid_count,current_bid').eq('id', editingAuctionId).single();
-      if (fresh) { bidCount = fresh.bid_count || 0; a.bidCount = bidCount; if (fresh.current_bid != null) a.currentBid = fresh.current_bid; }
+      const { data: fresh } = await sb.from('listings').select('bid_count,current_bid,start_price,reserve_price').eq('id', editingAuctionId).eq('sale_type', 'auction').single(); // v34-2f1: auction is a listings row (was dead `auctions`); base table also carries reserve_price (available_listings hides it) so the owner sees their own reserve
+      if (fresh) {
+        bidCount = fresh.bid_count || 0; a.bidCount = bidCount;
+        if (fresh.current_bid != null) a.currentBid = fresh.current_bid;
+        if (fresh.start_price != null) a.startPrice = fresh.start_price;
+        if (fresh.reserve_price != null) a.reservePrice = fresh.reserve_price;
+      }
     } catch (e) { console.error('openEditAuction bid_count:', e); }
   }
   const hasBids = bidCount > 0;
@@ -9209,7 +9213,7 @@ async function saveAuctionEdits() {
   let bidCount = (la0?.bidCount || 0);
   if (/^[0-9a-f-]{36}$/i.test(String(id))) {
     try {
-      const { data: fr } = await sb.from('auctions').select('bid_count').eq('id', id).single();
+      const { data: fr } = await sb.from('listings').select('bid_count').eq('id', id).eq('sale_type', 'auction').single(); // v34-2f1: off dead `auctions`
       if (fr) bidCount = fr.bid_count || 0;
     } catch (e) { console.error('saveAuctionEdits bid_count:', e); }
   }
@@ -9221,6 +9225,7 @@ async function saveAuctionEdits() {
       const sp = parseInt(startEl.value) || 0;
       update.start_price = sp;
       update.current_bid = sp; // no bids yet, so current bid tracks the new start
+      update.price = sp;       // v34-2f1: keep the price mirror (price = current_bid ?? start_price) consistent
     }
     if (resEl && resEl.value !== '') update.reserve_price = parseInt(resEl.value) || 0;
     // Duration (pre-bid only): preset resets from now, or exact custom end time
@@ -9237,7 +9242,7 @@ async function saveAuctionEdits() {
     }
   }
 
-  const { error } = await sb.from('auctions').update(update).eq('id', id).eq('seller_id', currentUser.id);
+  const { error } = await sb.from('listings').update(update).eq('id', id).eq('sale_type', 'auction').eq('seller_id', currentUser.id); // v34-2f1: write to listings (was dead `auctions`)
   if (btn) { btn.disabled = false; btn.textContent = '💾 Save Changes'; }
   if (error) { showToast('❌ ' + error.message); return; }
 
