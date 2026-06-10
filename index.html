@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-1a</title>
+<title>OneStopSwap v35-2</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-1a';
+window._OSS_BUILD = 'v35-2';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -4321,6 +4321,7 @@ async function saveListingToDb(listing) {
     location: listing.location, image_url: listing.img, size: listing.size || null, gender: listing.gender || null, is_active: true, sold: false
   }).select().single();
   if (error) { console.error('Listing save error:', error); return null; }
+  checkListingReward(); // v35-2: +20 SB every 5 listings
   return data;
 }
 
@@ -5470,6 +5471,7 @@ async function postAuction(title, desc, category, condition) {
       showToast('⚡ Auction is live!' + (durLabel ? ' ' + durLabel + ' countdown started.' : ' Countdown started.'));
       // Subscribe to realtime bids for this auction
       subscribeToAuction(data.id);
+      checkListingReward(); // v35-2: auctions count toward the 5-item milestone
     }
   } else {
     showToast('⚡ Auction posted locally!');
@@ -7897,7 +7899,13 @@ const REWARDS = {
     review: { enabled: true, amount: 5, label: 'Review reward',
       title: '⭐ Thanks for your review!',
       body: 'You earned 5 SB for sharing your feedback with the community.' },
-    // list5 / sale / referral are wired in the following builds
+    list5: { enabled: true, amount: 20, label: 'Listing milestone',
+      title: '📦 5 items listed!',
+      body: 'Nice work — you earned 20 SB for listing 5 items.' },
+    sale: { enabled: true, amount: 20, label: 'Weekly sale bonus',
+      title: '💸 Sale of the week!',
+      body: 'You earned 20 SB for completing a sale this week.' },
+    // referral wired next (v35-3)
   }
 };
 // Rolling-7-day reward total from the transactions ledger. Returns 0 on any error so a glitch never blocks a reward.
@@ -7944,6 +7952,28 @@ async function awardSB(triggerKey, dedupeId) {
   } catch (e) { console.error('awardSB notify error:', e); }
 }
 
+// v35-2: week boundary (Monday 00:00 local) + key for the once-per-week sale bonus.
+function _weekStart() {
+  const d = new Date(); const dow = (d.getDay() + 6) % 7; // 0 = Monday
+  d.setHours(0,0,0,0); d.setDate(d.getDate() - dow); return d;
+}
+function _weekKey() { return _weekStart().toISOString().slice(0,10); }
+// +20 SB each time the user crosses a multiple of 5 listings (milestone N = count/5). Idempotent per N.
+async function checkListingReward() {
+  if (!currentUser || !(REWARDS.triggers.list5 && REWARDS.triggers.list5.enabled)) return;
+  try {
+    const { count } = await sb.from('listings').select('id', { count: 'exact', head: true }).eq('seller_id', currentUser.id);
+    const total = count || 0;
+    if (total > 0 && total % 5 === 0) await awardSB('list5', total / 5);
+  } catch (e) { console.error('checkListingReward error:', e); }
+}
+// +20 SB once per calendar week if the seller has a paid-or-later sale this week. Idempotent per week.
+async function checkSaleReward() {
+  if (!currentUser || !(REWARDS.triggers.sale && REWARDS.triggers.sale.enabled)) return;
+  const wk = _weekStart().getTime();
+  const ok = (MY_SALES_ROWS || []).some(o => ['Paid','Shipped','Delivered','Completed'].includes(o.status) && o.created_at && new Date(o.created_at).getTime() >= wk);
+  if (ok) await awardSB('sale', _weekKey());
+}
 function refreshWalletStats() {
   const earned = TXN_LOG.filter(t=>t.type==='earned').reduce((s,t)=>s+Math.abs(t.amt),0);
   const spent  = TXN_LOG.filter(t=>t.type==='spent').reduce((s,t)=>s+Math.abs(t.amt),0);
@@ -8922,6 +8952,7 @@ async function renderMySales() {
     return;
   }
   MY_SALES_ROWS = res.data || [];
+  checkSaleReward(); // v35-2: +20 SB once/week for a sale this week
   // v34-1aj.1: orders carry no image/title (RPCs don't copy them — no drift). Hydrate via the same
   // join-on-read the buyer My Orders uses: build a listings map from listing_ids, attach orderDisplay.
   // v34-1ak: exclude legacy/off-vocab orders — won-auction settle (settle_auction/buy_now_auction)
