@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2ah</title>
+<title>OneStopSwap v35-1a</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2ah';
+window._OSS_BUILD = 'v35-1a';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3525,6 +3525,7 @@ async function completeProfileSetup() {
   // Load the new profile and go to account completion
   const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
   if (profile) { currentProfile = profile; SB = _num(profile.sb_balance) || 125; updateAllSBDisplays(); }
+  awardSB('signup', 'signup'); // v34-2ai: welcome bonus (one-time)
   document.getElementById('s-profile-setup').style.display = 'none';
   showAccountCompletion();
 }
@@ -6375,6 +6376,7 @@ async function submitReview() {
       return;
     }
     showToast('⭐ Review saved! Thanks for your feedback.');
+    awardSB('review', currentReviewOrderId || sellerName); // v34-2ai: +5 SB, one per order
     // v34-1ar: review notification REMOVED (Dean's call) — a "you got a review" ping is the one
     // non-actionable notification, so it belongs with engagement notifs (reviews/likes/follows) in the
     // SwapBucks-flywheel / discovery-&-social pillar, not the transaction core. Wiring it up there will
@@ -7881,6 +7883,66 @@ function addTransaction(type, icon, label, sub, amt) {
 
 
 
+
+// ══ SwapBucks Rewards engine (v35-1a — flywheel, the new v35 major line) ══
+// Tune EVERYTHING here: amounts, on/off per trigger, and the rolling-7-day cap. Pivoting amounts or
+// switching a trigger off is a one-line change. Rewards are tagged in the ledger by a 'reward:' sub_label
+// (transactions.type stays 'earned' so they count in the wallet AND dodge any type CHECK constraint).
+const REWARDS = {
+  weeklyCapSB: 100, // max reward SB a user can earn in any rolling 7 days (0 = uncapped)
+  triggers: {
+    signup: { enabled: true, amount: 25, label: 'Welcome bonus',
+      title: '🎉 Welcome to OneStopSwap!',
+      body: "We're excited to have you — enjoy 25 SB on us, credited straight to your wallet." },
+    review: { enabled: true, amount: 5, label: 'Review reward',
+      title: '⭐ Thanks for your review!',
+      body: 'You earned 5 SB for sharing your feedback with the community.' },
+    // list5 / sale / referral are wired in the following builds
+  }
+};
+// Rolling-7-day reward total from the transactions ledger. Returns 0 on any error so a glitch never blocks a reward.
+async function rewardSBThisWeek() {
+  if (!currentUser) return 0;
+  try {
+    const since = new Date(Date.now() - 7*24*3600*1000).toISOString();
+    const { data } = await sb.from('transactions').select('amount').eq('user_id', currentUser.id).like('sub_label', 'reward:%').gte('created_at', since);
+    return (data || []).reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+  } catch (_) { return 0; }
+}
+// DB-backed idempotency: has this exact event already been rewarded? (survives reloads → can't double-pay)
+async function rewardAlreadyGranted(tag) {
+  if (!currentUser) return true;
+  try {
+    const { data } = await sb.from('transactions').select('id').eq('user_id', currentUser.id).eq('sub_label', tag).limit(1);
+    return !!(data && data.length);
+  } catch (_) { return false; }
+}
+// Core: credit reward SB once per dedupeId, within the weekly cap, with a toast + a persisted bell message.
+async function awardSB(triggerKey, dedupeId) {
+  const cfg = REWARDS.triggers[triggerKey];
+  if (!cfg || !cfg.enabled || !currentUser) return;
+  let amount = Number(cfg.amount) || 0;
+  if (amount <= 0) return;
+  const tag = 'reward:' + triggerKey + ':' + (dedupeId != null ? dedupeId : triggerKey);
+  if (await rewardAlreadyGranted(tag)) return; // already paid this event
+  if (REWARDS.weeklyCapSB > 0) {
+    const remaining = REWARDS.weeklyCapSB - (await rewardSBThisWeek());
+    if (remaining <= 0) { showToast('🎁 Weekly reward cap reached — more next week!'); return; }
+    if (amount > remaining) amount = remaining; // clamp to the cap
+  }
+  SB += amount; updateAllSBDisplays();
+  try {
+    await sb.from('profiles').update({ sb_balance: SB }).eq('id', currentUser.id);
+    await sb.from('transactions').insert({ user_id: currentUser.id, type: 'earned', icon: '🎁', label: cfg.label, sub_label: tag, amount });
+  } catch (e) { console.error('awardSB persist error:', e); }
+  TXN_LOG.unshift({ type: 'earned', icon: '🎁', label: cfg.label, sub: '+' + amount + ' SB reward', amt: amount, date: 'Just now', clr: '#00C864' });
+  refreshWalletStats();
+  showToast('🎁 +' + amount + ' SB — ' + cfg.label + '!');
+  try {
+    await sb.from('notifications').insert({ user_id: currentUser.id, type: 'wallet', icon: '🎁', title: cfg.title, body: cfg.body.replace(/\b\d+ SB\b/, amount + ' SB'), action_label: 'View Wallet', action_target: 'sb-wallet', read: false });
+    await loadNotificationsFromDb();
+  } catch (e) { console.error('awardSB notify error:', e); }
+}
 
 function refreshWalletStats() {
   const earned = TXN_LOG.filter(t=>t.type==='earned').reduce((s,t)=>s+Math.abs(t.amt),0);
