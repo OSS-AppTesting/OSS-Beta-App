@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-17</title>
+<title>OneStopSwap v35-18</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-17';
+window._OSS_BUILD = 'v35-18';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -8101,8 +8101,13 @@ async function captureReferral(explicitCode) {
     if (!code) return;
     const { data: res } = await sb.rpc('record_referral', { p_referrer_username: code });
     if (res === 'ok') { const _rw = document.getElementById('modal-referral-welcome'); if (_rw) _rw.style.display = 'flex'; else showToast('🎁 Referral applied — you both get 25 SB after your first swap!'); } // v35-13: acknowledge modal
-    // clear the stash on any terminal outcome so it can't keep retrying; keep it on no_auth/bad_code (retryable)
-    if (res === 'ok' || res === 'already' || res === 'self' || res === 'not_new') { try { localStorage.removeItem('oss_pending_ref'); } catch (e) {} }
+    else if (res === 'bad_code') { showToast('⚠️ Referral code “' + code + '” not found — enter the referrer\'s username'); } // v35-18: surface silent failures
+    else if (res === 'self')     { showToast('⚠️ You can\'t use your own referral code'); }
+    else if (res === 'already')  { showToast('You\'ve already used a referral code'); }
+    else if (res === 'not_new')  { showToast('Referral codes are only for brand-new accounts'); }
+    else if (res === 'no_auth')  { try { localStorage.setItem('oss_pending_ref', code); } catch (e) {} } // v35-18: stash a typed code for the email-confirm retry
+    // clear the stash on any terminal outcome so it can't keep retrying
+    if (res === 'ok' || res === 'already' || res === 'self' || res === 'not_new' || res === 'bad_code') { try { localStorage.removeItem('oss_pending_ref'); } catch (e) {} }
   } catch (e) { console.error('captureReferral:', e); }
 }
 // v35-17: invite share sheet. _referralLink() is the single source of the username + ?ref link.
