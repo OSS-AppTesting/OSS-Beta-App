@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-3</title>
+<title>OneStopSwap v35-4</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-3';
+window._OSS_BUILD = 'v35-4';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2308,7 +2308,7 @@ async function confirmSBCheckout() {
   // Drop the now-sold item from the buyer's local feed (already excluded server-side via the view).
   { const i = PRODS.findIndex(x => String(x.id) === String(p.id)); if (i > -1) PRODS.splice(i, 1); renderAll(); }
   broadcastFeed('sold', p.id); // v34-1h: live-drop this listing from every other browsing feed
-  showToast('⚡ Swapped! ' + p.price + ' SB spent (6% fee: ' + fee + ' SB). Check My Orders.');
+  showToast('⚡ Swapped! ' + p.price + ' SB spent. Check My Orders.'); // v35-4: 6% fee is the SELLER's (billed in cash) — don't show it to the buyer
   go('home');
 }
 
@@ -2815,7 +2815,7 @@ async function doBuyItNow(auctionId) {
   const idx = AUCTIONS.findIndex(x => x.id === auctionId || x.dbId === auctionId);
   if (idx > -1) AUCTIONS.splice(idx, 1);
   renderAuctionList();
-  showToast('⚡ Bought now for ' + (isUSD ? '$' + price : price + ' SB') + '! 6% fee: ' + fee + '. Check My Orders.');
+  showToast('⚡ Bought now for ' + (isUSD ? '$' + price : price + ' SB') + '! Check My Orders.'); // v35-4: drop seller-only fee from the buyer toast
   go('my-orders');
 }
 
