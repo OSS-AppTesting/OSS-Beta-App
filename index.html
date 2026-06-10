@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2ac</title>
+<title>OneStopSwap v34-2ad</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2ac';
+window._OSS_BUILD = 'v34-2ad';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2524,7 +2524,7 @@ function renderAuctionList() {
               <div id="timer-${a.id}" class="${(!expired && cd.urgent)?'auction-timer-urgent':''}" style="color:${expired ? '#FFB347' : (cd.urgent?'#FF3B30':'#fff')};font-weight:800;font-size:${expired ? '12' : '15'}px;font-family:'Space Grotesk',sans-serif;">${expired ? 'Ending — settling…' : cd.text}</div>
             </div>
           </div>
-          <div style="margin-top:6px;color:rgba(255,255,255,.3);font-size:11px;">${a.bidCount} bids · @${a.seller}</div>
+          <div style="margin-top:6px;color:rgba(255,255,255,.3);font-size:11px;">${a.bidCount} bids · @${a.seller}${(()=>{const _b=tierBadgeFor(a.seller,'sm');return _b?' '+_b:'';})()}</div>
         </div>
       </div>
     </div>`;
@@ -2534,6 +2534,7 @@ function renderAuctionList() {
   // v34-2k: while any auction is shown, run the reconcile poller so sold/ended/settled cards drop on
   // their own (BIN, seller end, or cron) without navigating. Self-stops when Live isn't visible / empty.
   if (liveList.length) scheduleSettlingDrop();
+  primeRatingsFor(liveList.map(a => a.seller), renderAuctionList); // v34-2ad: light up non-seeded sellers' tier badges on the Live cards
 }
 
 // v34-2i: live countdown on the My-Listings auction cards. The card timer is a static render; this
@@ -2687,7 +2688,7 @@ async function openAuction(id) {
       <!-- Seller -->
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:12px 14px;cursor:pointer;" onclick="openSellerProfile('${a.seller}')">
         ${avatarHTML(a.seller, 36, 10)}
-        <div style="flex:1;"><div style="color:#fff;font-weight:700;font-size:14px;">@${a.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${getSellerRating(a.seller).avg} · Verified seller ✓</div></div>
+        <div style="flex:1;"><div style="color:#fff;font-weight:700;font-size:14px;">@${a.seller}</div><div style="color:rgba(255,255,255,.4);font-size:12px;">⭐ ${getSellerRating(a.seller).avg}${(()=>{const r=getSellerRating(a.seller);const _b=tierBadgeFor(a.seller,'sm');return _b?' · '+_b:(r.count?' · '+r.count+' reviews':'');})()}</div></div>
         ${isAucOwner
           ? `<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:6px 14px;"><span style="color:#00C864;font-weight:700;font-size:13px;">✓ Your auction</span></div>`
           : `<button onclick="event.stopPropagation();openChat('${a.seller}','${a.sellerColor}','#FF3B30','${a.sellerInitials}')" style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Ask</button>`}
@@ -6425,6 +6426,46 @@ async function loadSellerRating(seller) {
     console.error('loadSellerRating exception:', e);
     return getSellerRating(seller);
   }
+}
+
+// v34-2ad: batched rating prime for on-screen sellers. getSellerRating reads an in-memory cache that's
+// only boot-seeded for the demo sellers; real sellers (e.g. aspenthedog) aren't cached until their
+// profile/detail loads, so their tier badge goes missing in feeds. This pulls reviews + sales_count for
+// a LIST of usernames in ONE round trip (not a per-card loop), computes the SAME avg/count/sales as
+// loadSellerRating, caches them, then repaints. Idempotent: only queries usernames not already cached,
+// so the repaint can't loop (second pass finds them cached -> no query -> no repaint).
+async function primeRatingsFor(usernames, repaint) {
+  const need = [...new Set((usernames || []).filter(u => u && u !== 'user' && !(u in SELLER_RATINGS)))];
+  if (!need.length) return;
+  try {
+    const [{ data: revs }, { data: profs }] = await Promise.all([
+      sb.from('reviews').select('seller_username,reviewer_username,rating,review_text,item_title,listing_title,created_at').in('seller_username', need),
+      sb.from('profiles').select('username,sales_count').in('username', need)
+    ]);
+    const byUser = {}; (revs || []).forEach(r => { (byUser[r.seller_username] = byUser[r.seller_username] || []).push(r); });
+    const salesByUser = {}; (profs || []).forEach(p => { salesByUser[p.username] = p.sales_count; });
+    need.forEach(u => {
+      const rows = byUser[u] || [];
+      const seed = SELLER_RATINGS_SEED[u] || { avg: 0, count: 0 };
+      const realCount = rows.length;
+      const realSum = rows.reduce((acc, r) => acc + (r.rating || 0), 0);
+      const totalCount = seed.count + realCount;
+      const totalSum = (seed.avg * seed.count) + realSum;
+      const avg = totalCount ? Math.round((totalSum / totalCount) * 10) / 10 : 0;
+      const reviews = rows.map(r => ({
+        name: r.reviewer_username || 'user',
+        initials: (r.reviewer_username || 'us').substring(0, 2).toUpperCase(),
+        color: '#FF3B30',
+        stars: r.rating || 0,
+        item: r.item_title || r.listing_title || 'Item purchase',
+        text: r.review_text || '',
+        date: r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recently'
+      }));
+      const salesCount = (salesByUser[u] != null) ? salesByUser[u] : null;
+      SELLER_RATINGS[u] = { avg, count: totalCount, reviews, sales: salesCount };
+    });
+    if (typeof repaint === 'function') repaint();
+  } catch (e) { console.error('primeRatingsFor error:', e); }
 }
 
 // Star distribution (percent per star, 5→1) from a reviews array; fallback if empty.
