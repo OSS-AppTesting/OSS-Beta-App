@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-15</title>
+<title>OneStopSwap v35-16</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-15';
+window._OSS_BUILD = 'v35-16';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -1847,6 +1847,15 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 </div>
 
 <!-- SB CHECKOUT MODAL -->
+<!-- v35-16: server-credited reward arrived (referral rewards) — centered celebration -->
+<div id="modal-reward-arrived" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:910;padding:24px;">
+  <div style="background:linear-gradient(135deg,#001A0A,#002D14);border:1px solid rgba(0,200,100,.3);border-radius:24px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#00C864,#00A050);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;">🎉</div>
+    <div id="reward-arrived-title" style="color:#fff;font-weight:900;font-size:20px;margin-bottom:8px;">Bonus arrived! 🎉</div>
+    <div id="reward-arrived-body" style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.6;margin-bottom:22px;"></div>
+    <button onclick="document.getElementById('modal-reward-arrived').style.display='none'" style="width:100%;background:linear-gradient(135deg,#00C864,#00A050);border:none;border-radius:16px;padding:15px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">Awesome! 🚀</button>
+  </div>
+</div>
 <!-- v35-15: list-5-items earn tip (centered, shown after the referral welcome) -->
 <div id="modal-earn-tip" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:900;padding:24px;">
   <div style="background:linear-gradient(135deg,#1A0000,#2D0000);border:1px solid rgba(255,59,48,.3);border-radius:24px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
@@ -3882,7 +3891,15 @@ async function setupRealtimeSubscriptions(myUsername) {
       mapped.time = 'Just now';
       NOTIFICATIONS.unshift(mapped);
       updateNotifBadge();
-      showToast('🔔 ' + (row.title || 'New notification'));
+      // v35-16: a 'wallet' notif = a SERVER-side SB credit (e.g. a referral reward) landed. Re-read the balance
+      // live (local SB doesn't know about server credits), and pop the celebration for the referral bonuses.
+      if (row.type === 'wallet') {
+        refreshBalanceFromDb();
+        if (/(Referral|Welcome) bonus/i.test(row.title || '')) showRewardArrived(row.title, row.body);
+        else showToast('🎁 ' + (row.title || 'SwapBucks added'));
+      } else {
+        showToast('🔔 ' + (row.title || 'New notification'));
+      }
       if (document.getElementById('s-notifications')?.classList.contains('active')) renderNotifications(notifFilter);
     })
     .subscribe((status) => { if (status === 'SUBSCRIBED') _scheduleNotifCatchup(); }); // v34-1q: self-heal missed bell events
@@ -8130,6 +8147,22 @@ function loadAppSettingsUI() {
   OSS_PREFS = loadPrefs();
   document.querySelectorAll('#s-app-settings [data-pref]').forEach(function (el) { _setToggleVisual(el, !!OSS_PREFS[el.getAttribute('data-pref')]); });
   const v = document.getElementById('app-settings-version'); if (v) v.textContent = (window._OSS_BUILD || '');
+}
+// v35-16: re-pull my SB balance from the DB. Server-side credits (referral rewards via DB trigger) update
+// profiles.sb_balance directly and never touch the local SB var, so the wallet looked stale until a refresh.
+async function refreshBalanceFromDb() {
+  if (!currentUser) return;
+  try {
+    const { data } = await sb.from('profiles').select('sb_balance').eq('id', currentUser.id).single();
+    if (data) { SB = _num(data.sb_balance) || 0; if (currentProfile) currentProfile.sb_balance = SB; updateAllSBDisplays(); refreshWalletStats(); }
+  } catch (e) {}
+}
+// v35-16: centered "bonus arrived" celebration for server-credited referral rewards (referrer + referee).
+function showRewardArrived(title, body) {
+  const t = document.getElementById('reward-arrived-title'); if (t) t.textContent = title || 'Bonus arrived! 🎉';
+  const b = document.getElementById('reward-arrived-body'); if (b) b.textContent = body || 'SwapBucks have been added to your wallet.';
+  const m = document.getElementById('modal-reward-arrived');
+  if (m) m.style.display = 'flex'; else showToast('🎁 ' + (title || 'Bonus arrived!'));
 }
 function refreshWalletStats() {
   const earned = TXN_LOG.filter(t=>t.type==='earned').reduce((s,t)=>s+Math.abs(t.amt),0);
