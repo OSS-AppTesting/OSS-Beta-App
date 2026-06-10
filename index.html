@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2x</title>
+<title>OneStopSwap v34-2y</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2x';
+window._OSS_BUILD = 'v34-2y';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -7212,7 +7212,7 @@ function renderTxnDetail(o, disp, events, listed, listedCur, buyerName) {
         +   (meSeller ?
               ('<div style="border-top:1px solid rgba(255,255,255,.06);margin-top:10px;padding-top:10px;">'
             +   '<div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;"><span>Platform fee (6%)</span><span>' + (cur === 'USD' ? '−' + fmtMoney(fee, 'USD') : fmtMoney(fee, 'USD') + ' (billed in cash)') + '</span></div>'
-            +   '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#00C864;"><span>Your earnings</span><span>' + fmtMoney(net, cur) + '</span></div>'
+            +   '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;"><span style="color:rgba(255,255,255,.55);">Your earnings</span><span style="color:' + (cur === 'USD' ? '#00C864' : '#FF3B30') + ';">' + fmtMoney(net, cur) + '</span></div>'
             + '</div>')
             : '')
         + '</div>';
@@ -7235,7 +7235,7 @@ function renderTxnDetail(o, disp, events, listed, listedCur, buyerName) {
             +   '</div>'
             +   '<div style="flex:1;padding-bottom:' + (last ? '0' : '12px') + ';min-width:0;">'
             +     '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">'
-            +       '<span style="color:' + cfg[2] + ';font-weight:700;font-size:14px;">' + cfg[1] + (amtStr ? ' · ' + amtStr : '') + '</span>'
+            +       '<span style="color:' + cfg[2] + ';font-weight:700;font-size:14px;">' + cfg[1] + '</span>' + (amtStr ? '<span style="color:' + ((e.currency || cur) === 'USD' ? '#00C864' : '#FF3B30') + ';font-weight:700;font-size:14px;"> · ' + amtStr + '</span>' : '')
             +       '<span style="color:rgba(255,255,255,.3);font-size:11px;white-space:nowrap;">' + when + '</span>'
             +     '</div>'
             +     '<div style="color:rgba(255,255,255,.4);font-size:12px;">' + who + '</div>'
