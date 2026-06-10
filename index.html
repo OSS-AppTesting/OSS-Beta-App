@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2w</title>
+<title>OneStopSwap v34-2x</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2w';
+window._OSS_BUILD = 'v34-2x';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -1145,6 +1145,16 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 </div>
 
 <!-- OFFER RESPONSE MODAL (seller accepts/declines/counters) -->
+<div id="modal-txn-detail" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:760;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#111;border-radius:28px 28px 0 0;padding:20px 20px 40px;width:100%;max-height:90dvh;overflow-y:auto;animation:slideUp .3s ease;">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 16px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="color:#fff;font-weight:900;font-size:20px;">🧾 Transaction Detail</h3>
+      <button onclick="document.getElementById('modal-txn-detail').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:24px;cursor:pointer;">✕</button>
+    </div>
+    <div id="txn-detail-content"></div>
+  </div>
+</div>
 <div id="modal-offer-response" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:700;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
     <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px;"></div>
@@ -7145,6 +7155,119 @@ function simulateSellerResponse(offerId, pct) {
   showOfferResponse(offerId);
 }
 
+// v34-2x: Transaction Detail card (V8+ pillar #6 / provenance) — READ side of offer_events.
+// Opens from buyer My Orders + seller My Sales; renders from the viewer's perspective.
+async function openTxnDetail(orderId) {
+  const box = document.getElementById('txn-detail-content');
+  const modal = document.getElementById('modal-txn-detail');
+  if (!box || !modal) return;
+  box.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,.3);">Loading…</div>';
+  modal.style.display = 'flex';
+  try {
+    const { data: o, error } = await sb.from('orders').select('*').eq('id', orderId).maybeSingle();
+    if (error || !o) { box.innerHTML = '<div style="text-align:center;padding:30px;color:#FF3B30;">Couldn’t load this order.</div>'; return; }
+    const lmap = await fetchListingsMap([o.listing_id]);
+    const disp = orderDisplay(o, lmap);
+    let events = [], listed = null, listedCur = null, buyerName = null;
+    if (o.offer_id) {
+      const evRes = await sb.from('offer_events').select('*').eq('offer_id', o.offer_id).order('created_at', { ascending: true });
+      events = evRes.data || [];
+      const offRes = await sb.from('offers').select('listed_price,listed_currency,buyer_username').eq('id', o.offer_id).maybeSingle();
+      if (offRes.data) { listed = offRes.data.listed_price; listedCur = offRes.data.listed_currency; buyerName = offRes.data.buyer_username; }
+    }
+    if (!buyerName && o.buyer_id) { try { const bp = await sb.from('profiles').select('username').eq('id', o.buyer_id).maybeSingle(); if (bp.data) buyerName = bp.data.username; } catch (_) {} }
+    box.innerHTML = renderTxnDetail(o, disp, events, listed, listedCur, buyerName);
+  } catch (e) {
+    box.innerHTML = '<div style="text-align:center;padding:30px;color:#FF3B30;">Couldn’t load this transaction.</div>';
+    console.error('openTxnDetail', e);
+  }
+}
+
+function renderTxnDetail(o, disp, events, listed, listedCur, buyerName) {
+  const meSeller = !!(currentUser && o.seller_id === currentUser.id);
+  const cur = o.currency || 'SB';
+  const price = Number(o.price) || 0;
+  const fee = Number((o.platform_fee != null) ? o.platform_fee : (price * 0.06)) || 0;
+  const counterparty = meSeller ? (buyerName || 'buyer') : (disp.seller || o.seller_username || 'seller');
+  const cpRole = meSeller ? 'Buyer' : 'Seller';
+  const net = (cur === 'USD') ? (price - fee) : price;
+  let html = '';
+  html += '<div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">'
+        +   '<div style="width:56px;height:56px;border-radius:12px;overflow:hidden;background:#111;flex-shrink:0;"><img src="' + (disp.img || '') + '" style="width:100%;height:100%;object-fit:cover;"></div>'
+        +   '<div style="flex:1;min-width:0;">'
+        +     '<div style="color:#fff;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (disp.title || 'Item') + '</div>'
+        +     '<div style="color:rgba(255,255,255,.4);font-size:12px;margin-top:2px;">' + cpRole + ': @' + counterparty + '</div>'
+        +   '</div>'
+        + '</div>';
+  const listedStr = (listed != null) ? fmtMoney(Number(listed), listedCur || cur) : '—';
+  html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:18px;">'
+        +   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+        +     '<span style="color:rgba(255,255,255,.4);font-size:13px;">Listed price</span>'
+        +     '<span style="color:rgba(255,255,255,.7);font-weight:600;font-size:14px;">' + listedStr + '</span>'
+        +   '</div>'
+        +   '<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +     '<span style="color:rgba(255,255,255,.55);font-size:13px;font-weight:700;">' + (meSeller ? 'Sold for' : 'You paid') + '</span>'
+        +     '<span style="color:' + (cur === 'USD' ? '#00C864' : '#FF3B30') + ';font-weight:900;font-size:18px;">' + fmtMoney(price, cur) + '</span>'
+        +   '</div>'
+        +   (meSeller ?
+              ('<div style="border-top:1px solid rgba(255,255,255,.06);margin-top:10px;padding-top:10px;">'
+            +   '<div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;"><span>Platform fee (6%)</span><span>' + (cur === 'USD' ? '−' + fmtMoney(fee, 'USD') : fmtMoney(fee, 'USD') + ' (billed in cash)') + '</span></div>'
+            +   '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#00C864;"><span>Your earnings</span><span>' + fmtMoney(net, cur) + '</span></div>'
+            + '</div>')
+            : '')
+        + '</div>';
+  html += '<div style="color:rgba(255,255,255,.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Negotiation</div>';
+  if (!events || !events.length) {
+    html += '<div style="color:rgba(255,255,255,.35);font-size:13px;padding:2px 0 18px;">Bought at the listed price — no negotiation.</div>';
+  } else {
+    const EV = { offer:['🏷️','Offer','#FFB347'], counter:['🔄','Counter','#4FC3F7'], accept:['✅','Accepted','#00C864'], decline:['❌','Declined','#FF3B30'], withdraw:['🚫','Withdrawn','rgba(255,255,255,.5)'], expire:['⏰','Expired','rgba(255,255,255,.5)'] };
+    html += '<div style="display:flex;flex-direction:column;margin-bottom:18px;">';
+    events.forEach((e, i) => {
+      const cfg = EV[e.event_type] || ['•', e.event_type, 'rgba(255,255,255,.5)'];
+      const who = (e.actor_username ? '@' + e.actor_username : (e.actor_role || '')) + (e.actor_role ? ' (' + e.actor_role + ')' : '');
+      const amtStr = (e.amount != null) ? fmtMoney(Number(e.amount), e.currency || cur) : '';
+      const when = e.created_at ? notifTimeLabel(new Date(e.created_at).getTime()) : '';
+      const last = (i === events.length - 1);
+      html += '<div style="display:flex;gap:10px;">'
+            +   '<div style="display:flex;flex-direction:column;align-items:center;">'
+            +     '<div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">' + cfg[0] + '</div>'
+            +     (last ? '' : '<div style="width:2px;flex:1;background:rgba(255,255,255,.08);min-height:14px;"></div>')
+            +   '</div>'
+            +   '<div style="flex:1;padding-bottom:' + (last ? '0' : '12px') + ';min-width:0;">'
+            +     '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">'
+            +       '<span style="color:' + cfg[2] + ';font-weight:700;font-size:14px;">' + cfg[1] + (amtStr ? ' · ' + amtStr : '') + '</span>'
+            +       '<span style="color:rgba(255,255,255,.3);font-size:11px;white-space:nowrap;">' + when + '</span>'
+            +     '</div>'
+            +     '<div style="color:rgba(255,255,255,.4);font-size:12px;">' + who + '</div>'
+            +   '</div>'
+            + '</div>';
+    });
+    html += '</div>';
+  }
+  html += '<div style="color:rgba(255,255,255,.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Fulfillment</div>';
+  const stages = [['Ordered', o.created_at], ['Shipped', o.shipped_at], ['Delivered', o.delivered_at]];
+  html += '<div style="display:flex;flex-direction:column;">';
+  stages.forEach((st, i) => {
+    const done = !!st[1];
+    const when = st[1] ? notifTimeLabel(new Date(st[1]).getTime()) : 'Pending';
+    const last = (i === stages.length - 1);
+    html += '<div style="display:flex;gap:10px;">'
+          +   '<div style="display:flex;flex-direction:column;align-items:center;">'
+          +     '<div style="width:20px;height:20px;border-radius:50%;background:' + (done ? '#00C864' : 'rgba(255,255,255,.1)') + ';flex-shrink:0;"></div>'
+          +     (last ? '' : '<div style="width:2px;flex:1;background:rgba(255,255,255,.08);min-height:12px;"></div>')
+          +   '</div>'
+          +   '<div style="flex:1;padding-bottom:' + (last ? '0' : '10px') + ';">'
+          +     '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">'
+          +       '<span style="color:' + (done ? '#fff' : 'rgba(255,255,255,.4)') + ';font-weight:600;font-size:13px;">' + st[0] + '</span>'
+          +       '<span style="color:rgba(255,255,255,.3);font-size:11px;">' + when + '</span>'
+          +     '</div>'
+          +   '</div>'
+          + '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
 function showOfferResponse(offerId) {
   const offer = OFFERS.find(o => o.id === offerId);
   if (!offer) return;
@@ -8436,7 +8559,7 @@ function renderOrders(filter) {
     const ss = STATUS_STYLES[o.status] || STATUS_STYLES['Processing'];
     const reviewed = reviewedOrders[o.id];
     return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;">
-      <div style="display:flex;gap:12px;padding:14px;">
+      <div onclick="openTxnDetail('${o.id}')" style="display:flex;gap:12px;padding:14px;cursor:pointer;">
         <div style="width:72px;height:72px;border-radius:12px;overflow:hidden;background:#111;flex-shrink:0;">
           <img src="${I[o.img]||o.img||''}" style="width:100%;height:100%;object-fit:cover;">
         </div>
@@ -8604,7 +8727,7 @@ function msCard(o) {
     +   (disp.img ? '' : '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;">🏷️</div>')
     +   soldBadge
     + '</div>'
-    + '<div style="flex:1;padding:12px 14px;min-width:0;">'
+    + '<div onclick="openTxnDetail(\'' + o.id + '\')" style="flex:1;padding:12px 14px;min-width:0;cursor:pointer;">'
     +   '<div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + title + '</div>'
     +   '<div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:8px;">🕒 ' + msStamp(o) + '</div>'
     +   '<div style="display:flex;align-items:center;gap:6px;">'
