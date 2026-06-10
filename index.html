@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-2</title>
+<title>OneStopSwap v35-3</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-2';
+window._OSS_BUILD = 'v35-3';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -1333,6 +1333,10 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Description</div>
         <textarea id="ae-desc" rows="3" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;"></textarea>
+      </div>
+            <div style="margin-bottom:14px;">
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Size <span style="color:rgba(255,255,255,.3);text-transform:none;letter-spacing:0;font-weight:600;">· editable anytime</span></div>
+        <input id="ae-size" placeholder="e.g. US 11 / M / One size" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;">
       </div>
       <div id="ae-price-fields" style="display:none;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
@@ -9641,6 +9645,7 @@ async function openEditAuction(id) {
   document.getElementById('ae-desc').value = a.description || '';
   const cat = document.getElementById('ae-category'); if (cat) cat.value = a.category || 'Other';
   const cond = document.getElementById('ae-condition'); if (cond) cond.value = a.condition || 'Good';
+  const aesz = document.getElementById('ae-size'); if (aesz) aesz.value = a.size || ''; // v35-3: size editable anytime, even after bids
   const aep = document.getElementById('ae-photo'); if (aep) aep.src = a.img || '';
   // Bid-aware: price/reserve editable only before the first bid (fair to bidders).
   // v32-19: trust the DB bid_count, not the (possibly stale) local copy — a bid placed while the
@@ -9712,7 +9717,8 @@ async function saveAuctionEdits() {
     showToast('📤 Uploading photo...');
     newImgUrl = await uploadToCloudinary(aiPhotoBase64, aiPhotoMime, false);
   }
-  const update = { title, description: desc, category, condition };
+  const aeSize = (document.getElementById('ae-size') ? document.getElementById('ae-size').value.trim() : ''); // v35-3: size editable anytime
+  const update = { title, description: desc, category, condition, size: aeSize || null };
   if (newImgUrl) update.image_url = newImgUrl;
 
   // Price/reserve editable only before the first bid — re-checked against the DB (authoritative),
