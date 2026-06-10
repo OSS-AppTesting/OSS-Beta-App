@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-11</title>
+<title>OneStopSwap v35-13</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-11';
+window._OSS_BUILD = 'v35-13';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -1847,6 +1847,15 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 </div>
 
 <!-- SB CHECKOUT MODAL -->
+<!-- v35-13: referral-applied welcome (centered, OK to dismiss) -->
+<div id="modal-referral-welcome" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:900;padding:24px;">
+  <div style="background:linear-gradient(135deg,#001A0A,#002D14);border:1px solid rgba(0,200,100,.3);border-radius:24px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#00C864,#00A050);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;">🎁</div>
+    <div style="color:#fff;font-weight:900;font-size:20px;margin-bottom:8px;">Referral applied!</div>
+    <div style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.6;margin-bottom:22px;">You and your friend both get <b style="color:#00C864;">25 SwapBucks</b> after your first swap. Welcome to OneStopSwap!</div>
+    <button onclick="document.getElementById('modal-referral-welcome').style.display='none'" style="width:100%;background:linear-gradient(135deg,#00C864,#00A050);border:none;border-radius:16px;padding:15px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">OK, let's go! 🚀</button>
+  </div>
+</div>
 <div id="modal-sb-checkout" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:700;" onclick="if(event.target===this)this.style.display='none'">
   <div style="background:#111;border-radius:28px 28px 0 0;padding:24px 20px 48px;width:100%;animation:slideUp .3s ease;">
     <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px;"></div>
@@ -8052,7 +8061,7 @@ async function captureReferral(explicitCode) {
     if (!code) { try { code = (new URLSearchParams(window.location.search).get('ref') || '').trim(); } catch (e) {} }
     if (!code) return;
     const { data: res } = await sb.rpc('record_referral', { p_referrer_username: code });
-    if (res === 'ok') showToast('🎁 Referral applied — you both get 25 SB after your first swap!');
+    if (res === 'ok') { const _rw = document.getElementById('modal-referral-welcome'); if (_rw) _rw.style.display = 'flex'; else showToast('🎁 Referral applied — you both get 25 SB after your first swap!'); } // v35-13: acknowledge modal
     // clear the stash on any terminal outcome so it can't keep retrying; keep it on no_auth/bad_code (retryable)
     if (res === 'ok' || res === 'already' || res === 'self' || res === 'not_new') { try { localStorage.removeItem('oss_pending_ref'); } catch (e) {} }
   } catch (e) { console.error('captureReferral:', e); }
@@ -8064,7 +8073,7 @@ async function shareReferral() {
   const link = location.origin + location.pathname + '?ref=' + encodeURIComponent(u);
   if (navigator.share) {
     // native share sheet is terminal — don't chain a copy after it (dismiss = no-op), so no raw-URL toast
-    try { await navigator.share({ title: 'OneStopSwap', text: 'Join me on OneStopSwap — we both get 25 SwapBucks after your first swap!', url: link }); }
+    try { await navigator.share({ title: '🎁 @' + u + ' sent you 25 SwapBucks on OneStopSwap', text: 'Join me on OneStopSwap and we both get 25 SwapBucks after your first swap — here\'s my link 👇', url: link }); } // v35-12: catchy personalized subject
     catch (e) { /* user dismissed the share sheet */ }
     return;
   }
