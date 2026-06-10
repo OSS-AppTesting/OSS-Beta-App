@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2aa</title>
+<title>OneStopSwap v34-2ab</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2aa';
+window._OSS_BUILD = 'v34-2ab';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -731,7 +731,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <div class="pav-badge">✓</div>
       </div>
       <input id="avatar-input" type="file" accept="image/*" style="display:none;" onchange="handleAvatarPhoto(this)">
-      <div><div id="prof-name" style="color:#fff;font-weight:800;font-size:20px;">Dino Bravo</div><div id="prof-username" style="color:rgba(255,255,255,.4);font-size:13px;">@dinobravo · Store Open 🟢</div></div>
+      <div><div id="prof-name" style="color:#fff;font-weight:800;font-size:20px;">Dino Bravo</div><div id="prof-username" style="color:rgba(255,255,255,.4);font-size:13px;">@dinobravo · Store Open 🟢</div><div id="prof-tier-badge"></div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 8px;text-align:center;"><div id="profile-listings" style="color:#fff;font-weight:900;font-size:22px;">—</div><div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:2px;">Listings</div></div>
@@ -8368,6 +8368,16 @@ async function refreshProfileStats() {
     try { await loadReviews(); } catch (e) {}
     const sr = SELLER_RATINGS[me] || { avg: 0, count: 0 };
     rEl.textContent = sr.count ? (Number(sr.avg).toFixed(1) + ' ⭐') : 'New';
+  }
+  // v34-2ab: own-profile tier badge (sellers see their own status). SAME source as the public
+  // seller profile — profiles.sales_count ?? review count, with the live avg — so the two agree.
+  const tbEl = document.getElementById('prof-tier-badge');
+  if (tbEl) {
+    const _sr = SELLER_RATINGS[me] || { avg: 0, count: 0 };
+    let _sales = _sr.count || 0;
+    try { const { data: _p } = await sb.from('profiles').select('sales_count').eq('username', me).maybeSingle(); if (_p && _p.sales_count != null) _sales = _p.sales_count; } catch (_) {}
+    const _b = tierBadgeHTML(_sales, _sr.avg);
+    tbEl.innerHTML = _b ? '<div style="margin-top:5px;">' + _b + '</div>' : '';
   }
   if (!uid) return;
   const lEl = document.getElementById('profile-listings');
