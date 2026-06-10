@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2t</title>
+<title>OneStopSwap v34-2u</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2t';
+window._OSS_BUILD = 'v34-2u';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -507,7 +507,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         </button>
         <button onclick="go('notifications')" style="position:relative;background:rgba(255,255,255,.08);border:none;border-radius:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6V11c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="rgba(255,255,255,.8)"/></svg>
-          <div id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;background:#FF3B30;border:2px solid #0A0A0A;display:flex;align-items:center;justify-content:center;">
+          <div id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:9px;background:#FF3B30;border:2px solid #0A0A0A;display:flex;align-items:center;justify-content:center;">
             <span id="notif-count" style="color:#fff;font-size:9px;font-weight:800;">0</span>
           </div>
         </button>
@@ -3612,7 +3612,7 @@ async function updateMessagesBadge() {
       .is('read_at', null);
     if (error) { badge.style.display = 'none'; return; } // column not added yet
     const n = count || 0;
-    if (n > 0) { badge.textContent = n > 9 ? '9+' : String(n); badge.style.display = 'flex'; }
+    if (n > 0) { badge.textContent = String(n); badge.style.display = 'flex'; } // v34-2u: show the real count, no 9+ cap
     else { badge.style.display = 'none'; }
   } catch (e) { badge.style.display = 'none'; }
 }
@@ -4689,7 +4689,7 @@ function updateNotifBadge() {
   const badge = document.getElementById('notif-badge');
   const count = document.getElementById('notif-count');
   if (badge) badge.style.display = unread > 0 ? 'flex' : 'none';
-  if (count) count.textContent = unread > 9 ? '9+' : unread;
+  if (count) count.textContent = String(unread); // v34-2u: real count, no 9+ cap
 }
 
 function markAllRead() {
