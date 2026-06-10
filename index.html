@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2v</title>
+<title>OneStopSwap v34-2w</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2v';
+window._OSS_BUILD = 'v34-2w';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -7420,9 +7420,11 @@ function openCounterOffer(offerId) {
   // v34-1n: counter can switch currency — default the toggle to the current deal currency
   setCounterCurrency(offer.currency);
   document.getElementById('counter-amount').value = '';
+  const _buyerCur = offer.buyerOfferCurrency || offer.currency; // v34-2w: buyer's own offer currency
   document.getElementById('counter-offer-summary').innerHTML = `
-    <div style="display:flex;justify-content:space-between;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;">
-      <div><div style="color:rgba(255,255,255,.4);font-size:12px;">Their counter</div><div style="color:#FFB347;font-weight:800;font-size:18px;">${isUSD?'$'+offer.counterAmount:offer.counterAmount+' SB'}</div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;">
+      <div><div style="color:rgba(255,255,255,.4);font-size:12px;">Your last offer</div><div style="color:${_buyerCur==='USD'?'#00C864':'#FF3B30'};font-weight:800;font-size:16px;">${offer.offerAmount==null?'\u2014':(_buyerCur==='USD'?'$'+offer.offerAmount:offer.offerAmount+' SB')}</div></div>
+      <div style="text-align:center;"><div style="color:rgba(255,255,255,.4);font-size:12px;">Their counter</div><div style="color:#FFB347;font-weight:800;font-size:18px;">${isUSD?'$'+offer.counterAmount:offer.counterAmount+' SB'}</div></div>
       <div style="text-align:right;"><div style="color:rgba(255,255,255,.4);font-size:12px;">Listed price</div><div style="color:#fff;font-weight:700;font-size:15px;">${isUSD?'$'+offer.listedPrice:offer.listedPrice+' SB'}</div></div>
     </div>`;
   document.getElementById('modal-offer-response').style.display = 'none';
