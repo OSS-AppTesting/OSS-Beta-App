@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-7</title>
+<title>OneStopSwap v35-11</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-7';
+window._OSS_BUILD = 'v35-11';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -325,6 +325,12 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From (City, State)</div>
         <input id="signup-location" type="text" placeholder="Nashville, TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      </div>
+
+      <!-- Referral code (optional) — v35-8 -->
+      <div>
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Referral Code <span style="color:rgba(255,255,255,.3);font-weight:600;letter-spacing:0;text-transform:none;">(optional)</span></div>
+        <input id="signup-referral" type="text" placeholder="Friend's username" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
       </div>
 
       <div id="signup-error" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:12px 16px;color:#FF3B30;font-size:13px;font-weight:600;"></div>
@@ -751,6 +757,11 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <div style="color:rgba(255,255,255,.4);font-size:12px;">They join with your link; you both earn after their first swap</div>
       </div>
       <span style="color:#00C864;font-size:20px;">›</span>
+    </div>
+    <!-- v35-10: referral stats (hidden until the user has >=1 referral) -->
+    <div id="referral-stats" style="display:none;align-items:center;gap:10px;background:rgba(0,200,100,.06);border:1px solid rgba(0,200,100,.18);border-radius:16px;padding:12px 16px;margin-bottom:20px;">
+      <span style="font-size:16px;">🎉</span>
+      <span id="referral-stats-text" style="color:rgba(255,255,255,.75);font-size:13px;font-weight:600;flex:1;"></span>
     </div>
     <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;">
       <div onclick="go('my-listings')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🏪</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">My Listings</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
@@ -3475,7 +3486,7 @@ async function handleSignup() {
   if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
   if (data.user) {
     await sb.from('profiles').upsert({ id: data.user.id, username, full_name: name, email, location: location || 'USA', sb_balance: 125, created_at: new Date().toISOString() });
-    try { const _ref = new URLSearchParams(location.search).get('ref'); if (_ref) { const { data: _rr } = await sb.rpc('record_referral', { p_referrer_username: _ref }); if (_rr === 'ok') showToast('🎁 Referral applied — you both get 25 SB after your first swap!'); } } catch (e) { console.error('record_referral:', e); } // v35-5a
+    await captureReferral((document.getElementById('signup-referral') || {}).value); // v35-8: field value, else stashed ?ref / URL (fixes the v35-5a `location` shadow bug)
     await loadUserProfile(data.user);
   } else {
     showScreen('login');
@@ -3566,6 +3577,7 @@ async function completeProfileSetup() {
   // Load the new profile and go to account completion
   const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
   if (profile) { currentProfile = profile; SB = _num(profile.sb_balance) || 125; updateAllSBDisplays(); }
+  await captureReferral(); // v35-8: apply a stashed ?ref (OAuth / email-confirm path — no signup field here)
   awardSB('signup', 'signup'); // v34-2ai: welcome bonus (one-time)
   document.getElementById('s-profile-setup').style.display = 'none';
   showAccountCompletion();
@@ -3583,7 +3595,7 @@ async function completeLogin() {
   const el_u = document.getElementById('prof-username');
   if (el_i) el_i.textContent = uname.substring(0,2).toUpperCase();
   if (el_n) el_n.textContent = fname;
-  if (el_u) el_u.textContent = '@' + uname + ' · Store Open 🟢';
+  if (el_u) el_u.textContent = '@' + uname + ((OSS_PREFS && OSS_PREFS.priv_status === 0) ? '' : ' · Store Open 🟢'); // v35-9: privacy toggle
   if (currentProfile) cacheAvatar(currentProfile.username, currentProfile.avatar_url);
   updateProfileAvatar();
   const firstName = fname.split(' ')[0] || uname;
@@ -4689,8 +4701,9 @@ function renderNotifications(filter) {
   const el = document.getElementById('notif-list');
   if (!el) return;
 
-  const list = filter === 'all' ? NOTIFICATIONS : NOTIFICATIONS.filter(n => n.type === filter);
-  const unread = NOTIFICATIONS.filter(n => !n.read).length;
+  const _base = NOTIFICATIONS.filter(n => notifAllowedByPref(n.type)); // v35-9: respect Settings notif toggles
+  const list = filter === 'all' ? _base : _base.filter(n => n.type === filter);
+  const unread = _base.filter(n => !n.read).length;
 
   // Update badge
   updateNotifBadge();
@@ -4744,11 +4757,29 @@ function tapNotification(id) {
 }
 
 function updateNotifBadge() {
-  const unread = NOTIFICATIONS.filter(n => !n.read).length;
+  const unread = NOTIFICATIONS.filter(n => !n.read && notifAllowedByPref(n.type)).length; // v35-9: muted types don't count
   const badge = document.getElementById('notif-badge');
   const count = document.getElementById('notif-count');
   if (badge) badge.style.display = unread > 0 ? 'flex' : 'none';
   if (count) count.textContent = String(unread); // v34-2u: real count, no 9+ cap
+}
+
+// v35-9: gate the bell by the user's Settings notif toggles (device-local prefs). Engagement/system
+// types with no toggle always show. Map: offer->offers, order->orders, wallet/reward->rewards,
+// auction->price-drops, broadcast->promos.
+function notifAllowedByPref(type) {
+  try {
+    const p = (typeof OSS_PREFS !== 'undefined' && OSS_PREFS) ? OSS_PREFS : {};
+    switch (type) {
+      case 'offer':     return p.notif_offers !== 0;
+      case 'order':     return p.notif_orders !== 0;
+      case 'wallet':
+      case 'reward':    return p.notif_rewards !== 0;
+      case 'auction':   return p.notif_drops  !== 0;
+      case 'broadcast': return p.notif_promos !== 0;
+      default:          return true;
+    }
+  } catch (e) { return true; }
 }
 
 function markAllRead() {
@@ -6420,11 +6451,9 @@ async function submitReview() {
     }
     showToast('⭐ Review saved! Thanks for your feedback.');
     awardSB('review', currentReviewOrderId || sellerName); // v34-2ai: +5 SB, one per order
-    // v34-1ar: review notification REMOVED (Dean's call) — a "you got a review" ping is the one
-    // non-actionable notification, so it belongs with engagement notifs (reviews/likes/follows) in the
-    // SwapBucks-flywheel / discovery-&-social pillar, not the transaction core. Wiring it up there will
-    // also need the `notifications.type` CHECK relaxed to allow 'review' (it currently rejects it — the
-    // reason this never fired). The review itself still saves + shows on the seller profile / My Reviews.
+    // v35-11: you-got-a-review notification (re-added — the v35-1a constraint relaxation now lets type='review' insert).
+    // Best-effort + cross-user (notifyUser refuses self); fail-soft if OSS_v35-1a_reward_notifs.sql isn't run yet.
+    notifyUsername(sellerName, { type:'review', icon:'⭐', title:'New review! ⭐', body:'@' + reviewer + ' left you a ' + selectedStars + '★ review on "' + itemName + '".', actionLabel:'View', actionTarget:'my-reviews' });
     await loadReviews();
     await loadSellerRating(sellerName);
     const drEl = document.getElementById('detail-seller-rating');
@@ -8015,6 +8044,19 @@ async function checkSaleReward() {
   const ok = (MY_SALES_ROWS || []).some(o => ['Paid','Shipped','Delivered','Completed'].includes(o.status) && o.created_at && new Date(o.created_at).getTime() >= wk);
   if (ok) await awardSB('sale', _weekKey());
 }
+// v35-8: resolve a referral code from (in order) an explicit field value, a stashed ?ref, or the live URL; record it once.
+async function captureReferral(explicitCode) {
+  try {
+    let code = (explicitCode || '').trim();
+    if (!code) { try { code = (localStorage.getItem('oss_pending_ref') || '').trim(); } catch (e) {} }
+    if (!code) { try { code = (new URLSearchParams(window.location.search).get('ref') || '').trim(); } catch (e) {} }
+    if (!code) return;
+    const { data: res } = await sb.rpc('record_referral', { p_referrer_username: code });
+    if (res === 'ok') showToast('🎁 Referral applied — you both get 25 SB after your first swap!');
+    // clear the stash on any terminal outcome so it can't keep retrying; keep it on no_auth/bad_code (retryable)
+    if (res === 'ok' || res === 'already' || res === 'self' || res === 'not_new') { try { localStorage.removeItem('oss_pending_ref'); } catch (e) {} }
+  } catch (e) { console.error('captureReferral:', e); }
+}
 async function shareReferral() {
   const u = (currentProfile && currentProfile.username) ? currentProfile.username
             : ((currentUser && currentUser.user_metadata && currentUser.user_metadata.username) || '');
@@ -8029,6 +8071,20 @@ async function shareReferral() {
   try { await navigator.clipboard.writeText(link); showToast('🎁 Invite link copied — share it to earn 25 SB!'); }
   catch (e) { showToast('🎁 Couldn\'t copy automatically — try again'); }
 }
+// v35-10: Profile referral-stats row — reads the referrals table (RLS: referrer can read own rows).
+async function loadReferralStats() {
+  const box = document.getElementById('referral-stats');
+  if (!box || !currentUser) return;
+  try {
+    const { data, error } = await sb.from('referrals').select('status,reward_sb').eq('referrer_id', currentUser.id);
+    if (error || !data || !data.length) { box.style.display = 'none'; return; }
+    const joined = data.length;
+    const earned = data.filter(r => r.status === 'credited').reduce((t, r) => t + (Number(r.reward_sb) || 0), 0);
+    const txt = document.getElementById('referral-stats-text');
+    if (txt) txt.innerHTML = '<b style=\"color:#00C864;\">' + joined + '</b> ' + (joined === 1 ? 'friend' : 'friends') + ' joined · <b style=\"color:#00C864;\">' + earned + ' SB</b> earned';
+    box.style.display = 'flex';
+  } catch (e) { box.style.display = 'none'; }
+}
 const OSS_PREFS_DEFAULTS = { notif_offers:1, notif_orders:1, notif_rewards:1, notif_drops:1, notif_promos:0, priv_sales:1, priv_status:1 };
 function loadPrefs() { try { return Object.assign({}, OSS_PREFS_DEFAULTS, JSON.parse(localStorage.getItem('oss_prefs') || '{}')); } catch (e) { return Object.assign({}, OSS_PREFS_DEFAULTS); } }
 let OSS_PREFS = loadPrefs();
@@ -8038,7 +8094,20 @@ function _setToggleVisual(el, on) {
   el.style.background = on ? '#00C864' : 'rgba(255,255,255,.15)';
   const knob = el.querySelector('span'); if (knob) knob.style.left = on ? '21px' : '3px';
 }
-function togglePref(el, key) { OSS_PREFS[key] = OSS_PREFS[key] ? 0 : 1; savePrefs(); _setToggleVisual(el, !!OSS_PREFS[key]); }
+// v35-9: re-apply privacy toggles to the current own-profile UI.
+function applyPrivacyPrefs() {
+  try {
+    const uname = (currentProfile && currentProfile.username) || (currentUser && currentUser.email && currentUser.email.split('@')[0]) || 'user';
+    const u = document.getElementById('prof-username');
+    if (u) u.textContent = '@' + uname + ((OSS_PREFS && OSS_PREFS.priv_status === 0) ? '' : ' · Store Open 🟢');
+    if (typeof refreshProfileStats === 'function' && currentUser) refreshProfileStats();
+  } catch (e) {}
+}
+function togglePref(el, key) {
+  OSS_PREFS[key] = OSS_PREFS[key] ? 0 : 1; savePrefs(); _setToggleVisual(el, !!OSS_PREFS[key]);
+  if (key.indexOf('notif_') === 0) { updateNotifBadge(); var _ns = document.getElementById('s-notifications'); if (_ns && _ns.classList.contains('active')) renderNotifications('all'); } // v35-9: live
+  if (key.indexOf('priv_') === 0) { applyPrivacyPrefs(); } // v35-9: live
+}
 function loadAppSettingsUI() {
   OSS_PREFS = loadPrefs();
   document.querySelectorAll('#s-app-settings [data-pref]').forEach(function (el) { _setToggleVisual(el, !!OSS_PREFS[el.getAttribute('data-pref')]); });
@@ -8611,7 +8680,8 @@ async function refreshProfileStats() {
     } catch (e) {}
   }
   const sEl = document.getElementById('profile-sold');
-  if (sEl) {
+  if (sEl && OSS_PREFS && OSS_PREFS.priv_sales === 0) { sEl.textContent = '—'; } // v35-9: privacy toggle hides the sold count
+  else if (sEl) {
     try {
       const sc = await sb.from('orders').select('id', { count: 'exact', head: true }).eq('seller_id', uid).not('status', 'in', '(Cancelled,Refunded)');
       sEl.textContent = String(sc.count || 0);
@@ -10560,7 +10630,7 @@ function go(name) {
   if (name === 'my-listings') { MY_LISTINGS_QUERY = ''; const mli = document.getElementById('ml-search'); if (mli) mli.value = ''; const mlc = document.getElementById('ml-search-clear'); if (mlc) mlc.style.display = 'none'; setMyListingsView('active'); } // v31-38: land on Active; v33-8: reset in-account search
   if (name === 'sb-wallet') renderWallet();
   if (name === 'my-reviews') loadReviews().then(() => renderReviews()).catch(() => renderReviews());
-  if (name === 'profile') refreshProfileStats();
+  if (name === 'profile') { refreshProfileStats(); loadReferralStats(); } // v35-10
   if (name === 'acct-settings') loadProfileSettings();
   if (name === 'support') renderFaq();
   if (name === 'new-listing') {
@@ -10605,6 +10675,8 @@ function doSrch(q) {
 // ── SPLASH ────────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
   PRODS.length = 0; PRODS.push(...DEMO_PRODS);
+  // v35-8: stash an incoming ?ref so an email-confirm round-trip can't lose it; auto-fill the signup field.
+  try { const _ref0 = (new URLSearchParams(window.location.search).get('ref') || '').trim(); if (_ref0) { try { localStorage.setItem('oss_pending_ref', _ref0); } catch (e) {} const _rf = document.getElementById('signup-referral'); if (_rf) _rf.value = _ref0; } } catch (e) {}
   renderAll();
   startAuctionTimers();
   updateNotifBadge();
