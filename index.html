@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-5a</title>
+<title>OneStopSwap v35-6</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-5a';
+window._OSS_BUILD = 'v35-6';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -757,7 +757,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <div onclick="go('my-sales')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🧾</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">My Sales</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
       <div onclick="go('my-orders')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">My Orders</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
       <div onclick="go('my-offers')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🏷️</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">My Offers</span><span id="offers-badge" style="display:none;background:#FF3B30;border-radius:10px;padding:2px 8px;color:#fff;font-size:11px;font-weight:800;margin-right:8px;"></span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
-      <div onclick="go('acct-settings')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">⚙️</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Account Settings</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
+      <div onclick="go('acct-settings')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Edit Profile</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div><div onclick="go('app-settings');loadAppSettingsUI()" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">⚙️</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Settings</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
       <div onclick="go('sb-wallet')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">💰</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">SwapBucks Wallet</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
       <div onclick="go('my-reviews')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">⭐</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">My Reviews</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
       <div onclick="go('support')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🎧</div><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Support</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
@@ -1635,6 +1635,34 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
 
     </div>
   </div>
+  </div>
+</div>
+
+<div id="s-app-settings" class="screen">
+  <div style="padding:52px 20px 40px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+      <button onclick="go('profile')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+      <h2 style="color:#fff;font-weight:900;font-size:24px;flex:1;">Settings</h2>
+    </div>
+    <div style="color:rgba(255,255,255,.3);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Notifications</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;margin-bottom:22px;">
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.05);"><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Offers &amp; messages</span><div data-pref="notif_offers" onclick="togglePref(this,'notif_offers')" style="width:46px;height:28px;border-radius:14px;background:#00C864;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;"><span style="position:absolute;top:3px;left:21px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);"></span></div></div>
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.05);"><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Order &amp; shipping updates</span><div data-pref="notif_orders" onclick="togglePref(this,'notif_orders')" style="width:46px;height:28px;border-radius:14px;background:#00C864;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;"><span style="position:absolute;top:3px;left:21px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);"></span></div></div>
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.05);"><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">SwapBucks &amp; rewards</span><div data-pref="notif_rewards" onclick="togglePref(this,'notif_rewards')" style="width:46px;height:28px;border-radius:14px;background:#00C864;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;"><span style="position:absolute;top:3px;left:21px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);"></span></div></div>
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.05);"><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Price drops on saved items</span><div data-pref="notif_drops" onclick="togglePref(this,'notif_drops')" style="width:46px;height:28px;border-radius:14px;background:#00C864;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;"><span style="position:absolute;top:3px;left:21px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);"></span></div></div>
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.05);"><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Promotions &amp; news</span><div data-pref="notif_promos" onclick="togglePref(this,'notif_promos')" style="width:46px;height:28px;border-radius:14px;background:#00C864;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;"><span style="position:absolute;top:3px;left:21px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);"></span></div></div>
+    </div>
+    <div style="color:rgba(255,255,255,.3);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Privacy</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;margin-bottom:22px;">
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.05);"><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Show sold count on my profile</span><div data-pref="priv_sales" onclick="togglePref(this,'priv_sales')" style="width:46px;height:28px;border-radius:14px;background:#00C864;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;"><span style="position:absolute;top:3px;left:21px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);"></span></div></div>
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.05);"><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Show “Store Open” status</span><div data-pref="priv_status" onclick="togglePref(this,'priv_status')" style="width:46px;height:28px;border-radius:14px;background:#00C864;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;"><span style="position:absolute;top:3px;left:21px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);"></span></div></div>
+    </div>
+    <div style="color:rgba(255,255,255,.3);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">About</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;overflow:hidden;margin-bottom:22px;">
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.05);"><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">App version</span><span id="app-settings-version" style="color:rgba(255,255,255,.4);font-weight:700;font-size:14px;">—</span></div>
+      <div onclick="showToast('Terms of Service — coming soon')" style="display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Terms of Service</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
+      <div onclick="showToast('Privacy Policy — coming soon')" style="display:flex;align-items:center;gap:14px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;"><span style="color:#fff;font-weight:600;font-size:15px;flex:1;">Privacy Policy</span><span style="color:rgba(255,255,255,.2);font-size:20px;">›</span></div>
+    </div>
   </div>
 </div>
 
@@ -7997,6 +8025,21 @@ async function shareReferral() {
   } catch (e) { /* share cancelled — fall through to copy */ }
   try { await navigator.clipboard.writeText(link); showToast('🎁 Invite link copied — share it to earn 25 SB!'); }
   catch (e) { showToast(link); }
+}
+const OSS_PREFS_DEFAULTS = { notif_offers:1, notif_orders:1, notif_rewards:1, notif_drops:1, notif_promos:0, priv_sales:1, priv_status:1 };
+function loadPrefs() { try { return Object.assign({}, OSS_PREFS_DEFAULTS, JSON.parse(localStorage.getItem('oss_prefs') || '{}')); } catch (e) { return Object.assign({}, OSS_PREFS_DEFAULTS); } }
+let OSS_PREFS = loadPrefs();
+function savePrefs() { try { localStorage.setItem('oss_prefs', JSON.stringify(OSS_PREFS)); } catch (e) {} }
+function _setToggleVisual(el, on) {
+  el.dataset.on = on ? '1' : '0';
+  el.style.background = on ? '#00C864' : 'rgba(255,255,255,.15)';
+  const knob = el.querySelector('span'); if (knob) knob.style.left = on ? '21px' : '3px';
+}
+function togglePref(el, key) { OSS_PREFS[key] = OSS_PREFS[key] ? 0 : 1; savePrefs(); _setToggleVisual(el, !!OSS_PREFS[key]); }
+function loadAppSettingsUI() {
+  OSS_PREFS = loadPrefs();
+  document.querySelectorAll('#s-app-settings [data-pref]').forEach(function (el) { _setToggleVisual(el, !!OSS_PREFS[el.getAttribute('data-pref')]); });
+  const v = document.getElementById('app-settings-version'); if (v) v.textContent = (window._OSS_BUILD || '');
 }
 function refreshWalletStats() {
   const earned = TXN_LOG.filter(t=>t.type==='earned').reduce((s,t)=>s+Math.abs(t.amt),0);
