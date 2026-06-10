@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v34-2z</title>
+<title>OneStopSwap v34-2aa</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v34-2z';
+window._OSS_BUILD = 'v34-2aa';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -6101,7 +6101,8 @@ function tierBadgeHTML(count, avg, opts) {
 
 function renderSellerProfile(seller) {
   const rating = getSellerRating(seller);
-  const _tierB = tierBadgeHTML(rating.count, rating.avg); // v34-2z
+  const _salesNum = (rating.sales != null) ? rating.sales : rating.count; // v34-2aa: real sales, falls back to review count
+  const _tierB = tierBadgeHTML(_salesNum, rating.avg); // v34-2z/2aa
   const bio = SELLER_BIOS[seller] || { bio: 'OneStopSwap seller', location: 'USA', joined: '2023' };
   const initials = seller.substring(0,2).toUpperCase();
   const color = '#' + [...seller].reduce((h,c) => ((h<<5)-h+c.charCodeAt(0))|0, 0).toString(16).slice(-6).padStart(6,'0');
@@ -6146,7 +6147,7 @@ function renderSellerProfile(seller) {
             <div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Listings</div>
           </div>
           <div style="text-align:center;background:rgba(255,255,255,.04);border-radius:12px;padding:10px 6px;">
-            <div style="color:#FF3B30;font-weight:900;font-size:18px;">${rating.count}</div>
+            <div style="color:#FF3B30;font-weight:900;font-size:18px;">${_salesNum}</div>
             <div style="color:rgba(255,255,255,.4);font-size:10px;margin-top:2px;">Sales</div>
           </div>
           <div style="text-align:center;background:rgba(255,255,255,.04);border-radius:12px;padding:10px 6px;">
@@ -6405,7 +6406,9 @@ async function loadSellerRating(seller) {
       text: r.review_text || '',
       date: r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recently'
     }));
-    SELLER_RATINGS[seller] = { avg, count: totalCount, reviews };
+    let salesCount = null; // v34-2aa: real sales metric, decoupled from review count
+    try { const { data: prof } = await sb.from('profiles').select('sales_count').eq('username', seller).maybeSingle(); if (prof && prof.sales_count != null) salesCount = prof.sales_count; } catch (_) {}
+    SELLER_RATINGS[seller] = { avg, count: totalCount, reviews, sales: salesCount };
     primeAvatars(reviews.map(rv => rv.name));
     return SELLER_RATINGS[seller];
   } catch (e) {
