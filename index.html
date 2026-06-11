@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-33</title>
+<title>OneStopSwap v35-34</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-33';
+window._OSS_BUILD = 'v35-34';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -8151,7 +8151,7 @@ async function captureReferral(explicitCode) {
     if (!code) return;
     const { data: res, error: rpcErr } = await sb.rpc('record_referral', { p_referrer_username: code });
     if (rpcErr) { console.error('record_referral rpc error:', rpcErr); showToast('⚠️ Referral didn\'t record — is OSS_v35-5_referral.sql run? (' + (rpcErr.message || rpcErr.code || 'RPC failed') + ')'); return; } // v35-19: surface a missing-function / RLS error instead of silently no-opping
-    if (res === 'ok') { try { localStorage.setItem('oss_was_referred', '1'); } catch (e) {} const _rw = document.getElementById('modal-referral-welcome'); if (_rw) _rw.style.display = 'flex'; else showToast('🎁 Referral applied — you both get 25 SB after your first swap!'); } // v35-13: acknowledge modal · v35-31: flag referred (gates the green first-purchase popup)
+    if (res === 'ok') { try { localStorage.setItem('oss_was_referred', '1'); } catch (e) {} } // v35-34: flag referred → the GREEN first-purchase tip shows at onboarding (showOnboardingTips). NO 'Referral applied!' modal at signup; the bonus celebration (modal-reward-arrived) fires AFTER the first sale completes.
     else if (res === 'bad_code') { showToast('⚠️ Referral code “' + code + '” not found — enter the referrer\'s username'); } // v35-18: surface silent failures
     else if (res === 'self')     { showToast('⚠️ You can\'t use your own referral code'); }
     else if (res === 'already')  { try { localStorage.setItem('oss_was_referred', '1'); } catch (e) {} showToast('You\'ve already used a referral code'); } // v35-31: also flag referred
