@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-29</title>
+<title>OneStopSwap v35-30</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-29';
+window._OSS_BUILD = 'v35-30';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -1882,6 +1882,15 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
   </div>
 </div>
 <!-- v35-15: list-5-items earn tip (centered, shown after the referral welcome) -->
+<!-- v35-30: first-purchase reward tip (GREEN). Shown to every new user, BEFORE the red list-5 tip. -->
+<div id="modal-firstbuy-tip" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:901;padding:24px;">
+  <div style="background:linear-gradient(135deg,#001A0A,#002D14);border:1px solid rgba(0,200,100,.3);border-radius:24px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#00C864,#00A050);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;">🎁</div>
+    <div style="color:#fff;font-weight:900;font-size:20px;margin-bottom:8px;">Your first purchase pays off</div>
+    <div style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.6;margin-bottom:22px;">Make your first purchase and earn a <b style="color:#00C864;">25 SwapBucks</b> welcome bonus — straight to your wallet 🎉</div>
+    <button onclick="document.getElementById('modal-firstbuy-tip').style.display='none';document.getElementById('modal-earn-tip').style.display='flex';" style="width:100%;background:linear-gradient(135deg,#00C864,#00A050);border:none;border-radius:16px;padding:15px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">Got it! 🚀</button>
+  </div>
+</div>
 <div id="modal-earn-tip" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:900;padding:24px;">
   <div style="background:linear-gradient(135deg,#1A0000,#2D0000);border:1px solid rgba(255,59,48,.3);border-radius:24px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
     <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;">📦</div>
@@ -3545,6 +3554,7 @@ async function handleSignup() {
   if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
   if (data.user) {
     await sb.from('profiles').upsert({ id: data.user.id, username, full_name: name, email, location: location || 'USA', sb_balance: 0, created_at: new Date().toISOString() });
+    try { localStorage.setItem('oss_show_onboarding', '1'); } catch (e) {} // v35-30: arm the new-user onboarding popups (durable across the email-confirm reload)
     await captureReferral((document.getElementById('signup-referral') || {}).value); // v35-8: field value, else stashed ?ref / URL (fixes the v35-5a `location` shadow bug)
     await loadUserProfile(data.user);
   } else {
@@ -3637,6 +3647,7 @@ async function completeProfileSetup() {
   const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
   if (profile) { currentProfile = profile; SB = _num(profile.sb_balance) || 0; updateAllSBDisplays(); }
   await captureReferral(); // v35-8: apply a stashed ?ref (OAuth / email-confirm path — no signup field here)
+  try { localStorage.setItem('oss_show_onboarding', '1'); } catch (e) {} // v35-30: arm the new-user onboarding popups
   // v35-28: NO signup bonus. The welcome SB is paid on the user's FIRST completed sale by the
   //         server-side referral trigger (_referral_on_order_complete → referee 'Welcome bonus 🎉',
   //         referrer 'Referral bonus 🎉'). Do NOT re-add awardSB('signup') — that was the v35-25 bug.
@@ -3644,6 +3655,13 @@ async function completeProfileSetup() {
   showAccountCompletion();
 }
 
+// v35-30: show BOTH onboarding tips to every new user — green first-purchase reward, then (Got it) the red list-5 reward.
+function showOnboardingTips() {
+  const g = document.getElementById('modal-firstbuy-tip');
+  const r = document.getElementById('modal-earn-tip');
+  if (g) { g.style.display = 'flex'; }       // green button chains to the red one
+  else if (r) { r.style.display = 'flex'; }   // fallback if green is somehow missing
+}
 async function completeLogin() {
   document.getElementById('s-onboarding').style.display = 'none';
   document.getElementById('s-login').style.display = 'none';
@@ -3663,10 +3681,13 @@ async function completeLogin() {
   // Check if new user — profile created in last 60 seconds
   const isNewUser = currentProfile?.created_at &&
     (Date.now() - new Date(currentProfile.created_at).getTime()) < 60000;
-  if (isNewUser) {
+  // v35-30: onboarding popups fire off a DURABLE signup flag (set in handleSignup/completeProfileSetup),
+  // NOT the fragile 60s created_at window — survives the email-confirm reload + slow card entry. isNewUser kept as a fallback.
+  let _justSignedUp = false; try { _justSignedUp = localStorage.getItem('oss_show_onboarding') === '1'; } catch (e) {}
+  if (isNewUser || _justSignedUp) {
     showToast('🎉 Welcome to OneStopSwap, ' + firstName + '!');
-    // v35-28: NO signup bonus (removed the v35-25 award). Bonus pays on first completed sale via the referral trigger.
-    const _et = document.getElementById('modal-earn-tip'); if (_et) _et.style.display = 'flex'; // v35-27: earn-tip for ALL new users (not just referred)
+    showOnboardingTips(); // GREEN first-purchase tip → (Got it) → RED list-5 tip. NO signup bonus is paid (referral trigger pays on first sale).
+    try { localStorage.removeItem('oss_show_onboarding'); } catch (e) {}
   } else {
     showToast('Welcome back, ' + firstName + '! 👋');
   }
