@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-32</title>
+<title>OneStopSwap v35-33</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-32';
+window._OSS_BUILD = 'v35-33';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3557,7 +3557,9 @@ async function handleSignup() {
   if (data.user) {
     await sb.from('profiles').upsert({ id: data.user.id, username, full_name: name, email, location: location || 'USA', zip: _zip || null, sb_balance: 0, created_at: new Date().toISOString() });
     try { localStorage.setItem('oss_show_onboarding', '1'); } catch (e) {} // v35-30: arm the new-user onboarding popups (durable across the email-confirm reload)
-    await captureReferral((document.getElementById('signup-referral') || {}).value); // v35-8: field value, else stashed ?ref / URL (fixes the v35-5a `location` shadow bug)
+    const _refVal = ((document.getElementById('signup-referral') || {}).value || '').trim(); // v35-33
+    if (_refVal) { await captureReferral(_refVal); } // v35-8: explicit field value only on this path
+    else { try { localStorage.removeItem('oss_pending_ref'); localStorage.removeItem('oss_was_referred'); } catch (e) {} } // v35-33: EMPTY field = NO referral. Don't apply a stale ?ref/stash; clear stale referral state so the green + 'Referral applied' modals can't falsely fire.
     await loadUserProfile(data.user);
   } else {
     showScreen('login');
