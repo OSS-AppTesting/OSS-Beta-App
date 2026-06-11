@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v36-2</title>
+<title>OneStopSwap v36-3</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v36-2';
+window._OSS_BUILD = 'v36-3';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -6622,7 +6622,10 @@ async function loadSellerRating(seller) {
 // loadSellerRating, caches them, then repaints. Idempotent: only queries usernames not already cached,
 // so the repaint can't loop (second pass finds them cached -> no query -> no repaint).
 async function primeRatingsFor(usernames, repaint) {
-  const need = [...new Set((usernames || []).filter(u => u && u !== 'user' && !(u in SELLER_RATINGS)))];
+  // v36-3: also (re)prime any cached seller that's missing `sales` and isn't a seeded demo seller.
+  // A no-sales entry (e.g. one created by loadMyReviews / a just-submitted review) otherwise shadows
+  // the real sales_count load forever, making tierBadgeFor fall back to review count (wrong tier).
+  const need = [...new Set((usernames || []).filter(u => u && u !== 'user' && (!(u in SELLER_RATINGS) || (SELLER_RATINGS[u].sales == null && !(u in SELLER_RATINGS_SEED)))))];
   if (!need.length) return;
   try {
     const [{ data: revs }, { data: profs }] = await Promise.all([
