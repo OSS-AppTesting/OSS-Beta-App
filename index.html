@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-31</title>
+<title>OneStopSwap v35-32</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-31';
+window._OSS_BUILD = 'v35-32';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -333,9 +333,10 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
       <!-- Location — v35-23: city + state dropdown -->
       <div>
         <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From</div>
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
-          <input id="signup-city" type="text" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="signup-city" type="text" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
           <select id="signup-state" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;"></select>
+          <input id="signup-zip" type="text" inputmode="numeric" placeholder="ZIP" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
         </div>
       </div>
 
@@ -3538,6 +3539,7 @@ async function handleSignup() {
   const password = document.getElementById('signup-password').value;
   const _city = ((document.getElementById('signup-city') || {}).value || '').trim();
   const _st = (document.getElementById('signup-state') || {}).value || '';
+  const _zip = ((document.getElementById('signup-zip') || {}).value || '').trim(); // v35-32
   const location = [_city, _st].filter(Boolean).join(', '); // v35-23
   const errEl = document.getElementById('signup-error');
   if (!name || !username || !email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
@@ -3553,7 +3555,7 @@ async function handleSignup() {
   if (btn) { btn.textContent = 'Create Account 🚀'; btn.disabled = false; }
   if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
   if (data.user) {
-    await sb.from('profiles').upsert({ id: data.user.id, username, full_name: name, email, location: location || 'USA', sb_balance: 0, created_at: new Date().toISOString() });
+    await sb.from('profiles').upsert({ id: data.user.id, username, full_name: name, email, location: location || 'USA', zip: _zip || null, sb_balance: 0, created_at: new Date().toISOString() });
     try { localStorage.setItem('oss_show_onboarding', '1'); } catch (e) {} // v35-30: arm the new-user onboarding popups (durable across the email-confirm reload)
     await captureReferral((document.getElementById('signup-referral') || {}).value); // v35-8: field value, else stashed ?ref / URL (fixes the v35-5a `location` shadow bug)
     await loadUserProfile(data.user);
