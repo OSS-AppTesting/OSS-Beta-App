@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-34</title>
+<title>OneStopSwap v35-35</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-34';
+window._OSS_BUILD = 'v35-35';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -2335,9 +2335,8 @@ function toggleLike(id) {
   if (b) { b.className='lbtn'+(liked[id]?' on':''); b.textContent=liked[id]?'❤️':'🤍'; }
 }
 
-function buySB(amt) {
-  SB += amt;
-  updateAllSBDisplays();
+async function buySB(amt) {
+  await applyBalanceDelta(amt);
   addTransaction('earned', '💳', 'Added ' + amt + ' SwapBucks', 'Visa ···6411', amt);
   document.getElementById('modal-sb').style.display='none';
   showToast('✓ ' + amt + ' SB added to your wallet!');
@@ -2409,8 +2408,7 @@ async function confirmSBCheckout() {
   const { data: order, error } = await ossRpc('create_order_buy_now', { p_listing_id: p.id }, 'create_order_buy_now');
   if (error) return;
   const fee = Math.round(p.price * 0.06);
-  SB -= p.price;
-  updateAllSBDisplays();
+  await applyBalanceDelta(-p.price);
   addTransaction('spent', '🛍️', 'Purchased: ' + p.title, '@' + p.seller, -p.price);
   if (order && order.id) {
     ORDERS.unshift({ id: order.id, item: p.title, img: p.img, price: _num(order.price), currency: order.currency || 'SB', seller: p.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
@@ -2919,7 +2917,7 @@ async function doBuyItNow(auctionId) {
     order = res.data;
   }
   const fee = Math.round(price * 0.06);
-  if (!isUSD) { SB -= price; updateAllSBDisplays(); } // mirror the server-side SB debit locally (the RPC is the source of truth)
+  if (!isUSD) { refreshBalanceFromDb(); } // v35-35: buy_it_now already debited server-side — re-read the authoritative balance (the profiles subscription also reflects it live)
   addTransaction('spent', '⚡', 'Bought Now: ' + a.title, '@' + a.seller + (isUSD ? ' · USD' : ''), -price);
   if (order && order.id) {
     ORDERS.unshift({ id: order.id, item: a.title, img: a.img, price: _num(order.price), currency: order.currency || (isUSD ? 'USD' : 'SB'), seller: a.seller, status: 'Paid', date: 'Today', tracking: null, carrier: 'USPS', listingId: order.listing_id, timeline: buildTimeline(order) });
@@ -3736,6 +3734,7 @@ function _scheduleOrdersCatchup() {
 }
 async function _refreshOrdersLive() {
   try { await loadOrders(); } catch (e) { txlog('err', 'ordersCatchup', e.message || String(e)); }
+  refreshBalanceFromDb(); // v35-35: reconnect backstop — a payout/bonus that landed during a socket drop is caught up here
   if (document.getElementById('s-my-orders')?.classList.contains('active')) renderOrders(window._ordersFilter || 'all');
   // My Listings (seller dashboard) re-fetches its own orders on render — re-render if open.
   if (document.getElementById('s-my-listings')?.classList.contains('active')) renderMyListings();
@@ -3903,6 +3902,17 @@ async function setupRealtimeSubscriptions(myUsername) {
     }, (payload) => { _refreshOrdersLive(); if (payload && payload.new && payload.new.status === 'Completed') refreshBalanceFromDb(); }) // v35-20: live seller-balance refresh when a sale completes (payout landed)
     .subscribe((status) => { if (status === 'SUBSCRIBED') _scheduleOrdersCatchup(); });
   _realtimeChannels.push(orderSellerCh);
+
+  // v35-35: DIRECT live wire for the balance. ANY change to my sb_balance from ANY source — sale payout,
+  // a referral/welcome bonus earned while idle, an SB transfer in, my own purchase — streams here instantly
+  // and updates the number on screen with no refresh. This is the real-time guarantee for the balance.
+  const balanceCh = sb.channel('profile-balance-' + currentUser.id)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${currentUser.id}` }, (payload) => {
+      const nb = _num(payload && payload.new && payload.new.sb_balance);
+      if (nb != null && !isNaN(nb)) { SB = nb; if (currentProfile) currentProfile.sb_balance = nb; updateAllSBDisplays(); refreshWalletStats(); if (typeof refreshTransactionsLive === 'function') refreshTransactionsLive(); }
+    })
+    .subscribe();
+  _realtimeChannels.push(balanceCh);
 
   // Realtime: listings refresh (new items from anyone)
   const listingCh = sb.channel('listings-feed')
@@ -4130,7 +4140,7 @@ async function completeOrderPayment(orderId, currency, amount) {
   if (error) return false; // red toast already surfaced (e.g. "not awaiting payment")
   const lo = ORDERS.find(x => x.id === orderId);
   const itemLabel = (lo && lo.item) ? lo.item : 'order';
-  if (currency === 'SB') { SB -= amount; updateAllSBDisplays(); addTransaction('spent', '🏷️', 'Paid: ' + itemLabel, '', -amount); }
+  if (currency === 'SB') { await applyBalanceDelta(-amount); addTransaction('spent', '🏷️', 'Paid: ' + itemLabel, '', -amount); }
   else { addTransaction('spent', '💳', 'Paid: ' + itemLabel, '', -amount); }
   if (lo) { lo.status = 'Paid'; lo.timeline = buildTimeline(data || { status: 'Paid' }); }
   if (data?.seller_id) notifyUser(data.seller_id, { type:'order', icon:'💰', title:'Paid — ship it!', body:'@' + (currentProfile?.username || 'A buyer') + ' paid for ' + itemLabel + '. Mark it shipped when it\'s on the way.', actionLabel:'View', actionTarget:'my-sales' });
@@ -4658,9 +4668,8 @@ async function sellerCancelOrder(orderId) {
 async function saveTransactionToDb(type, icon, label, subLabel, amount) {
   if (!currentUser) return;
   await sb.from('transactions').insert({ user_id: currentUser.id, type, icon, label, sub_label: subLabel, amount });
-  if (type !== 'pending') {
-    await sb.from('profiles').update({ sb_balance: SB }).eq('id', currentUser.id);
-  }
+  // v35-35: balance is NOT written here anymore. The DB owns sb_balance; every change goes through
+  // applyBalanceDelta / transfer_sb (atomic, relative). This function only records the ledger row.
 }
 
 async function checkUsernameDb(val) {
@@ -7064,14 +7073,8 @@ async function processShortfallPayment() {
 
   // Credit SB
   const pack = _shortfallSelectedPack;
-  SB += pack.sb;
-  updateAllSBDisplays();
+  await applyBalanceDelta(pack.sb);
   addTransaction('earned', '💳', 'Purchased ' + pack.sb + ' SB', 'Card ending ' + last4, pack.sb);
-
-  // Update profile in DB
-  if (currentUser) {
-    sb.from('profiles').update({ sb_balance: SB }).eq('id', currentUser.id).then(() => {});
-  }
 
   // Show success
   document.getElementById('shortfall-processing').style.display = 'none';
@@ -8106,9 +8109,8 @@ async function awardSB(triggerKey, dedupeId) {
     if (remaining <= 0) { showToast('🎁 Weekly reward cap reached — more next week!'); return; }
     if (amount > remaining) amount = remaining; // clamp to the cap
   }
-  SB += amount; updateAllSBDisplays();
+  await applyBalanceDelta(amount);
   try {
-    await sb.from('profiles').update({ sb_balance: SB }).eq('id', currentUser.id);
     await sb.from('transactions').insert({ user_id: currentUser.id, type: 'earned', icon: '🎁', label: cfg.label, sub_label: tag, amount });
   } catch (e) { console.error('awardSB persist error:', e); }
   TXN_LOG.unshift({ type: 'earned', icon: '🎁', label: cfg.label, sub: '+' + amount + ' SB reward', amt: amount, date: 'Just now', clr: '#00C864' });
@@ -8253,6 +8255,29 @@ async function refreshBalanceFromDb() {
     if (data) { SB = _num(data.sb_balance) || 0; if (currentProfile) currentProfile.sb_balance = SB; updateAllSBDisplays(); refreshWalletStats(); }
   } catch (e) {}
   refreshTransactionsLive(); // v35-29: also sync the ledger so a server-side credit (referral/sale payout) shows live, not just on reload
+}
+// v35-35: THE single way the client changes its own balance. Atomic, relative, server-authoritative.
+// Sends a DELTA to adjust_sb_balance; the DB adds it and returns the new balance (never an absolute
+// overwrite), so a concurrent server credit can't be clobbered. The client reflects the returned value.
+async function applyBalanceDelta(delta) {
+  delta = Math.round(Number(delta) || 0);
+  if (!currentUser || !delta) return SB;
+  try {
+    const { data, error } = await sb.rpc('adjust_sb_balance', { p_delta: delta });
+    if (!error && data != null) { SB = _num(data); if (currentProfile) currentProfile.sb_balance = SB; updateAllSBDisplays(); refreshWalletStats(); }
+  } catch (e) { try { txlog('err', 'adjustBalance', e.message || String(e)); } catch (_) {} }
+  return SB;
+}
+// v35-35: atomic cross-user Send-SB. transfer_sb debits sender + credits recipient + writes both ledger
+// rows + the recipient's bell, server-side in one transaction. Returns sender's new balance (or null on error).
+async function sendSBTransfer(toUsername, amount) {
+  if (!currentUser) return null;
+  try {
+    const { data, error } = await sb.rpc('transfer_sb', { p_to_username: toUsername, p_amount: Math.round(Number(amount) || 0) });
+    if (error) { showToast('\u26A0\uFE0F ' + String(error.message || 'Transfer failed').replace(/^.*:\s*/, '')); return null; }
+    SB = _num(data); if (currentProfile) currentProfile.sb_balance = SB; updateAllSBDisplays(); refreshWalletStats(); refreshTransactionsLive();
+    return SB;
+  } catch (e) { showToast('\u26A0\uFE0F Transfer failed'); return null; }
 }
 // v35-29: live transaction ledger. Server-side credits (referral + sale payouts via DB trigger) insert a
 // transactions row the client never sees until a reload. Re-pull and merge by id (skip rows already in
@@ -8790,7 +8815,7 @@ function openSendSB() {
   if (balEl) balEl.textContent = 'Your balance: ' + SB + ' SB';
 }
 
-function confirmSendSB() {
+async function confirmSendSB() {
   const to = document.getElementById('send-to').value.trim().replace('@','');
   const amt = parseInt(document.getElementById('send-amt').value);
   const note = document.getElementById('send-note').value.trim();
@@ -8798,9 +8823,8 @@ function confirmSendSB() {
   if (!amt || amt < 1) { showToast('Enter an amount!'); return; }
   if (amt > SB) { showToast('Not enough SB! You have ' + SB + ' SB'); return; }
 
-  SB -= amt;
-  updateAllSBDisplays();
-  addTransaction('spent', '📤', 'Sent to @' + to + (note ? ' · ' + note : ''), '@' + to, -amt);
+  const _nb = await sendSBTransfer(to, amt);
+  if (_nb === null) return; // transfer failed (insufficient / recipient not found) — toast already shown
   document.getElementById('modal-send-sb').style.display = 'none';
   document.getElementById('send-to').value = '';
   document.getElementById('send-amt').value = '';
