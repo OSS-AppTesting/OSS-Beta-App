@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-28</title>
+<title>OneStopSwap v35-29</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-28';
+window._OSS_BUILD = 'v35-29';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -4117,7 +4117,7 @@ async function loadTransactions() {
   const { data, error } = await sb.from('transactions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   if (error || !data || !data.length) return;
   const mapped = data.map(t => ({
-    type: t.type, icon: t.icon, label: t.label, sub: t.sub_label,
+    id: t.id, type: t.type, icon: t.icon, label: t.label, sub: t.sub_label,
     amt: t.amount, date: new Date(t.created_at).toLocaleDateString(),
     clr: t.amount > 0 ? '#00C864' : '#FF3B30'
   }));
@@ -8224,6 +8224,25 @@ async function refreshBalanceFromDb() {
   try {
     const { data } = await sb.from('profiles').select('sb_balance').eq('id', currentUser.id).single();
     if (data) { SB = _num(data.sb_balance) || 0; if (currentProfile) currentProfile.sb_balance = SB; updateAllSBDisplays(); refreshWalletStats(); }
+  } catch (e) {}
+  refreshTransactionsLive(); // v35-29: also sync the ledger so a server-side credit (referral/sale payout) shows live, not just on reload
+}
+// v35-29: live transaction ledger. Server-side credits (referral + sale payouts via DB trigger) insert a
+// transactions row the client never sees until a reload. Re-pull and merge by id (skip rows already in
+// TXN_LOG), so the wallet history updates the instant a reward lands — no dupes, no manual refresh needed.
+async function refreshTransactionsLive() {
+  if (!currentUser) return;
+  try {
+    const { data } = await sb.from('transactions').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    if (!data || !data.length) return;
+    const have = new Set(TXN_LOG.filter(t => t.id != null).map(t => t.id));
+    const fresh = data.filter(t => !have.has(t.id)).map(t => ({
+      id: t.id, type: t.type, icon: t.icon, label: t.label, sub: t.sub_label,
+      amt: t.amount, date: new Date(t.created_at).toLocaleDateString(),
+      clr: t.amount > 0 ? '#00C864' : '#FF3B30'
+    }));
+    if (fresh.length) { TXN_LOG.unshift(...fresh); refreshWalletStats(); }
+    if (document.getElementById('s-sb-wallet')?.classList.contains('active')) renderTxnList('all');
   } catch (e) {}
 }
 // v35-16: centered "bonus arrived" celebration for server-credited referral rewards (referrer + referee).
