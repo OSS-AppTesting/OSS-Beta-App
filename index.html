@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v36-1</title>
+<title>OneStopSwap v36-2</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v36-1';
+window._OSS_BUILD = 'v36-2';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -3737,6 +3737,9 @@ async function _refreshOrdersLive() {
   if (document.getElementById('s-my-orders')?.classList.contains('active')) renderOrders(window._ordersFilter || 'all');
   // My Listings (seller dashboard) re-fetches its own orders on render — re-render if open.
   if (document.getElementById('s-my-listings')?.classList.contains('active')) renderMyListings();
+  // v36-2: My Sales is realtime too — a new sale, or a buyer paying / confirming delivery, must reflect
+  // live while the seller is watching the screen, not only on re-navigation. (Standing rule #1.)
+  if (document.getElementById('s-my-sales')?.classList.contains('active')) renderMySales();
 }
 
 // v34-1e: catch-up for MESSAGES. The live INSERT handler appends bubbles in real time, but a socket
