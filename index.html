@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-22</title>
+<title>OneStopSwap v35-23</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-22';
+window._OSS_BUILD = 'v35-23';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -330,10 +330,13 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         </div>
       </div>
 
-      <!-- Location -->
+      <!-- Location — v35-23: city + state dropdown -->
       <div>
-        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From (City, State)</div>
-        <input id="signup-location" type="text" placeholder="Nashville, TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From</div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
+          <input id="signup-city" type="text" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <select id="signup-state" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;"></select>
+        </div>
       </div>
 
       <!-- Referral code (optional) — v35-8 -->
@@ -3509,7 +3512,7 @@ async function handleLogin() {
   const password = document.getElementById('login-password').value;
   const errEl = document.getElementById('login-error');
   if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
-  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Please enter a valid email (e.g. you@example.com).'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
   const btn = document.querySelector('#s-login button[onclick="handleLogin()"]');
   if (btn) { btn.textContent = 'Signing in...'; btn.disabled = true; }
@@ -3524,10 +3527,12 @@ async function handleSignup() {
   const username = document.getElementById('signup-username').value.trim().toLowerCase();
   const email = document.getElementById('signup-email').value.trim();
   const password = document.getElementById('signup-password').value;
-  const location = document.getElementById('signup-location').value.trim();
+  const _city = ((document.getElementById('signup-city') || {}).value || '').trim();
+  const _st = (document.getElementById('signup-state') || {}).value || '';
+  const location = [_city, _st].filter(Boolean).join(', '); // v35-23
   const errEl = document.getElementById('signup-error');
   if (!name || !username || !email || !password) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return; }
-  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Please enter a valid email (e.g. you@example.com).'; errEl.style.display = 'block'; return; }
   if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
   if (password !== ((document.getElementById('signup-password-confirm') || {}).value || '')) { errEl.textContent = 'Passwords don\'t match.'; errEl.style.display = 'block'; return; } // v35-21
   const { data: existing } = await sb.from('profiles').select('username').eq('username', username).single();
@@ -8232,7 +8237,7 @@ function _fillStates(id) {
   el.innerHTML = '<option value=\"\" disabled selected>State</option>' + US_STATES.map(st => '<option value=\"' + st + '\">' + st + '</option>').join('');
   el.dataset.filled = '1';
 }
-function _fillAllStates() { ['co-state','sbc-state'].forEach(_fillStates); }
+function _fillAllStates() { ['co-state','sbc-state','signup-state'].forEach(_fillStates); }
 function refreshWalletStats() {
   const earned = TXN_LOG.filter(t=>t.type==='earned').reduce((s,t)=>s+Math.abs(t.amt),0);
   const spent  = TXN_LOG.filter(t=>t.type==='spent').reduce((s,t)=>s+Math.abs(t.amt),0);
