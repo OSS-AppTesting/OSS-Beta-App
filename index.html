@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v35-25</title>
+<title>OneStopSwap v35-28</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -15,7 +15,7 @@ const SUPABASE_KEY = 'sb_publishable_l4A-oKhKc56ALgeTosBs0Q_Kv4WJ09K';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v35-25';
+window._OSS_BUILD = 'v35-28';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -419,7 +419,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         <input id="ac-address" type="text" placeholder="Street address" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
           <input id="ac-city" type="text" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
-          <input id="ac-state" type="text" placeholder="State" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <select id="ac-state" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;"></select>
         </div>
         <input id="ac-zip" type="text" placeholder="ZIP code" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
       </div>
@@ -1581,7 +1581,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
         </div>
         <div>
           <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">State</div>
-          <input id="settings-state" type="text" placeholder="TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <select id="settings-state" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;"></select>
         </div>
       </div>
 
@@ -1896,7 +1896,7 @@ html,body{width:100%;min-height:100%;background:#0A0A0A;font-family:'DM Sans',sa
     <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#00C864,#00A050);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;">🎁</div>
     <div style="color:#fff;font-weight:900;font-size:20px;margin-bottom:8px;">Referral applied!</div>
     <div style="color:rgba(255,255,255,.6);font-size:14px;line-height:1.6;margin-bottom:22px;">You and your friend both get <b style="color:#00C864;">25 SwapBucks</b> after your first swap. Welcome to OneStopSwap!</div>
-    <button onclick="document.getElementById('modal-referral-welcome').style.display='none';document.getElementById('modal-earn-tip').style.display='flex'" style="width:100%;background:linear-gradient(135deg,#00C864,#00A050);border:none;border-radius:16px;padding:15px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">OK, let's go! 🚀</button>
+    <button onclick="document.getElementById('modal-referral-welcome').style.display='none'" style="width:100%;background:linear-gradient(135deg,#00C864,#00A050);border:none;border-radius:16px;padding:15px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;">OK, let's go! 🚀</button>
   </div>
 </div>
 <div id="modal-sb-checkout" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:flex-end;justify-content:center;z-index:700;" onclick="if(event.target===this)this.style.display='none'">
@@ -3637,7 +3637,9 @@ async function completeProfileSetup() {
   const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
   if (profile) { currentProfile = profile; SB = _num(profile.sb_balance) || 0; updateAllSBDisplays(); }
   await captureReferral(); // v35-8: apply a stashed ?ref (OAuth / email-confirm path — no signup field here)
-  awardSB('signup', 'signup'); // v34-2ai: welcome bonus (one-time)
+  // v35-28: NO signup bonus. The welcome SB is paid on the user's FIRST completed sale by the
+  //         server-side referral trigger (_referral_on_order_complete → referee 'Welcome bonus 🎉',
+  //         referrer 'Referral bonus 🎉'). Do NOT re-add awardSB('signup') — that was the v35-25 bug.
   document.getElementById('s-profile-setup').style.display = 'none';
   showAccountCompletion();
 }
@@ -3663,7 +3665,8 @@ async function completeLogin() {
     (Date.now() - new Date(currentProfile.created_at).getTime()) < 60000;
   if (isNewUser) {
     showToast('🎉 Welcome to OneStopSwap, ' + firstName + '!');
-    awardSB('signup', 'signup'); // v35-25: welcome bonus on ALL signup paths (idempotent; email/pw path previously got nothing)
+    // v35-28: NO signup bonus (removed the v35-25 award). Bonus pays on first completed sale via the referral trigger.
+    const _et = document.getElementById('modal-earn-tip'); if (_et) _et.style.display = 'flex'; // v35-27: earn-tip for ALL new users (not just referred)
   } else {
     showToast('Welcome back, ' + firstName + '! 👋');
   }
@@ -8238,7 +8241,7 @@ function _fillStates(id) {
   el.innerHTML = '<option value=\"\" disabled selected>State</option>' + US_STATES.map(st => '<option value=\"' + st + '\">' + st + '</option>').join('');
   el.dataset.filled = '1';
 }
-function _fillAllStates() { ['co-state','sbc-state','signup-state'].forEach(_fillStates); }
+function _fillAllStates() { ['co-state','sbc-state','signup-state','ac-state','settings-state'].forEach(_fillStates); }
 function refreshWalletStats() {
   const earned = TXN_LOG.filter(t=>t.type==='earned').reduce((s,t)=>s+Math.abs(t.amt),0);
   const spent  = TXN_LOG.filter(t=>t.type==='spent').reduce((s,t)=>s+Math.abs(t.amt),0);
