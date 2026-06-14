@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v36-9</title>
+<title>OneStopSwap v36-11</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -17,7 +17,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try { if (localStorage.getItem('oss_theme') === 'light') document.documentElement.setAttribute('data-theme', 'light'); } catch (e) {}
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v36-9';
+window._OSS_BUILD = 'v36-11';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -48,11 +48,11 @@ window.addEventListener('unhandledrejection', function (e) {
   --on-color:#fff;
 }
 [data-theme="light"]{
-  --bg:#F2F2F6; --surface:#FFFFFF; --surface-dim:#EDEDF0;
+  --bg:#E9E9EE; --surface:#FFFFFF; --surface-dim:#E4E4EA;
   --surface-2:#FFF0F0; --surface-3:#FFE4E4; --surface-4:#FFD9D9; --surface-alt:#EEEEF4;
-  --text:#0E0E12; --text-muted:rgba(0,0,0,.55); --border:rgba(0,0,0,.10);
+  --text:#0E0E12; --text-muted:rgba(0,0,0,.6); --border:rgba(0,0,0,.14);
   --nav-bg:rgba(248,248,250,.92); --green-1:#E6F6EC; --green-2:#D2EDDC;
-  --fill:rgba(0,0,0,.05); --fill-strong:rgba(0,0,0,.11); --line:rgba(0,0,0,.12);
+  --fill:rgba(0,0,0,.06); --fill-strong:rgba(0,0,0,.14); --line:rgba(0,0,0,.16);
   --on-color:#fff;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -117,10 +117,10 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 
 /* COMING SOON TILE */
 .cs-tile{position:relative;overflow:hidden;border-radius:18px;border:1px solid rgba(255,255,255,.25);background:linear-gradient(135deg,#12122a,#1e1e3a,#12122a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;}
-.cs-shimmer{position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--line),transparent);animation:csm 2.2s infinite;}
+.cs-shimmer{position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);animation:csm 2.2s infinite;}
 @keyframes csm{0%{transform:translateX(-150%)}100%{transform:translateX(150%)}}
 .cs-lock{font-size:22px;position:relative;z-index:1;filter:drop-shadow(0 0 8px rgba(255,255,255,.3));}
-.cs-lbl{color:var(--text);font-size:10px;font-weight:800;letter-spacing:1.5px;position:relative;z-index:1;}
+.cs-lbl{color:var(--on-color);font-size:10px;font-weight:800;letter-spacing:1.5px;position:relative;z-index:1;}
 .cs-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#FF3B30;margin-right:4px;animation:cdp 1.5s infinite;}
 .cs-sub{color:#FF3B30;font-size:9px;font-weight:700;letter-spacing:.5px;position:relative;z-index:1;}
 @keyframes cdp{0%,100%{opacity:.4}50%{opacity:1}}
@@ -136,7 +136,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 .si input{flex:1;background:none;border:none;color:var(--on-color);font-size:16px;font-family:'DM Sans',sans-serif;outline:none;}
 .si input::placeholder{color:var(--text-muted);}
 .stag{background:var(--fill);border:1px solid var(--line);border-radius:20px;padding:7px 14px;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;flex-shrink:0;}
-.stag:active{background:rgba(255,59,48,.15);color:#FF3B30;}
+.stag:active{background:rgba(255,59,48,.22);color:#FF3B30;}
 .srow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--fill);cursor:pointer;}
 .srow:active{opacity:.7;}
 
@@ -165,7 +165,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 .bid-pop{animation:bidPop 0.3s ease;}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .oss .r{color:#FF3B30;}
-.oss .w{color:var(--on-color);}
+.oss .w{color:var(--text);}
 .float{animation:fl 3s ease-in-out infinite;}
 @keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 </style>
@@ -564,7 +564,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <span style="font-size:16px;">👑</span>
         <span style="color:#FF3B30;font-weight:800;font-size:12px;letter-spacing:2px;text-transform:uppercase;">Most Wanted</span>
-        <div style="margin-left:auto;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:3px 10px;">
+        <div style="margin-left:auto;background:rgba(255,59,48,.22);border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:3px 10px;">
           <span id="mw-views" style="color:#FF3B30;font-size:11px;font-weight:700;">👁 634 views</span>
         </div>
       </div>
@@ -715,7 +715,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h2 style="color:var(--text);font-weight:900;font-size:28px;font-family:'Space Grotesk',sans-serif;">Live Auctions</h2>
-        <div style="display:flex;align-items:center;gap:5px;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:3px 10px;">
+        <div style="display:flex;align-items:center;gap:5px;background:rgba(255,59,48,.22);border:1px solid rgba(255,59,48,.3);border-radius:20px;padding:3px 10px;">
           <div style="width:6px;height:6px;border-radius:50%;background:#FF3B30;animation:livePulse 1.2s infinite;"></div>
           <span style="color:#FF3B30;font-size:11px;font-weight:800;">LIVE</span>
         </div>
@@ -797,14 +797,14 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <span id="referral-stats-text" style="color:var(--text-muted);font-size:13px;font-weight:600;flex:1;"></span>
     </div>
     <div style="background:var(--fill);border:1px solid var(--fill);border-radius:20px;overflow:hidden;">
-      <div onclick="go('my-listings')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🏪</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">My Listings</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
-      <div onclick="go('my-sales')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🧾</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">My Sales</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
-      <div onclick="go('my-orders')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">My Orders</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
-      <div onclick="go('my-offers')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🏷️</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">My Offers</span><span id="offers-badge" style="display:none;background:#FF3B30;border-radius:10px;padding:2px 8px;color:var(--on-color);font-size:11px;font-weight:800;margin-right:8px;"></span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
-      <div onclick="go('acct-settings')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">Edit Profile</span><span style="color:var(--text-muted);font-size:20px;">›</span></div><div onclick="go('app-settings');loadAppSettingsUI()" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">⚙️</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">Settings</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
-      <div onclick="go('sb-wallet')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">💰</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">SwapBucks Wallet</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
-      <div onclick="go('my-reviews')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">⭐</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">My Reviews</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
-      <div onclick="go('support')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.12);display:flex;align-items:center;justify-content:center;font-size:18px;">🎧</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">Support</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+      <div onclick="go('my-listings')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.18);display:flex;align-items:center;justify-content:center;font-size:18px;">🏪</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">My Listings</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+      <div onclick="go('my-sales')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.18);display:flex;align-items:center;justify-content:center;font-size:18px;">🧾</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">My Sales</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+      <div onclick="go('my-orders')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.18);display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">My Orders</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+      <div onclick="go('my-offers')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.18);display:flex;align-items:center;justify-content:center;font-size:18px;">🏷️</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">My Offers</span><span id="offers-badge" style="display:none;background:#FF3B30;border-radius:10px;padding:2px 8px;color:var(--on-color);font-size:11px;font-weight:800;margin-right:8px;"></span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+      <div onclick="go('acct-settings')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.18);display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">Edit Profile</span><span style="color:var(--text-muted);font-size:20px;">›</span></div><div onclick="go('app-settings');loadAppSettingsUI()" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.18);display:flex;align-items:center;justify-content:center;font-size:18px;">⚙️</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">Settings</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+      <div onclick="go('sb-wallet')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.18);display:flex;align-items:center;justify-content:center;font-size:18px;">💰</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">SwapBucks Wallet</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+      <div onclick="go('my-reviews')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--fill);cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.18);display:flex;align-items:center;justify-content:center;font-size:18px;">⭐</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">My Reviews</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+      <div onclick="go('support')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.18);display:flex;align-items:center;justify-content:center;font-size:18px;">🎧</div><span style="color:var(--text);font-weight:600;font-size:15px;flex:1;">Support</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
       <div onclick="signOut()" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;border-top:1px solid var(--fill);"><div style="width:36px;height:36px;border-radius:10px;background:rgba(255,59,48,.08);display:flex;align-items:center;justify-content:center;font-size:18px;">🚪</div><span style="color:#FF3B30;font-weight:600;font-size:15px;flex:1;">Sign Out</span><span style="color:rgba(255,59,48,.3);font-size:20px;">›</span></div>
     </div>
   </div>
@@ -1121,7 +1121,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <div id="offer-currency-toggle" style="display:none;">
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Pay With</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div id="offer-toggle-usd" onclick="setOfferCurrency('USD')" style="background:rgba(0,165,80,.15);border:2px solid rgba(0,165,80,.5);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
+          <div id="offer-toggle-usd" onclick="setOfferCurrency('USD')" style="background:rgba(0,165,80,.22);border:2px solid rgba(0,165,80,.5);border-radius:14px;padding:10px;text-align:center;cursor:pointer;">
             <div style="font-size:18px;margin-bottom:2px;">💵</div>
             <div style="color:#00A550;font-weight:800;font-size:13px;">USD Cash</div>
           </div>
@@ -1322,7 +1322,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
     <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px;"></div>
     <div style="color:var(--text);font-weight:900;font-size:19px;text-align:center;margin-bottom:18px;">Profile Photo</div>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <button id="avatar-edit-btn" onclick="editSavedAvatar()" style="display:none;width:100%;background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:14px;padding:15px;color:#FF3B30;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">✎ Edit current photo</button>
+      <button id="avatar-edit-btn" onclick="editSavedAvatar()" style="display:none;width:100%;background:rgba(255,59,48,.18);border:1px solid rgba(255,59,48,.3);border-radius:14px;padding:15px;color:#FF3B30;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">✎ Edit current photo</button>
       <button onclick="chooseNewAvatar()" style="width:100%;background:var(--border);border:1px solid var(--fill-strong);border-radius:14px;padding:15px;color:var(--text);font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">📷 Choose new photo</button>
       <button onclick="openAvatarPresets()" style="width:100%;background:var(--border);border:1px solid var(--fill-strong);border-radius:14px;padding:15px;color:var(--text);font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">🎨 Pick an avatar</button>
       <button onclick="closeAvatarActions()" style="width:100%;background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:8px;font-family:'DM Sans',sans-serif;">Cancel</button>
@@ -1627,7 +1627,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <button onclick="saveProfileSettings()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:16px;color:var(--on-color);font-weight:800;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">Save Changes ✓</button>
 
       <!-- Danger zone -->
-      <div style="margin-top:12px;background:rgba(255,59,48,.05);border:1px solid rgba(255,59,48,.15);border-radius:16px;padding:16px;">
+      <div style="margin-top:12px;background:rgba(255,59,48,.05);border:1px solid rgba(255,59,48,.22);border-radius:16px;padding:16px;">
       <!-- Section: Payment -->
       <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;margin-bottom:10px;">Payment Method</div>
 
@@ -1671,7 +1671,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       </div>
 
       <!-- Danger Zone -->
-      <div style="margin-top:4px;background:rgba(255,59,48,.05);border:1px solid rgba(255,59,48,.15);border-radius:16px;padding:16px;">
+      <div style="margin-top:4px;background:rgba(255,59,48,.05);border:1px solid rgba(255,59,48,.22);border-radius:16px;padding:16px;">
         <div style="color:var(--text-muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Danger Zone</div>
         <button onclick="signOut()" style="width:100%;background:none;border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:12px;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px;">Sign Out</button>
         <button onclick="showToast('Contact support to delete your account')" style="width:100%;background:none;border:1px solid var(--border);border-radius:12px;padding:12px;color:var(--text-muted);font-weight:600;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">Delete Account</button>
@@ -1749,15 +1749,15 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 
     <!-- Live stats row -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
-      <div style="background:rgba(0,200,100,.06);border:1px solid rgba(0,200,100,.15);border-radius:16px;padding:14px 8px;text-align:center;">
+      <div style="background:rgba(0,200,100,.06);border:1px solid rgba(0,200,100,.22);border-radius:16px;padding:14px 8px;text-align:center;">
         <div id="wallet-earned" style="color:#00C864;font-weight:900;font-size:18px;">+340</div>
         <div style="color:var(--text-muted);font-size:10px;margin-top:2px;">Earned</div>
       </div>
-      <div style="background:rgba(255,59,48,.06);border:1px solid rgba(255,59,48,.15);border-radius:16px;padding:14px 8px;text-align:center;">
+      <div style="background:rgba(255,59,48,.06);border:1px solid rgba(255,59,48,.22);border-radius:16px;padding:14px 8px;text-align:center;">
         <div id="wallet-spent" style="color:#FF3B30;font-weight:900;font-size:18px;">-215</div>
         <div style="color:var(--text-muted);font-size:10px;margin-top:2px;">Spent</div>
       </div>
-      <div style="background:rgba(255,179,71,.06);border:1px solid rgba(255,179,71,.15);border-radius:16px;padding:14px 8px;text-align:center;">
+      <div style="background:rgba(255,179,71,.06);border:1px solid rgba(255,179,71,.22);border-radius:16px;padding:14px 8px;text-align:center;">
         <div id="wallet-pending" style="color:#FFB347;font-weight:900;font-size:18px;">+12</div>
         <div style="color:var(--text-muted);font-size:10px;margin-top:2px;">Pending</div>
       </div>
@@ -1891,10 +1891,10 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
     <div style="text-align:center;font-size:34px;margin-bottom:4px;">🎁</div>
     <div style="color:var(--text);font-weight:900;font-size:19px;text-align:center;margin-bottom:4px;">Invite friends</div>
     <div style="color:var(--text-muted);font-size:13px;text-align:center;margin-bottom:20px;">You both get 25 SB after their first swap</div>
-    <div onclick="inviteByEmail()" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--fill);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;cursor:pointer;"><div style="width:40px;height:40px;border-radius:12px;background:rgba(0,200,100,.12);display:flex;align-items:center;justify-content:center;font-size:20px;">✉️</div><span style="color:var(--text);font-weight:700;font-size:15px;flex:1;">Email</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
-    <div onclick="inviteByText()" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--fill);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;cursor:pointer;"><div style="width:40px;height:40px;border-radius:12px;background:rgba(0,200,100,.12);display:flex;align-items:center;justify-content:center;font-size:20px;">💬</div><span style="color:var(--text);font-weight:700;font-size:15px;flex:1;">Text message</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
-    <div onclick="inviteCopyLink()" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--fill);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;cursor:pointer;"><div style="width:40px;height:40px;border-radius:12px;background:rgba(0,200,100,.12);display:flex;align-items:center;justify-content:center;font-size:20px;">🔗</div><span style="color:var(--text);font-weight:700;font-size:15px;flex:1;">Copy link</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
-    <div onclick="closeInviteShare();shareReferral()" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--fill);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;cursor:pointer;"><div style="width:40px;height:40px;border-radius:12px;background:rgba(0,200,100,.12);display:flex;align-items:center;justify-content:center;font-size:20px;">…</div><span style="color:var(--text);font-weight:700;font-size:15px;flex:1;">More options</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+    <div onclick="inviteByEmail()" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--fill);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;cursor:pointer;"><div style="width:40px;height:40px;border-radius:12px;background:rgba(0,200,100,.18);display:flex;align-items:center;justify-content:center;font-size:20px;">✉️</div><span style="color:var(--text);font-weight:700;font-size:15px;flex:1;">Email</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+    <div onclick="inviteByText()" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--fill);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;cursor:pointer;"><div style="width:40px;height:40px;border-radius:12px;background:rgba(0,200,100,.18);display:flex;align-items:center;justify-content:center;font-size:20px;">💬</div><span style="color:var(--text);font-weight:700;font-size:15px;flex:1;">Text message</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+    <div onclick="inviteCopyLink()" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--fill);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;cursor:pointer;"><div style="width:40px;height:40px;border-radius:12px;background:rgba(0,200,100,.18);display:flex;align-items:center;justify-content:center;font-size:20px;">🔗</div><span style="color:var(--text);font-weight:700;font-size:15px;flex:1;">Copy link</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
+    <div onclick="closeInviteShare();shareReferral()" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--fill);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;cursor:pointer;"><div style="width:40px;height:40px;border-radius:12px;background:rgba(0,200,100,.18);display:flex;align-items:center;justify-content:center;font-size:20px;">…</div><span style="color:var(--text);font-weight:700;font-size:15px;flex:1;">More options</span><span style="color:var(--text-muted);font-size:20px;">›</span></div>
   </div>
 </div>
 <!-- v35-16: server-credited reward arrived (referral rewards) — centered celebration -->
@@ -2017,7 +2017,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 <!-- BOTTOM NAV -->
 <nav id="nav">
   <button class="nb active" onclick="go('home')" id="nb-home">
-    <svg viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="#FF3B30" stroke-width="2" stroke-linejoin="round" fill="rgba(255,59,48,.15)"/></svg>
+    <svg viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="#FF3B30" stroke-width="2" stroke-linejoin="round" fill="rgba(255,59,48,.22)"/></svg>
     <span>Home</span><div class="nb-dot"></div>
   </button>
   <button class="nb" onclick="if(prevScreen==='shop'){clearFilter();}else{go('shop');}" id="nb-shop">
@@ -2034,7 +2034,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
     <span>Messages</span><div class="nb-dot"></div><div class="nb-badge" id="messages-badge"></div>
   </button>
   <button class="nb" onclick="go('profile')" id="nb-profile">
-    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#FF3B30" stroke-width="2" fill="rgba(255,59,48,.15)"/><path d="M4 20c0-3 3.6-6 8-6s8 3 8 6" stroke="#FF3B30" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#FF3B30" stroke-width="2" fill="rgba(255,59,48,.22)"/><path d="M4 20c0-3 3.6-6 8-6s8 3 8 6" stroke="#FF3B30" stroke-width="2" stroke-linecap="round"/></svg>
     <span>Profile</span><div class="nb-dot"></div>
   </button>
 </nav>
@@ -2203,7 +2203,7 @@ function renderFilterPanel() {
       <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">${g.label}</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         ${g.opts.map(([val, lbl]) => { const on = FILTERS[g.dim].includes(val); return `
-          <div onclick="toggleFilter('${g.dim}','${String(val).replace(/'/g, "\\'")}')" style="display:flex;align-items:center;justify-content:space-between;background:${on ? 'rgba(255,59,48,.12)' : 'var(--fill)'};border:1px solid ${on ? 'rgba(255,59,48,.4)' : 'var(--line)'};border-radius:12px;padding:12px 14px;cursor:pointer;">
+          <div onclick="toggleFilter('${g.dim}','${String(val).replace(/'/g, "\\'")}')" style="display:flex;align-items:center;justify-content:space-between;background:${on ? 'rgba(255,59,48,.18)' : 'var(--fill)'};border:1px solid ${on ? 'rgba(255,59,48,.4)' : 'var(--line)'};border-radius:12px;padding:12px 14px;cursor:pointer;">
             <span style="color:${on ? 'var(--text)' : 'var(--text-muted)'};font-size:14px;font-weight:600;">${lbl}</span>
             <span style="width:22px;height:22px;border-radius:6px;border:2px solid ${on ? '#FF3B30' : 'rgba(255,255,255,.2)'};background:${on ? '#FF3B30' : 'transparent'};display:flex;align-items:center;justify-content:center;color:var(--text);font-size:13px;font-weight:900;">${on ? '✓' : ''}</span>
           </div>`; }).join('')}
@@ -2215,7 +2215,7 @@ function renderChips() {
   const chips = [];
   if (FILTERS.query) chips.push(['query', FILTERS.query, '🔍 ' + FILTERS.query]);
   FILTER_GROUPS.forEach(g => FILTERS[g.dim].forEach(v => { const o = g.opts.find(x => x[0] === v); chips.push([g.dim, v, o ? o[1] : v]); }));
-  return chips.map(([dim, val, lbl]) => `<div onclick="removeChip('${dim}','${String(val).replace(/'/g, "\\'")}')" style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.35);border-radius:16px;padding:4px 10px;cursor:pointer;white-space:nowrap;"><span style="color:#FF3B30;font-size:12px;font-weight:700;">${lbl}</span><span style="color:#FF3B30;font-size:12px;">✕</span></div>`).join('');
+  return chips.map(([dim, val, lbl]) => `<div onclick="removeChip('${dim}','${String(val).replace(/'/g, "\\'")}')" style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,59,48,.22);border:1px solid rgba(255,59,48,.35);border-radius:16px;padding:4px 10px;cursor:pointer;white-space:nowrap;"><span style="color:#FF3B30;font-size:12px;font-weight:700;">${lbl}</span><span style="color:#FF3B30;font-size:12px;">✕</span></div>`).join('');
 }
 function removeChip(dim, val) {
   if (dim === 'query') { clearSearch(); return; }
@@ -2338,7 +2338,7 @@ function renderAll() {
 
   // SB packs
   document.getElementById('sb-packs').innerHTML = SB_PACKS.map(p=>`
-    <button onclick="buySB(${p.sb})" style="display:flex;justify-content:space-between;align-items:center;background:${p.popular?'rgba(255,59,48,.15)':'var(--fill)'};border:${p.popular?'1px solid rgba(255,59,48,.5)':'1px solid var(--border)'};border-radius:16px;padding:14px 18px;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;">
+    <button onclick="buySB(${p.sb})" style="display:flex;justify-content:space-between;align-items:center;background:${p.popular?'rgba(255,59,48,.22)':'var(--fill)'};border:${p.popular?'1px solid rgba(255,59,48,.5)':'1px solid var(--border)'};border-radius:16px;padding:14px 18px;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;">
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#FF3B30,#C0392B);display:flex;align-items:center;justify-content:center;"><span style="color:var(--text);font-weight:900;font-size:13px;">SB</span></div>
         <div style="text-align:left;"><div style="color:#FF3B30;font-weight:800;font-size:16px;">${p.sb} SwapBucks</div>${p.popular?'<div style="color:rgba(255,59,48,.7);font-size:11px;font-weight:700;">⭐ Most Popular</div>':''}</div>
@@ -2486,11 +2486,11 @@ function showDetail(id) {
   const ownerBar = isSold
     ? `<div style="display:flex;gap:10px;">
         <button class="rbtn" onclick="relistEditListing('${p.id}')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);color:var(--on-color);cursor:pointer;">↩︎ Relist Item</button>
-        <button onclick="removeListingFromDetail('${p.id}')" style="flex:0 0 auto;background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:16px;padding:15px 18px;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🗑️ Remove</button>
+        <button onclick="removeListingFromDetail('${p.id}')" style="flex:0 0 auto;background:rgba(255,59,48,.18);border:1px solid rgba(255,59,48,.3);border-radius:16px;padding:15px 18px;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🗑️ Remove</button>
       </div>`
     : `<div style="display:flex;gap:10px;">
         <button class="rbtn" onclick="openEditListing('${p.id}')" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);color:var(--on-color);cursor:pointer;">✎ Edit Listing</button>
-        <button onclick="removeListingFromDetail('${p.id}')" style="flex:0 0 auto;background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:16px;padding:15px 18px;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🗑️ Remove</button>
+        <button onclick="removeListingFromDetail('${p.id}')" style="flex:0 0 auto;background:rgba(255,59,48,.18);border:1px solid rgba(255,59,48,.3);border-radius:16px;padding:15px 18px;color:#FF3B30;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">🗑️ Remove</button>
       </div>`;
   const similar = PRODS.filter(x=>x.category===p.category && x.id!==p.id).slice(0,4);
   // v31-14: non-owner view of a SOLD item — show a Sold state instead of Swap/Offer.
@@ -2516,8 +2516,8 @@ function showDetail(id) {
           ${avatarHTML(p.seller, 40, 12)}
           <div><div style="color:var(--text);font-weight:700;font-size:15px;">@${p.seller}</div><div id="detail-seller-rating" style="color:var(--text-muted);font-size:12px;">${getSellerRating(p.seller).count > 0 ? '⭐ ' + getSellerRating(p.seller).avg + ' · ' + getSellerRating(p.seller).count + ' reviews' : 'No reviews yet'}</div></div>
           ${isOwner
-            ? `<div style="margin-left:auto;background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:6px 14px;"><span style="color:#00C864;font-weight:700;font-size:13px;">${isSold ? '✓ Sold' : '✓ Your listing'}</span></div>`
-            : `<button onclick="event.stopPropagation();openChat('${p.seller}','var(--surface-2)','#FF3B30','${p.seller.substring(0,2).toUpperCase()}')" style="margin-left:auto;background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
+            ? `<div style="margin-left:auto;background:rgba(0,200,100,.18);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:6px 14px;"><span style="color:#00C864;font-weight:700;font-size:13px;">${isSold ? '✓ Sold' : '✓ Your listing'}</span></div>`
+            : `<button onclick="event.stopPropagation();openChat('${p.seller}','var(--surface-2)','#FF3B30','${p.seller.substring(0,2).toUpperCase()}')" style="margin-left:auto;background:rgba(255,59,48,.22);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Chat</button>
           <button onclick="event.stopPropagation();openReviewFromProfile('${p.seller}','${p.title}')" style="background:rgba(255,200,0,.12);border:1px solid rgba(255,200,0,.25);border-radius:10px;padding:6px 14px;color:#FFD700;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">⭐ Review</button>`}
         </div>
         <div style="border-top:1px solid var(--fill);padding-top:12px;display:flex;gap:20px;">
@@ -2651,7 +2651,7 @@ function renderAuctionList() {
         </div>
         <div style="flex:1;padding:12px 14px;min-width:0;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-            <span style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:2px 8px;color:#FF3B30;font-size:10px;font-weight:800;">${a.category}</span>
+            <span style="background:rgba(255,59,48,.22);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:2px 8px;color:#FF3B30;font-size:10px;font-weight:800;">${a.category}</span>
             ${a.size && a.size !== 'N/A / One size' ? `<span style="background:var(--fill);border:1px solid var(--line);border-radius:6px;padding:2px 8px;color:var(--text-muted);font-size:10px;font-weight:700;">${a.size}</span>` : ''}
             <span style="color:var(--text-muted);font-size:10px;">👁 ${a.watchers}</span>
           </div>
@@ -2832,15 +2832,15 @@ async function openAuction(id) {
         ${avatarHTML(a.seller, 36, 10)}
         <div style="flex:1;"><div style="color:var(--text);font-weight:700;font-size:14px;">@${a.seller}</div><div style="color:var(--text-muted);font-size:12px;">⭐ ${getSellerRating(a.seller).avg}${(()=>{const r=getSellerRating(a.seller);const _b=tierBadgeFor(a.seller,'sm');return _b?' · '+_b:(r.count?' · '+r.count+' reviews':'');})()}</div></div>
         ${isAucOwner
-          ? `<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:6px 14px;"><span style="color:#00C864;font-weight:700;font-size:13px;">✓ Your auction</span></div>`
-          : `<button onclick="event.stopPropagation();openChat('${a.seller}','${a.sellerColor}','#FF3B30','${a.sellerInitials}')" style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Ask</button>`}
+          ? `<div style="background:rgba(0,200,100,.18);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:6px 14px;"><span style="color:#00C864;font-weight:700;font-size:13px;">✓ Your auction</span></div>`
+          : `<button onclick="event.stopPropagation();openChat('${a.seller}','${a.sellerColor}','#FF3B30','${a.sellerInitials}')" style="background:rgba(255,59,48,.22);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 14px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Ask</button>`}
       </div>
 
       <!-- Details -->
       <div style="margin-bottom:16px;">
         <div style="color:var(--text);font-weight:800;font-size:18px;margin-bottom:6px;">${a.title}</div>
         <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <span style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.2);border-radius:8px;padding:3px 10px;color:#FF3B30;font-size:12px;font-weight:700;">${a.category}</span>
+          <span style="background:rgba(255,59,48,.18);border:1px solid rgba(255,59,48,.2);border-radius:8px;padding:3px 10px;color:#FF3B30;font-size:12px;font-weight:700;">${a.category}</span>
           <span style="background:var(--fill);border:1px solid var(--line);border-radius:8px;padding:3px 10px;color:var(--text-muted);font-size:12px;font-weight:600;">${a.condition}</span>
           ${a.size && a.size !== 'N/A / One size' ? `<span style="background:var(--fill);border:1px solid var(--line);border-radius:8px;padding:3px 10px;color:var(--text-muted);font-size:12px;font-weight:600;">Size ${a.size}</span>` : ''}
         </div>
@@ -2864,7 +2864,7 @@ async function openAuction(id) {
       ${isAucOwner ? `
         <div style="display:flex;gap:10px;">
           <button onclick="openEditAuction('${a.id}')" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px;color:var(--on-color);font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">✎ Edit Auction</button>
-          <button onclick="endAuctionFromScreen('${a.id}')" style="flex:0 0 auto;background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.4);border-radius:16px;padding:14px 18px;color:#FFB347;font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">⏹ End</button>
+          <button onclick="endAuctionFromScreen('${a.id}')" style="flex:0 0 auto;background:rgba(255,179,71,.22);border:1px solid rgba(255,179,71,.4);border-radius:16px;padding:14px 18px;color:#FFB347;font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">⏹ End</button>
         </div>
         <div style="text-align:center;margin-top:8px;color:var(--text-muted);font-size:12px;">Your auction · ${a.bidCount} bids · ${aucMoney(a.currentBid, a)} high bid</div>
       ` : cd.ended ? `
@@ -2915,7 +2915,7 @@ async function buyNowAuction(auctionId) {
   const priceLabel = isUSD ? '$' + price : price + ' SB';
   window._binSwipe.auctionId = auctionId;
   wrap.innerHTML =
-    '<div id="bin-swipe" style="position:relative;width:100%;height:58px;border-radius:16px;background:rgba(0,165,80,.12);border:1px solid rgba(0,165,80,.35);overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none;margin-bottom:10px;">' +
+    '<div id="bin-swipe" style="position:relative;width:100%;height:58px;border-radius:16px;background:rgba(0,165,80,.18);border:1px solid rgba(0,165,80,.35);overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none;margin-bottom:10px;">' +
       '<div id="bin-swipe-fill" style="position:absolute;left:4px;top:4px;height:50px;width:50px;border-radius:12px;background:linear-gradient(135deg,#00A550,#007A3D);"></div>' +
       '<div id="bin-swipe-label" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text);font-weight:800;font-size:15px;pointer-events:none;letter-spacing:.3px;">Slide to buy — ' + priceLabel + '</div>' +
       '<div id="bin-swipe-thumb" style="position:absolute;left:4px;top:4px;width:50px;height:50px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;color:#00A550;font-weight:900;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:grab;">&rsaquo;</div>' +
@@ -3066,7 +3066,7 @@ async function placeBid(auctionId, amount) {
       if (minLbl2) minLbl2.textContent = aucMoney(nextBid2, a);
 
       showToast('🔥 @' + comp.user + ' outbid you! ' + aucMoney(compBid, a));
-      addNotification('auction','⚡','rgba(255,179,71,.15)','rgba(255,179,71,.3)',
+      addNotification('auction','⚡','rgba(255,179,71,.22)','rgba(255,179,71,.3)',
         "You've been outbid!",
         '@' + comp.user + ' bid ' + aucMoney(compBid, a) + '. You were leading at ' + aucMoney(a.currentBid, a) + '.',
         'Bid Again', () => openAuction(a.id));
@@ -3328,7 +3328,7 @@ function setSellMode(mode) {
     auctionFields.style.display = 'none';
     btn.textContent = '🚀 Post Listing';
   } else {
-    auctionEl.style.background = 'rgba(255,179,71,.15)';
+    auctionEl.style.background = 'rgba(255,179,71,.22)';
     auctionEl.style.border = '2px solid rgba(255,179,71,.5)';
     auctionEl.querySelector('div:nth-child(2)').style.color = '#FFB347';
     fixedEl.style.background = 'var(--fill)';
@@ -3366,7 +3366,7 @@ function setAuctionCurrency(type) {
     usdEl.querySelector('div:last-child').style.color = 'var(--text-muted)';
     if (label) label.textContent = 'Starting Bid (SB)';
   } else {
-    usdEl.style.background = 'rgba(0,165,80,.15)'; usdEl.style.border = '2px solid rgba(0,165,80,.5)';
+    usdEl.style.background = 'rgba(0,165,80,.22)'; usdEl.style.border = '2px solid rgba(0,165,80,.5)';
     usdEl.querySelector('div:last-child').style.color = '#00A550';
     sbEl.style.background = 'var(--fill)'; sbEl.style.border = '2px solid var(--line)';
     sbEl.querySelector('div:last-child').style.color = 'var(--text-muted)';
@@ -3392,7 +3392,7 @@ function selectCurrency(type) {
     const priceLabel = document.querySelector('#f-price')?.previousElementSibling;
     if (priceLabel) priceLabel.textContent = 'Price (SB)';
   } else {
-    usdEl.style.background = 'rgba(0,165,80,.15)';
+    usdEl.style.background = 'rgba(0,165,80,.22)';
     usdEl.style.border = '2px solid rgba(0,165,80,.5)';
     usdEl.querySelector('div:nth-child(2)').style.color = '#00A550';
     sbEl.style.background = 'var(--fill)';
@@ -4200,11 +4200,11 @@ async function loadNotificationsFromDb() {
 // Per-type icon tint so notifications arriving live look identical to reloaded ones.
 function notifColor(type) {
   switch (type) {
-    case 'order':   return { bg:'rgba(79,195,247,.15)', border:'rgba(79,195,247,.3)' };
-    case 'auction': return { bg:'rgba(255,179,71,.15)', border:'rgba(255,179,71,.3)' };
-    case 'wallet':  return { bg:'rgba(0,200,100,.15)',  border:'rgba(0,200,100,.3)'  };
-    case 'review':  return { bg:'rgba(255,179,71,.15)', border:'rgba(255,179,71,.3)' };
-    default:        return { bg:'rgba(255,59,48,.15)',  border:'rgba(255,59,48,.3)'  }; // offer / message / other
+    case 'order':   return { bg:'rgba(79,195,247,.22)', border:'rgba(79,195,247,.3)' };
+    case 'auction': return { bg:'rgba(255,179,71,.22)', border:'rgba(255,179,71,.3)' };
+    case 'wallet':  return { bg:'rgba(0,200,100,.22)',  border:'rgba(0,200,100,.3)'  };
+    case 'review':  return { bg:'rgba(255,179,71,.22)', border:'rgba(255,179,71,.3)' };
+    default:        return { bg:'rgba(255,59,48,.22)',  border:'rgba(255,59,48,.3)'  }; // offer / message / other
   }
 }
 
@@ -4558,7 +4558,7 @@ function renderSaleManage(order, title) {
   if (!order) {
     actions = '<div style="background:var(--fill);border-radius:12px;padding:16px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.5;">No order to fulfill for this one.<br>Items marked sold manually have no buyer order.</div>';
   } else if (delivered) {
-    actions = '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:14px;padding:16px;text-align:center;color:#00C864;font-weight:800;font-size:15px;">🎉 Delivered</div>';
+    actions = '<div style="background:rgba(0,200,100,.18);border:1px solid rgba(0,200,100,.3);border-radius:14px;padding:16px;text-align:center;color:#00C864;font-weight:800;font-size:15px;">🎉 Delivered</div>';
   } else if (shipped) {
     actions = (order.tracking_number ? '<div style="background:var(--fill);border-radius:12px;padding:12px;margin-bottom:12px;"><div style="color:var(--text-muted);font-size:11px;margin-bottom:3px;">Tracking · ' + (order.carrier || 'USPS') + '</div><div style="color:var(--text);font-family:monospace;font-size:13px;word-break:break-all;">' + order.tracking_number + '</div></div>' : '')
       + '<button onclick="sellerDeliverOrder(\'' + order.id + '\')" style="width:100%;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:14px;padding:15px;color:var(--on-color);font-weight:800;font-size:15px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">✓ Mark as Delivered</button>';
@@ -4731,7 +4731,7 @@ function togglePw(inputId) {
 const NOTIFICATIONS = [
   {
     id:'n001', type:'offer', read:false,
-    icon:'🏷️', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
+    icon:'🏷️', iconBg:'rgba(255,59,48,.22)', iconBorder:'rgba(255,59,48,.3)',
     title:'New offer on your listing',
     body:'@sneakerhead_99 offered 20 SB on Metallic Gold Long-Sleeve Shirt',
     time:'2 min ago', action:()=>openOffersInbox(),
@@ -4739,7 +4739,7 @@ const NOTIFICATIONS = [
   },
   {
     id:'n002', type:'offer', read:false,
-    icon:'🔄', iconBg:'rgba(79,195,247,.15)', iconBorder:'rgba(79,195,247,.3)',
+    icon:'🔄', iconBg:'rgba(79,195,247,.22)', iconBorder:'rgba(79,195,247,.3)',
     title:'Counter offer received',
     body:'@ivyparklover countered your offer with $135 on Adidas x Ivy Park Stan Smith',
     time:'8 min ago', action:()=>go('my-offers'),
@@ -4747,7 +4747,7 @@ const NOTIFICATIONS = [
   },
   {
     id:'n003', type:'auction', read:false,
-    icon:'⚡', iconBg:'rgba(255,179,71,.15)', iconBorder:'rgba(255,179,71,.3)',
+    icon:'⚡', iconBg:'rgba(255,179,71,.22)', iconBorder:'rgba(255,179,71,.3)',
     title:"You've been outbid!",
     body:'@retrofinds just bid 123 SB on Y2K Betsey Johnson Dress. You were leading at 118 SB.',
     time:'14 min ago', action:()=>go('live'),
@@ -4755,7 +4755,7 @@ const NOTIFICATIONS = [
   },
   {
     id:'n004', type:'order', read:false,
-    icon:'📦', iconBg:'rgba(79,195,247,.15)', iconBorder:'rgba(79,195,247,.3)',
+    icon:'📦', iconBg:'rgba(79,195,247,.22)', iconBorder:'rgba(79,195,247,.3)',
     title:'Your order has shipped!',
     body:'Adidas x Ivy Park Stan Smith is on its way from LA, CA. Est. delivery May 28-29.',
     time:'1 hour ago', action:()=>openOrderTracking('OSS-1038'),
@@ -4763,7 +4763,7 @@ const NOTIFICATIONS = [
   },
   {
     id:'n005', type:'message', read:false,
-    icon:'💬', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
+    icon:'💬', iconBg:'rgba(255,59,48,.22)', iconBorder:'rgba(255,59,48,.3)',
     title:'New message from @vintagequeen',
     body:'Hey! Yes I can ship same day if you buy before 2pm 😊',
     time:'2 hours ago', action:()=>openChat('vintagequeen','#2d1b00','#FF3B30','VQ'),
@@ -4771,7 +4771,7 @@ const NOTIFICATIONS = [
   },
   {
     id:'n006', type:'wallet', read:true,
-    icon:'💰', iconBg:'rgba(0,200,100,.15)', iconBorder:'rgba(0,200,100,.3)',
+    icon:'💰', iconBg:'rgba(0,200,100,.22)', iconBorder:'rgba(0,200,100,.3)',
     title:'SwapBucks received!',
     body:'@goldenthread sent you 25 SB for the baseball glove.',
     time:'3 hours ago', action:()=>go('sb-wallet'),
@@ -4779,7 +4779,7 @@ const NOTIFICATIONS = [
   },
   {
     id:'n007', type:'offer', read:true,
-    icon:'✅', iconBg:'rgba(0,200,100,.15)', iconBorder:'rgba(0,200,100,.3)',
+    icon:'✅', iconBg:'rgba(0,200,100,.22)', iconBorder:'rgba(0,200,100,.3)',
     title:'Offer accepted!',
     body:'@goldenthread accepted your offer of 18 SB on Metallic Gold Long-Sleeve Shirt.',
     time:'Yesterday', action:()=>go('my-offers'),
@@ -4787,7 +4787,7 @@ const NOTIFICATIONS = [
   },
   {
     id:'n008', type:'order', read:true,
-    icon:'🎉', iconBg:'rgba(0,200,100,.15)', iconBorder:'rgba(0,200,100,.3)',
+    icon:'🎉', iconBg:'rgba(0,200,100,.22)', iconBorder:'rgba(0,200,100,.3)',
     title:'Order delivered!',
     body:'Your Y2K Betsey Johnson Dress has been delivered. How was it?',
     time:'Yesterday', action:()=>go('my-orders'),
@@ -4795,7 +4795,7 @@ const NOTIFICATIONS = [
   },
   {
     id:'n009', type:'auction', read:true,
-    icon:'🏆', iconBg:'rgba(255,179,71,.15)', iconBorder:'rgba(255,179,71,.3)',
+    icon:'🏆', iconBg:'rgba(255,179,71,.22)', iconBorder:'rgba(255,179,71,.3)',
     title:"You won the auction!",
     body:'Congratulations! You won the Metallic Gold Long-Sleeve Shirt for 38 SB.',
     time:'2 days ago', action:()=>go('my-orders'),
@@ -4811,7 +4811,7 @@ const NOTIFICATIONS = [
   },
   {
     id:'n011', type:'wallet', read:true,
-    icon:'🔥', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
+    icon:'🔥', iconBg:'rgba(255,59,48,.22)', iconBorder:'rgba(255,59,48,.3)',
     title:'Price drop on liked item!',
     body:'Adidas x Ivy Park Stan Smith dropped from $175 to $150. You liked this item.',
     time:'3 days ago', action:()=>showDetail(5),
@@ -4819,7 +4819,7 @@ const NOTIFICATIONS = [
   },
   {
     id:'n012', type:'message', read:true,
-    icon:'💬', iconBg:'rgba(255,59,48,.15)', iconBorder:'rgba(255,59,48,.3)',
+    icon:'💬', iconBg:'rgba(255,59,48,.22)', iconBorder:'rgba(255,59,48,.3)',
     title:'New message from @sneakerhead_99',
     body:'Ships USPS Priority, usually 1-2 days. Happy to bundle!',
     time:'3 days ago', action:()=>openChat('sneakerhead_99','var(--surface-alt)','#FF3B30','SH'),
@@ -4863,7 +4863,7 @@ function renderNotifications(filter) {
     if (!items.length) return;
     html += `<div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:16px 0 8px;">${label}</div>`;
     html += items.map(n => `
-      <div onclick="tapNotification('${n.id}')" style="display:flex;gap:12px;padding:14px;background:${n.read?'rgba(255,255,255,.02)':'rgba(255,59,48,.04)'};border:1px solid ${n.read?'var(--fill)':'rgba(255,59,48,.12)'};border-radius:16px;margin-bottom:8px;cursor:pointer;position:relative;transition:opacity .15s;" onmousedown="this.style.opacity='.7'" onmouseup="this.style.opacity='1'">
+      <div onclick="tapNotification('${n.id}')" style="display:flex;gap:12px;padding:14px;background:${n.read?'rgba(255,255,255,.02)':'rgba(255,59,48,.04)'};border:1px solid ${n.read?'var(--fill)':'rgba(255,59,48,.18)'};border-radius:16px;margin-bottom:8px;cursor:pointer;position:relative;transition:opacity .15s;" onmousedown="this.style.opacity='.7'" onmouseup="this.style.opacity='1'">
         ${!n.read ? '<div style="position:absolute;top:14px;right:14px;width:8px;height:8px;border-radius:50%;background:#FF3B30;"></div>' : ''}
         <div style="width:44px;height:44px;border-radius:14px;background:${n.iconBg};border:1px solid ${n.iconBorder};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${n.icon}</div>
         <div style="flex:1;min-width:0;padding-right:${n.read?'0':'16px'};">
@@ -5999,7 +5999,7 @@ async function openChat(seller, color, accent, initials) {
         <div style="color:var(--text);font-weight:700;font-size:15px;">@${seller}</div>
         <div id="chat-status" style="color:${accent};font-size:11px;font-weight:600;">● Online</div>
       </div>
-      ${isDemoSeller(seller) ? `<div style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:4px 10px;">
+      ${isDemoSeller(seller) ? `<div style="background:rgba(255,59,48,.18);border:1px solid rgba(255,59,48,.2);border-radius:10px;padding:4px 10px;">
         <span style="color:#FF3B30;font-size:10px;font-weight:800;">⚡ AI Seller</span>
       </div>` : ''}
     </div>
@@ -6302,8 +6302,8 @@ function sellerTier(count, avg) {
   count = Number(count) || 0; avg = Number(avg) || 0;
   if (count >= 250 && avg >= 4.9) return { key:'premiere', label:'Premiere Seller', emoji:'👑', color:'#E6E4F0', bg:'rgba(225,223,240,.12)', border:'rgba(225,223,240,.38)' };
   if (count >= 100 && avg >= 4.8) return { key:'power',    label:'Power Seller',    emoji:'🔥', color:'#FFD700', bg:'rgba(255,215,0,.12)',   border:'rgba(255,215,0,.34)' };
-  if (count >= 50  && avg >= 4.7) return { key:'top',      label:'Top Seller',      emoji:'⭐',      color:'#FF3B30', bg:'rgba(255,59,48,.12)',   border:'rgba(255,59,48,.32)' };
-  if (count >= 5   && avg >= 4.5) return { key:'verified', label:'Verified',        emoji:'✅',      color:'#4FC3F7', bg:'rgba(79,195,247,.12)',  border:'rgba(79,195,247,.32)' };
+  if (count >= 50  && avg >= 4.7) return { key:'top',      label:'Top Seller',      emoji:'⭐',      color:'#FF3B30', bg:'rgba(255,59,48,.18)',   border:'rgba(255,59,48,.32)' };
+  if (count >= 5   && avg >= 4.5) return { key:'verified', label:'Verified',        emoji:'✅',      color:'#4FC3F7', bg:'rgba(79,195,247,.18)',  border:'rgba(79,195,247,.32)' };
   return null;
 }
 function tierBadgeHTML(count, avg, opts) {
@@ -6348,7 +6348,7 @@ function renderSellerProfile(seller) {
         <div style="color:var(--text);font-weight:700;font-size:16px;">@${seller}</div>
         <div style="color:var(--text-muted);font-size:12px;">⭐ ${rating.avg} · ${rating.count} reviews</div>
       </div>
-      <button onclick="openChat('${seller}','var(--surface-2)','#FF3B30','${initials}')" style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:8px 16px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Message</button>
+      <button onclick="openChat('${seller}','var(--surface-2)','#FF3B30','${initials}')" style="background:rgba(255,59,48,.22);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:8px 16px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Message</button>
       <button onclick="openReviewFromProfile('${seller}')" style="background:rgba(255,200,0,.15);border:1px solid rgba(255,200,0,.3);border-radius:12px;padding:8px 16px;color:#FFD700;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">⭐ Review</button>
     </div>
 
@@ -6867,12 +6867,12 @@ let sellerCounterChosenCurrency = null;
 function styleCurrencyToggle(usdEl, sbEl, type) {
   if (!usdEl || !sbEl) return;
   if (type === 'USD') {
-    usdEl.style.background = 'rgba(0,165,80,.15)'; usdEl.style.border = '2px solid rgba(0,165,80,.5)';
+    usdEl.style.background = 'rgba(0,165,80,.22)'; usdEl.style.border = '2px solid rgba(0,165,80,.5)';
     usdEl.querySelector('div:last-child').style.color = '#00A550';
     sbEl.style.background = 'var(--fill)'; sbEl.style.border = '2px solid var(--line)';
     sbEl.querySelector('div:last-child').style.color = 'var(--text-muted)';
   } else {
-    sbEl.style.background = 'rgba(255,59,48,.15)'; sbEl.style.border = '2px solid rgba(255,59,48,.5)';
+    sbEl.style.background = 'rgba(255,59,48,.22)'; sbEl.style.border = '2px solid rgba(255,59,48,.5)';
     sbEl.querySelector('div:last-child').style.color = '#FF3B30';
     usdEl.style.background = 'var(--fill)'; usdEl.style.border = '2px solid var(--line)';
     usdEl.querySelector('div:last-child').style.color = 'var(--text-muted)';
@@ -6911,7 +6911,7 @@ function setOfferCurrency(type) {
   const symEl = document.getElementById('offer-currency-symbol');
 
   if (type === 'USD') {
-    usdEl.style.background = 'rgba(0,165,80,.15)';
+    usdEl.style.background = 'rgba(0,165,80,.22)';
     usdEl.style.border = '2px solid rgba(0,165,80,.5)';
     usdEl.querySelector('div:last-child').style.color = '#00A550';
     sbEl.style.background = 'var(--fill)';
@@ -6920,7 +6920,7 @@ function setOfferCurrency(type) {
     symEl.textContent = '$';
     noteEl.style.display = 'none';
   } else {
-    sbEl.style.background = 'rgba(255,59,48,.15)';
+    sbEl.style.background = 'rgba(255,59,48,.22)';
     sbEl.style.border = '2px solid rgba(255,59,48,.5)';
     sbEl.querySelector('div:last-child').style.color = '#FF3B30';
     usdEl.style.background = 'var(--fill)';
@@ -7025,7 +7025,7 @@ function showSBShortfall(needed, onSuccess) {
     return `
       <div onclick="selectShortfallPack(${i})" id="shortfall-pack-${i}"
         style="display:flex;align-items:center;justify-content:space-between;
-          background:${isSmart ? 'rgba(255,59,48,.12)' : 'var(--fill)'};
+          background:${isSmart ? 'rgba(255,59,48,.18)' : 'var(--fill)'};
           border:2px solid ${isSmart ? 'rgba(255,59,48,.5)' : 'var(--border)'};
           border-radius:14px;padding:12px 14px;cursor:pointer;position:relative;transition:all .2s;box-sizing:border-box;width:100%;">
         ${isSmart ? '<div style="position:absolute;top:-8px;right:12px;background:#FF3B30;color:var(--on-color);font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:.5px;">RECOMMENDED</div>' : ''}
@@ -7061,7 +7061,7 @@ function selectShortfallPack(idx) {
     const el = document.getElementById('shortfall-pack-' + i);
     if (!el) return;
     el.style.borderColor = i === idx ? '#FF3B30' : 'var(--border)';
-    el.style.background = i === idx ? 'rgba(255,59,48,.15)' : 'var(--fill)';
+    el.style.background = i === idx ? 'rgba(255,59,48,.22)' : 'var(--fill)';
   });
   // Show card on file + confirm button
   const savedType = currentProfile?.card_type || 'Card';
@@ -7401,7 +7401,7 @@ async function submitOffer() {
   }
 
   // Add to notification center
-  addNotification('offer','🏷️','rgba(255,59,48,.15)','rgba(255,59,48,.3)',
+  addNotification('offer','🏷️','rgba(255,59,48,.22)','rgba(255,59,48,.3)',
     'Offer sent to @' + p.seller,
     'Your offer of ' + (chosenCurrency==='USD'?'$'+amount:amount+' SB') + ' on ' + p.title + ' is pending.',
     'View Offer', () => go('my-offers'));
@@ -7618,7 +7618,7 @@ function showOfferResponse(offerId) {
         </div>
         <div style="display:flex;gap:10px;">
           <button onclick="declineCounter('${offer.id}')" style="flex:1;background:var(--border);border:1px solid var(--line);border-radius:14px;padding:14px;color:var(--text);font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Decline</button>
-          <button onclick="openCounterOffer('${offer.id}')" style="flex:1;background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.3);border-radius:14px;padding:14px;color:#FFB347;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
+          <button onclick="openCounterOffer('${offer.id}')" style="flex:1;background:rgba(255,179,71,.22);border:1px solid rgba(255,179,71,.3);border-radius:14px;padding:14px;color:#FFB347;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
           <button onclick="acceptCounter('${offer.id}')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:14px;padding:14px;color:var(--on-color);font-weight:800;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Accept ✓</button>
         </div>
       </div>`;
@@ -7680,7 +7680,7 @@ function showSellerOfferResponse(offerId) {
         <div style="color:var(--text-muted);font-size:12px;margin-bottom:24px;">Listed ${fmtC(o.listedPrice, o.listedCurrency)}</div>
         <div style="display:flex;gap:10px;">
           <button onclick="document.getElementById('modal-offer-response').style.display='none';respondToOffer('${o.id}','declined')" style="flex:1;background:var(--border);border:1px solid var(--line);border-radius:14px;padding:14px;color:var(--text);font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Decline</button>
-          <button onclick="document.getElementById('modal-offer-response').style.display='none';respondToOffer('${o.id}','countered')" style="flex:1;background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.3);border-radius:14px;padding:14px;color:#FFB347;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
+          <button onclick="document.getElementById('modal-offer-response').style.display='none';respondToOffer('${o.id}','countered')" style="flex:1;background:rgba(255,179,71,.22);border:1px solid rgba(255,179,71,.3);border-radius:14px;padding:14px;color:#FFB347;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Counter</button>
           <button onclick="document.getElementById('modal-offer-response').style.display='none';respondToOffer('${o.id}','accepted')" style="flex:1;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:14px;padding:14px;color:var(--on-color);font-weight:800;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Accept ✓</button>
         </div>
       </div>`;
@@ -7930,14 +7930,14 @@ function openOrderTracking(orderId) {
 
     <!-- Est delivery banner -->
     ${!['Delivered','Completed'].includes(o.status) ? `
-    <div style="background:linear-gradient(135deg,rgba(255,59,48,.15),rgba(255,59,48,.05));border-bottom:1px solid rgba(255,59,48,.2);padding:12px 20px;display:flex;align-items:center;gap:10px;">
+    <div style="background:linear-gradient(135deg,rgba(255,59,48,.22),rgba(255,59,48,.05));border-bottom:1px solid rgba(255,59,48,.2);padding:12px 20px;display:flex;align-items:center;gap:10px;">
       <span style="font-size:20px;">📅</span>
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Estimated Delivery</div>
         <div style="color:var(--text);font-weight:800;font-size:15px;">${o.timeline[o.timeline.length-1].date}</div>
       </div>
     </div>` : `
-    <div style="background:linear-gradient(135deg,rgba(0,165,80,.15),rgba(0,165,80,.05));border-bottom:1px solid rgba(0,165,80,.2);padding:12px 20px;display:flex;align-items:center;gap:10px;">
+    <div style="background:linear-gradient(135deg,rgba(0,165,80,.22),rgba(0,165,80,.05));border-bottom:1px solid rgba(0,165,80,.2);padding:12px 20px;display:flex;align-items:center;gap:10px;">
       <span style="font-size:20px;">🎉</span>
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Delivered</div>
@@ -7976,7 +7976,7 @@ function openOrderTracking(orderId) {
           <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">${o.carrier||'USPS'} Tracking</div>
           <div style="color:var(--text);font-weight:600;font-size:13px;font-family:monospace;">${o.tracking}</div>
         </div>
-        <button onclick="navigator.clipboard?.writeText('${o.tracking}');showToast('Tracking # copied!')" style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 12px;color:#FF3B30;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Copy</button>
+        <button onclick="navigator.clipboard?.writeText('${o.tracking}');showToast('Tracking # copied!')" style="background:rgba(255,59,48,.22);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:6px 12px;color:#FF3B30;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Copy</button>
       </div>` : ''}
 
       <!-- Shipping info -->
@@ -8466,12 +8466,12 @@ async function renderOffers(filter) {
   }
 
   const STATUS_CONFIG = {
-    'Pending':   {bg:'rgba(255,179,71,.12)', border:'rgba(255,179,71,.3)',  color:'#FFB347', icon:'⏳'},
-    'Countered': {bg:'rgba(79,195,247,.12)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'🔄'},
-    'Accepted':  {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'✅'},
-    'Declined':  {bg:'rgba(255,59,48,.12)',  border:'rgba(255,59,48,.3)',   color:'#FF3B30', icon:'❌'},
-    'Completed': {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'🎉'},
-    'Paid':      {bg:'rgba(79,195,247,.12)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'💰'},
+    'Pending':   {bg:'rgba(255,179,71,.18)', border:'rgba(255,179,71,.3)',  color:'#FFB347', icon:'⏳'},
+    'Countered': {bg:'rgba(79,195,247,.18)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'🔄'},
+    'Accepted':  {bg:'rgba(0,200,100,.18)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'✅'},
+    'Declined':  {bg:'rgba(255,59,48,.18)',  border:'rgba(255,59,48,.3)',   color:'#FF3B30', icon:'❌'},
+    'Completed': {bg:'rgba(0,200,100,.18)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'🎉'},
+    'Paid':      {bg:'rgba(79,195,247,.18)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'💰'},
     'Withdrawn': {bg:'var(--fill)', border:'var(--fill-strong)', color:'rgba(255,255,255,.5)', icon:'🚫'},
   };
 
@@ -8490,12 +8490,12 @@ async function renderOffers(filter) {
 // renderOffers (v31-30) so sent and received offers can be merged + sorted in a single list.
 function sentOfferCard(o) {
   const STATUS_CONFIG = {
-    'Pending':   {bg:'rgba(255,179,71,.12)', border:'rgba(255,179,71,.3)',  color:'#FFB347', icon:'⏳'},
-    'Countered': {bg:'rgba(79,195,247,.12)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'🔄'},
-    'Accepted':  {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'✅'},
-    'Declined':  {bg:'rgba(255,59,48,.12)',  border:'rgba(255,59,48,.3)',   color:'#FF3B30', icon:'❌'},
-    'Completed': {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'🎉'},
-    'Paid':      {bg:'rgba(79,195,247,.12)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'💰'},
+    'Pending':   {bg:'rgba(255,179,71,.18)', border:'rgba(255,179,71,.3)',  color:'#FFB347', icon:'⏳'},
+    'Countered': {bg:'rgba(79,195,247,.18)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'🔄'},
+    'Accepted':  {bg:'rgba(0,200,100,.18)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'✅'},
+    'Declined':  {bg:'rgba(255,59,48,.18)',  border:'rgba(255,59,48,.3)',   color:'#FF3B30', icon:'❌'},
+    'Completed': {bg:'rgba(0,200,100,.18)',  border:'rgba(0,200,100,.3)',   color:'#00C864', icon:'🎉'},
+    'Paid':      {bg:'rgba(79,195,247,.18)', border:'rgba(79,195,247,.3)',  color:'#4FC3F7', icon:'💰'},
     'Withdrawn': {bg:'var(--fill)', border:'var(--fill-strong)', color:'rgba(255,255,255,.5)', icon:'🚫'},
   };
   const sc = STATUS_CONFIG[o.status] || STATUS_CONFIG['Pending'];
@@ -8517,7 +8517,7 @@ function sentOfferCard(o) {
               <span style="color:var(--text-muted);font-size:12px;">Listed: <span style="color:var(--text);font-weight:600;">${o.listedCurrency==='USD'?'$'+o.listedPrice:o.listedPrice+' SB'}</span></span>
               <span style="color:var(--text-muted);">·</span>
               <span style="color:var(--text-muted);font-size:12px;">Your offer: <span style="color:${(o.buyerOfferCurrency||o.currency)==='USD'?'#00C864':'#FF3B30'};font-weight:700;">${(o.buyerOfferCurrency||o.currency)==='USD'?'$'+o.offerAmount:o.offerAmount+' SB'}</span></span>
-              ${o.currencyChanged ? '<span style="background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:1px 6px;color:#FF3B30;font-size:10px;font-weight:700;white-space:nowrap;">Currency changed</span>' : ''}
+              ${o.currencyChanged ? '<span style="background:rgba(255,59,48,.22);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:1px 6px;color:#FF3B30;font-size:10px;font-weight:700;white-space:nowrap;">Currency changed</span>' : ''}
             </div>
             ${expiry && (o.status==='Pending'||o.status==='Countered') ? `<div style="color:${expiry==='Expired'?'#FF3B30':'rgba(255,179,71,.7)'};font-size:11px;margin-top:4px;font-weight:600;">⏱ ${expiry}</div>` : ''}
           </div>
@@ -8527,11 +8527,11 @@ function sentOfferCard(o) {
           ${o.status === 'Countered' ? (o.counterAmount != null ? `
             <div style="display:flex;align-items:center;gap:6px;">
               <span style="color:${isUSD?'#00C864':'#FF3B30'};font-size:12px;font-weight:700;">Counter: ${isUSD?'$'+o.counterAmount:o.counterAmount+' SB'}</span>
-              <button onclick="showOfferResponse('${o.id}')" style="background:rgba(79,195,247,.15);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:4px 10px;color:#4FC3F7;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
+              <button onclick="showOfferResponse('${o.id}')" style="background:rgba(79,195,247,.22);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:4px 10px;color:#4FC3F7;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
             </div>` : `
             <span style="display:inline-flex;align-items:center;gap:8px;">
               <span style="color:var(--text-muted);font-size:12px;">🔄 Countered ${fmt(o.offerAmount)} — waiting…</span>
-              <button onclick="armWithdrawSwipe('${o.id}', this)" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:6px 14px;color:#FF3B30;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Withdraw</button>
+              <button onclick="armWithdrawSwipe('${o.id}', this)" style="background:rgba(255,59,48,.18);border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:6px 14px;color:#FF3B30;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Withdraw</button>
             </span>`) :
           o.status === 'Accepted' ? (
             (!lo || lo.status === 'AwaitingPayment')
@@ -8541,7 +8541,7 @@ function sentOfferCard(o) {
           o.status === 'Pending' ? `
             <span style="display:inline-flex;align-items:center;gap:10px;">
               <span style="color:var(--text-muted);font-size:12px;">Waiting for seller…</span>
-              <button onclick="armWithdrawSwipe('${o.id}', this)" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:6px 14px;color:#FF3B30;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Withdraw</button>
+              <button onclick="armWithdrawSwipe('${o.id}', this)" style="background:rgba(255,59,48,.18);border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:6px 14px;color:#FF3B30;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Withdraw</button>
             </span>` :
           o.status === 'Declined' ? `
             <button onclick="reOffer('${o.id}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:8px;padding:6px 14px;color:var(--on-color);font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">🏷️ Offer Again</button>` :
@@ -8572,9 +8572,9 @@ function renderReceivedOffers() {
 // tab can render the seller's countered offers with the same markup.
 function receivedOfferCard(o) {
   const STATUS_CONFIG = {
-    'Pending':  {bg:'rgba(255,179,71,.12)', border:'rgba(255,179,71,.3)', color:'#FFB347', icon:'⏳'},
-    'Accepted': {bg:'rgba(0,200,100,.12)',  border:'rgba(0,200,100,.3)',  color:'#00C864', icon:'✅'},
-    'Declined': {bg:'rgba(255,59,48,.12)',  border:'rgba(255,59,48,.3)',  color:'#FF3B30', icon:'❌'},
+    'Pending':  {bg:'rgba(255,179,71,.18)', border:'rgba(255,179,71,.3)', color:'#FFB347', icon:'⏳'},
+    'Accepted': {bg:'rgba(0,200,100,.18)',  border:'rgba(0,200,100,.3)',  color:'#00C864', icon:'✅'},
+    'Declined': {bg:'rgba(255,59,48,.18)',  border:'rgba(255,59,48,.3)',  color:'#FF3B30', icon:'❌'},
     'Withdrawn': {bg:'var(--fill)', border:'var(--fill-strong)', color:'rgba(255,255,255,.5)', icon:'🚫'},
   };
   const sc = STATUS_CONFIG[o.status] || STATUS_CONFIG['Pending'];
@@ -8597,7 +8597,7 @@ function receivedOfferCard(o) {
             <div style="color:var(--text-muted);font-size:12px;">
               Listed: <span style="color:var(--text);font-weight:600;">${o.listedCurrency==='USD'?'$'+o.listedPrice:o.listedPrice+' SB'}</span>
               &nbsp;·&nbsp; Offer: <span style="color:${o.currency==='USD'?'#00C864':'#FF3B30'};font-weight:700;">${fmt(o.offerAmount)}</span>
-              ${o.currencyChanged ? '&nbsp;<span style="background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.3);border-radius:5px;padding:1px 6px;color:#FFB347;font-size:10px;font-weight:700;white-space:nowrap;">⚠️ Different currency</span>' : ''}
+              ${o.currencyChanged ? '&nbsp;<span style="background:rgba(255,179,71,.22);border:1px solid rgba(255,179,71,.3);border-radius:5px;padding:1px 6px;color:#FFB347;font-size:10px;font-weight:700;white-space:nowrap;">⚠️ Different currency</span>' : ''}
             </div>
             ${expiry && o.status==='Pending' ? `<div style="color:rgba(255,179,71,.7);font-size:11px;margin-top:4px;font-weight:600;">⏱ ${expiry}</div>` : ''}
             ${o.message ? `<div style="color:var(--text-muted);font-size:12px;font-style:italic;margin-top:4px;">"${o.message}"</div>` : ''}
@@ -8606,7 +8606,7 @@ function receivedOfferCard(o) {
         ${o.status === 'Pending' ? `
         <div style="border-top:1px solid var(--fill);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
           <span style="color:#FFB347;font-size:12px;font-weight:700;">🏷️ @${o.buyer} offered ${fmtMoney(o.offerAmount, o.currency)}</span>
-          <button onclick="showSellerOfferResponse('${o.id}')" style="background:rgba(255,179,71,.15);border:1px solid rgba(255,179,71,.3);border-radius:8px;padding:6px 14px;color:#FFB347;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
+          <button onclick="showSellerOfferResponse('${o.id}')" style="background:rgba(255,179,71,.22);border:1px solid rgba(255,179,71,.3);border-radius:8px;padding:6px 14px;color:#FFB347;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
         </div>` :
         o.status === 'Accepted' ? (() => {
           const lo = _ordByOffer[o.dbId];
@@ -8626,19 +8626,19 @@ function receivedOfferCard(o) {
             </div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button onclick="openChat('${o.buyer}','${o.buyerColor}','#00C864','${o.buyerInitials}')" style="flex:1;background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.25);border-radius:10px;padding:8px;color:#00C864;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Message Buyer</button>
+            <button onclick="openChat('${o.buyer}','${o.buyerColor}','#00C864','${o.buyerInitials}')" style="flex:1;background:rgba(0,200,100,.18);border:1px solid rgba(0,200,100,.25);border-radius:10px;padding:8px;color:#00C864;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">💬 Message Buyer</button>
             <button onclick="go('my-sales')" style="flex:1;background:var(--fill);border:1px solid var(--line);border-radius:10px;padding:8px;color:var(--text-muted);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Track in My Sales →</button>
           </div>
         </div>`;
         })() :
         o.status === 'Countered' ? (o.sellerCounter != null ? `
         <div style="border-top:1px solid var(--fill);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
-          <span style="background:${o.currency==='USD'?'rgba(0,200,100,.12)':'rgba(255,59,48,.12)'};border:1px solid ${o.currency==='USD'?'rgba(0,200,100,.3)':'rgba(255,59,48,.3)'};border-radius:8px;padding:3px 10px;color:${o.currency==='USD'?'#00C864':'#FF3B30'};font-size:11px;font-weight:700;">🔄 Counter Sent: ${fmtMoney(o.sellerCounter, o.currency)}</span>
+          <span style="background:${o.currency==='USD'?'rgba(0,200,100,.18)':'rgba(255,59,48,.18)'};border:1px solid ${o.currency==='USD'?'rgba(0,200,100,.3)':'rgba(255,59,48,.3)'};border-radius:8px;padding:3px 10px;color:${o.currency==='USD'?'#00C864':'#FF3B30'};font-size:11px;font-weight:700;">🔄 Counter Sent: ${fmtMoney(o.sellerCounter, o.currency)}</span>
           <span style="color:var(--text-muted);font-size:12px;">Waiting for buyer...</span>
         </div>` : `
         <div style="border-top:1px solid var(--fill);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
           <span style="color:${o.currency==='USD'?'#00C864':'#FF3B30'};font-size:12px;font-weight:700;">🔄 @${o.buyer} countered: ${fmt(o.offerAmount)}</span>
-          <button onclick="showSellerOfferResponse('${o.id}')" style="background:rgba(79,195,247,.15);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:6px 14px;color:#4FC3F7;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
+          <button onclick="showSellerOfferResponse('${o.id}')" style="background:rgba(79,195,247,.22);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:6px 14px;color:#4FC3F7;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Respond →</button>
         </div>`) :
         `
         <div style="border-top:1px solid var(--fill);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
@@ -8699,7 +8699,7 @@ async function respondToOffer(offerId, action, _ackd) {
     // completion/cancel, and never pollutes the SB ledger sum.
 
     showToast('✅ Offer accepted! Order created — waiting for buyer payment.');
-    addNotification('offer','✅','rgba(0,200,100,.15)','rgba(0,200,100,.3)',
+    addNotification('offer','✅','rgba(0,200,100,.22)','rgba(0,200,100,.3)',
       'You accepted an offer',
       '@' + o.buyer + '\'s offer of ' + (fmtMoney(o.offerAmount, o.currency)) + ' on ' + o.title + '. Order created!',
       'View Order', () => go('my-orders'));
@@ -9108,14 +9108,14 @@ const ORDERS = [
 ];
 
 const STATUS_STYLES = {
-  'AwaitingPayment': {bg:'rgba(255,179,71,.12)',border:'rgba(255,179,71,.3)',color:'#FFB347',icon:'⏳'},
-  'Paid':      {bg:'rgba(79,195,247,.12)',border:'rgba(79,195,247,.3)',color:'#4FC3F7',icon:'💳'},
-  'Shipped':   {bg:'rgba(79,195,247,.12)',border:'rgba(79,195,247,.3)',color:'#4FC3F7',icon:'📦'},
-  'Delivered': {bg:'rgba(0,200,100,.12)',border:'rgba(0,200,100,.3)',color:'#00C864',icon:'✓'},
-  'Completed': {bg:'rgba(0,200,100,.12)',border:'rgba(0,200,100,.3)',color:'#00C864',icon:'✓'},
-  'Cancelled': {bg:'var(--fill)',border:'var(--fill-strong)',color:'rgba(255,255,255,.5)',icon:'⊘'},
-  'Refunded':  {bg:'var(--fill)',border:'var(--fill-strong)',color:'rgba(255,255,255,.5)',icon:'↩'},
-  'Processing':{bg:'rgba(255,179,71,.12)',border:'rgba(255,179,71,.3)',color:'#FFB347',icon:'⏳'},
+  'AwaitingPayment': {bg:'rgba(255,179,71,.18)',border:'rgba(255,179,71,.3)',color:'#FFB347',icon:'⏳'},
+  'Paid':      {bg:'rgba(79,195,247,.25)',border:'rgba(79,195,247,.5)',color:'#4FC3F7',icon:'💳'},
+  'Shipped':   {bg:'rgba(79,195,247,.25)',border:'rgba(79,195,247,.5)',color:'#4FC3F7',icon:'📦'},
+  'Delivered': {bg:'rgba(0,200,100,.25)',border:'rgba(0,200,100,.5)',color:'#00C864',icon:'✓'},
+  'Completed': {bg:'rgba(0,200,100,.25)',border:'rgba(0,200,100,.5)',color:'#00C864',icon:'✓'},
+  'Cancelled': {bg:'rgba(255,59,48,.15)',border:'rgba(255,59,48,.4)',color:'#FF3B30',icon:'⊘'},
+  'Refunded':  {bg:'rgba(255,179,71,.15)',border:'rgba(255,179,71,.4)',color:'#FFB347',icon:'↩'},
+  'Processing':{bg:'rgba(255,179,71,.25)',border:'rgba(255,179,71,.5)',color:'#FFB347',icon:'⏳'},
 };
 
 function renderOrders(filter) {
@@ -9144,7 +9144,7 @@ function renderOrders(filter) {
       </div>
       ${o.status === 'AwaitingPayment' ? `<div style="border-top:1px solid var(--fill);padding:12px 14px;"><button onclick="completeOrderPayment('${o.id}','${o.currency}',${o.price})" style="width:100%;background:linear-gradient(135deg,#00A550,#007A3D);border:none;border-radius:12px;padding:11px;color:var(--on-color);font-weight:800;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">💳 Complete Purchase · ${fmtMoney(o.price, o.currency)}</button></div>` : o.tracking ? `<div style="border-top:1px solid var(--fill);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
         <span style="color:var(--text-muted);font-size:11px;">📦 ${o.carrier||'USPS'} · ${o.tracking.slice(-8)}</span>
-        <button onclick="openOrderTracking('${o.id}')" style="background:linear-gradient(135deg,rgba(255,59,48,.2),rgba(255,59,48,.1));border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:4px 12px;color:#FF3B30;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Track →</button>
+        <button onclick="openOrderTracking('${o.id}')" style="background:linear-gradient(135deg,rgba(255,59,48,.28),rgba(255,59,48,.16));border:1px solid rgba(255,59,48,.5);border-radius:8px;padding:4px 12px;color:#FF3B30;font-size:11px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;">Track →</button>
       </div>` : `<div style="border-top:1px solid var(--fill);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
         <span style="color:var(--text-muted);font-size:11px;">⏳ Awaiting shipment</span>
         <button onclick="openOrderTracking('${o.id}')" style="background:var(--fill);border:1px solid var(--line);border-radius:8px;padding:4px 12px;color:var(--text-muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Details →</button>
@@ -9152,14 +9152,14 @@ function renderOrders(filter) {
       ${['Delivered','Completed'].includes(o.status) ? `
         <div style="border-top:1px solid var(--fill);padding:10px 14px;">
           ${reviewed ? `
-            <div style="background:rgba(255,179,71,.06);border:1px solid rgba(255,179,71,.15);border-radius:12px;padding:10px 14px;">
+            <div style="background:rgba(255,179,71,.06);border:1px solid rgba(255,179,71,.22);border-radius:12px;padding:10px 14px;">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
                 <span style="color:#FFB347;font-size:14px;">${'⭐'.repeat(reviewed.rating||reviewed.stars||0)}</span>
                 <span style="color:var(--text-muted);font-size:11px;font-weight:600;">Your review</span>
               </div>
               <div style="color:var(--text-muted);font-size:13px;line-height:1.5;">"${reviewed.text}"</div>
             </div>` : `
-            <button onclick="openReviewModal('${o.id}')" style="width:100%;background:linear-gradient(135deg,rgba(255,59,48,.15),rgba(255,59,48,.08));border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:10px;color:#FF3B30;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+            <button onclick="openReviewModal('${o.id}')" style="width:100%;background:linear-gradient(135deg,rgba(255,59,48,.3),rgba(255,59,48,.14));border:1px solid rgba(255,59,48,.5);border-radius:12px;padding:10px;color:#FF3B30;font-weight:800;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">
               ⭐ Leave a Review for @${o.seller}
             </button>`}
         </div>` : ''}
@@ -9259,13 +9259,13 @@ function clearMyOffersSearch() {
 let MY_SALES_QUERY = '';
 let MY_SALES_ROWS = []; // cached seller-order rows for in-tab search re-render without a refetch
 const MS_PILL = {
-  'AwaitingPayment': ['rgba(255,179,71,.14)','rgba(255,179,71,.35)','#FFB347','⏳ Awaiting payment'],
-  'Paid':            ['rgba(0,200,100,.12)','rgba(0,200,100,.3)','#00C864','💰 Paid · ship it'],
-  'Shipped':         ['rgba(79,195,247,.12)','rgba(79,195,247,.3)','#4FC3F7','📦 Shipped'],
-  'Delivered':       ['rgba(0,200,100,.12)','rgba(0,200,100,.3)','#00C864','✅ Delivered'],
-  'Completed':       ['rgba(0,200,100,.12)','rgba(0,200,100,.3)','#00C864','🎉 Completed'],
-  'Cancelled':       ['var(--fill)','var(--fill-strong)','rgba(255,255,255,.5)','❌ Cancelled'],
-  'Refunded':        ['var(--fill)','var(--fill-strong)','rgba(255,255,255,.5)','↩️ Refunded'],
+  'AwaitingPayment': ['rgba(255,179,71,.22)','rgba(255,179,71,.5)','#FFB347','⏳ Awaiting payment'],
+  'Paid':            ['rgba(0,200,100,.25)','rgba(0,200,100,.5)','#00C864','💰 Paid · ship it'],
+  'Shipped':         ['rgba(79,195,247,.25)','rgba(79,195,247,.5)','#4FC3F7','📦 Shipped'],
+  'Delivered':       ['rgba(0,200,100,.25)','rgba(0,200,100,.5)','#00C864','✅ Delivered'],
+  'Completed':       ['rgba(0,200,100,.25)','rgba(0,200,100,.5)','#00C864','🎉 Completed'],
+  'Cancelled':       ['rgba(255,59,48,.15)','rgba(255,59,48,.4)','#FF3B30','❌ Cancelled'],
+  'Refunded':        ['rgba(255,179,71,.15)','rgba(255,179,71,.4)','#FFB347','↩️ Refunded'],
 };
 function msStamp(o) {
   let label = 'Sold', ts = o.created_at; // AwaitingPayment / Paid
@@ -9569,17 +9569,17 @@ async function renderMyListings() {
              ${wantSold
                ? ((orderByListing[String(l.id)] && orderByListing[String(l.id)].status === 'AwaitingPayment')
                  ? '<div style="background:rgba(255,179,71,.14);border:1px solid rgba(255,179,71,.35);border-radius:10px;padding:5px 8px;text-align:center;"><span style="color:#FFB347;font-size:11px;font-weight:700;">⏳ Awaiting payment</span></div>'
-                 : '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:5px 8px;text-align:center;"><span style="color:#00C864;font-size:11px;font-weight:700;">💰 Paid · ship it</span></div>')
+                 : '<div style="background:rgba(0,200,100,.18);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:5px 8px;text-align:center;"><span style="color:#00C864;font-size:11px;font-weight:700;">💰 Paid · ship it</span></div>')
                : wantShipped
-               ? '<div style="background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:10px;padding:5px 8px;text-align:center;"><span style="color:#4FC3F7;font-size:11px;font-weight:700;">📦 Shipped</span></div>'
+               ? '<div style="background:rgba(79,195,247,.18);border:1px solid rgba(79,195,247,.3);border-radius:10px;padding:5px 8px;text-align:center;"><span style="color:#4FC3F7;font-size:11px;font-weight:700;">📦 Shipped</span></div>'
                : ((orderByListing[String(l.id)] && orderByListing[String(l.id)].status === 'Completed')
-                 ? '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:5px 8px;text-align:center;"><span style="color:#00C864;font-size:11px;font-weight:700;">✓ Completed</span></div>'
-                 : '<div style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:5px 8px;text-align:center;"><span style="color:#00C864;font-size:11px;font-weight:700;">🎉 Delivered</span></div>')}${wantSold ? `
-             <button onclick="relistEditListing('${l.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 12px;color:#00C864;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Relist</button>` : ''}`
+                 ? '<div style="background:rgba(0,200,100,.18);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:5px 8px;text-align:center;"><span style="color:#00C864;font-size:11px;font-weight:700;">✓ Completed</span></div>'
+                 : '<div style="background:rgba(0,200,100,.18);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:5px 8px;text-align:center;"><span style="color:#00C864;font-size:11px;font-weight:700;">🎉 Delivered</span></div>')}${wantSold ? `
+             <button onclick="relistEditListing('${l.id}')" style="background:rgba(0,200,100,.18);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 12px;color:#00C864;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Relist</button>` : ''}`
           : wantRemoved
-          ? `<button onclick="relistEditListing('${l.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 14px;color:#00C864;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩︎ Relist</button>`
+          ? `<button onclick="relistEditListing('${l.id}')" style="background:rgba(0,200,100,.18);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 14px;color:#00C864;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩︎ Relist</button>`
           : `<button onclick="showDetail('${l.id}')" style="background:var(--border);border:1px solid var(--line);border-radius:10px;padding:7px 12px;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View</button>
-             <button onclick="openEditListing('${l.id}')" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.25);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
+             <button onclick="openEditListing('${l.id}')" style="background:rgba(255,59,48,.18);border:1px solid rgba(255,59,48,.25);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
              <button onclick="deleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}',this)" style="background:var(--fill);border:1px solid var(--line);border-radius:10px;padding:7px 12px;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove</button>`}
       </div>
     </div>` }));
@@ -9605,8 +9605,8 @@ async function renderMyListings() {
         <div style="color:var(--text-muted);font-size:12px;margin-bottom:8px;">${a.category} · ${a.bid_count || 0} bids</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           ${sold
-            ? `<div style="background:${wantShipped?'rgba(79,195,247,.12)':'rgba(0,200,100,.12)'};border:1px solid ${wantShipped?'rgba(79,195,247,.3)':'rgba(0,200,100,.3)'};border-radius:8px;padding:3px 10px;"><span style="color:${wantShipped?'#4FC3F7':'#00C864'};font-weight:800;font-size:12px;">${wantShipped?'📦 Shipped':wantDelivered?'🎉 Delivered':'✓ Sold'}</span></div>`
-            : `<div style="background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.3);border-radius:8px;padding:3px 10px;"><span style="color:#FFB347;font-weight:800;font-size:12px;">⚡ Auction</span></div>`}
+            ? `<div style="background:${wantShipped?'rgba(79,195,247,.18)':'rgba(0,200,100,.18)'};border:1px solid ${wantShipped?'rgba(79,195,247,.3)':'rgba(0,200,100,.3)'};border-radius:8px;padding:3px 10px;"><span style="color:${wantShipped?'#4FC3F7':'#00C864'};font-weight:800;font-size:12px;">${wantShipped?'📦 Shipped':wantDelivered?'🎉 Delivered':'✓ Sold'}</span></div>`
+            : `<div style="background:rgba(255,179,71,.18);border:1px solid rgba(255,179,71,.3);border-radius:8px;padding:3px 10px;"><span style="color:#FFB347;font-weight:800;font-size:12px;">⚡ Auction</span></div>`}
           <span style="color:var(--text-muted);font-size:11px;">${sold ? 'Sold for' : 'Final:'} ${a.current_bid || a.start_price} ${a.currency || 'SB'}</span>
         </div>
         ${sold ? stampLine(a.id, a.created_at) : ''}
@@ -9616,7 +9616,7 @@ async function renderMyListings() {
           ? `<button onclick="openSaleManage('${a.id}','${(a.title||'').replace(/'/g,"\\'")}')" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:10px;padding:7px 12px;color:var(--on-color);font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">📦 Manage</button>`
           : (hadBids
           ? `<span style="color:var(--text-muted);font-size:11px;text-align:center;line-height:1.3;">🏆 Ended with bids</span>`
-          : `<button onclick="relistEditAuction('${a.id}')" style="background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 14px;color:#00C864;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩︎ Relist</button>`)}
+          : `<button onclick="relistEditAuction('${a.id}')" style="background:rgba(0,200,100,.18);border:1px solid rgba(0,200,100,.3);border-radius:10px;padding:7px 14px;color:#00C864;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩︎ Relist</button>`)}
       </div>
     </div>` };
     }
@@ -9642,7 +9642,7 @@ async function renderMyListings() {
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;padding:12px;justify-content:center;flex-shrink:0;">
         <button onclick="openAuction('${a.id}')" style="background:rgba(255,179,71,.1);border:1px solid rgba(255,179,71,.3);border-radius:10px;padding:7px 12px;color:#FFB347;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View</button>
-        <button onclick="openEditAuction('${a.id}')" style="background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.25);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
+        <button onclick="openEditAuction('${a.id}')" style="background:rgba(255,59,48,.18);border:1px solid rgba(255,59,48,.25);border-radius:10px;padding:7px 12px;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Edit</button>
         <button onclick="confirmEndAuction('${a.id}')" style="background:var(--fill);border:1px solid var(--line);border-radius:10px;padding:7px 12px;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">End</button>
       </div>
     </div>` };
@@ -10360,7 +10360,7 @@ function armWithdrawSwipe(offerId, btn) {
   if (!foot) { withdrawMyOffer(offerId); return; } // fallback if the footer isn't reachable
   window._withdrawSwipe.offerId = offerId;
   foot.innerHTML =
-    '<div id="wd-swipe" style="position:relative;width:100%;height:58px;border-radius:16px;background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.35);overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none;">' +
+    '<div id="wd-swipe" style="position:relative;width:100%;height:58px;border-radius:16px;background:rgba(255,59,48,.18);border:1px solid rgba(255,59,48,.35);overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none;">' +
       '<div id="wd-swipe-fill" style="position:absolute;left:4px;top:4px;height:50px;width:50px;border-radius:12px;background:linear-gradient(135deg,#FF3B30,#C0392B);"></div>' +
       '<div id="wd-swipe-label" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text);font-weight:800;font-size:15px;pointer-events:none;letter-spacing:.3px;">Slide to withdraw offer</div>' +
       '<div id="wd-swipe-thumb" style="position:absolute;left:4px;top:4px;width:50px;height:50px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;color:#FF3B30;font-weight:900;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:grab;">&rsaquo;</div>' +
