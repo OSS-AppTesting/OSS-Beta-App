@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OneStopSwap v36-5</title>
+<title>OneStopSwap v36-6</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -17,7 +17,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try { if (localStorage.getItem('oss_theme') === 'light') document.documentElement.setAttribute('data-theme', 'light'); } catch (e) {}
 
 // ── v31-10 TEMP DIAGNOSTICS (safe to remove once offers/orders are verified) ──
-window._OSS_BUILD = 'v36-5';
+window._OSS_BUILD = 'v36-6';
 // v31-20 TEMP (testing): AI seller auto-responder OFF so offers on seeded demo-named
 // listings don't auto-accept/counter during real two-account testing. Set to true
 // (or remove this gate) to restore solo-demo behavior before investor demos.
@@ -43,11 +43,13 @@ window.addEventListener('unhandledrejection', function (e) {
   --bg:#0A0A0A; --surface:#1A1A1A; --surface-dim:#111;
   --surface-2:#1A0000; --surface-3:#2D0000; --surface-4:#3D0000; --surface-alt:#1a1a2e;
   --text:#fff; --text-muted:rgba(255,255,255,.6); --border:rgba(255,255,255,.08);
+  --nav-bg:rgba(10,10,10,.97); --green-1:#001A0A; --green-2:#002D14;
 }
 [data-theme="light"]{
   --bg:#F2F2F6; --surface:#FFFFFF; --surface-dim:#EDEDF0;
   --surface-2:#FFF0F0; --surface-3:#FFE4E4; --surface-4:#FFD9D9; --surface-alt:#EEEEF4;
   --text:#0E0E12; --text-muted:rgba(0,0,0,.55); --border:rgba(0,0,0,.10);
+  --nav-bg:rgba(248,248,250,.92); --green-1:#E6F6EC; --green-2:#D2EDDC;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 ::-webkit-scrollbar{display:none;}
@@ -67,7 +69,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 .screen.active{display:flex;}
 
 /* BOTTOM NAV */
-#nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:center;padding:10px 0 24px;z-index:500;height:88px;}
+#nav{position:fixed;bottom:0;left:0;right:0;background:var(--nav-bg);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:center;padding:10px 0 24px;z-index:500;height:88px;}
 .nb{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 16px;background:none;border:none;cursor:pointer;position:relative;flex:1;}
 .nb svg{width:24px;height:24px;}
 .nb span{font-size:10px;font-weight:700;color:var(--text-muted);font-family:'DM Sans',sans-serif;}
@@ -250,7 +252,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <!-- Email -->
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Email</div>
-        <input id="login-email" type="email" placeholder="you@example.com" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="login-email" type="email" placeholder="you@example.com" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <!-- Password -->
@@ -260,7 +262,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
           <button onclick="showToast('Password reset email sent!')" style="background:none;border:none;color:#FF3B30;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Forgot?</button>
         </div>
         <div style="position:relative;">
-          <input id="login-password" type="password" placeholder="••••••••" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <input id="login-password" type="password" placeholder="••••••••" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
           <button onclick="togglePw('login-password')" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;">👁</button>
         </div>
       </div>
@@ -300,7 +302,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <!-- Full name -->
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Full Name</div>
-        <input id="signup-name" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="signup-name" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <!-- Username -->
@@ -308,7 +310,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Username</div>
         <div style="position:relative;">
           <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:15px;">@</span>
-          <input id="signup-username" type="text" placeholder="dinobravo" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px 14px 32px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" oninput="checkUsernameDb(this.value)">
+          <input id="signup-username" type="text" placeholder="dinobravo" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px 14px 32px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'" oninput="checkUsernameDb(this.value)">
         </div>
         <div id="username-check" style="font-size:12px;margin-top:6px;padding-left:4px;"></div>
       </div>
@@ -316,14 +318,14 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <!-- Email -->
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Email</div>
-        <input id="signup-email" type="email" placeholder="you@example.com" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="signup-email" type="email" placeholder="you@example.com" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <!-- Password -->
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Password</div>
         <div style="position:relative;">
-          <input id="signup-password" type="password" placeholder="Min 8 characters" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" oninput="checkPasswordStrength(this.value)">
+          <input id="signup-password" type="password" placeholder="Min 8 characters" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'" oninput="checkPasswordStrength(this.value)">
           <button onclick="togglePw('signup-password')" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;">👁</button>
         </div>
         <!-- Password strength bar -->
@@ -339,7 +341,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Confirm Password</div>
         <div style="position:relative;">
-          <input id="signup-password-confirm" type="password" placeholder="Re-enter password" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <input id="signup-password-confirm" type="password" placeholder="Re-enter password" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
           <button onclick="togglePw('signup-password-confirm')" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;">👁</button>
         </div>
       </div>
@@ -347,17 +349,17 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <!-- Location — v35-23: city + state dropdown -->
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From</div>
-        <input id="signup-city" type="text" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="signup-city" type="text" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
           <select id="signup-state" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;"></select>
-          <input id="signup-zip" type="text" inputmode="numeric" placeholder="ZIP" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <input id="signup-zip" type="text" inputmode="numeric" placeholder="ZIP" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
         </div>
       </div>
 
       <!-- Referral code (optional) — v35-8 -->
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Referral Code <span style="color:var(--text-muted);font-weight:600;letter-spacing:0;text-transform:none;">(optional)</span></div>
-        <input id="signup-referral" type="text" placeholder="Friend's username" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="signup-referral" type="text" placeholder="Friend's username" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <div id="signup-error" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:12px 16px;color:#FF3B30;font-size:13px;font-weight:600;"></div>
@@ -387,7 +389,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Username</div>
         <div style="position:relative;">
           <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:15px;">@</span>
-          <input id="setup-username" type="text" placeholder="yourname" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px 14px 32px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" oninput="checkSetupUsername(this.value)" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <input id="setup-username" type="text" placeholder="yourname" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px 14px 32px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" oninput="checkSetupUsername(this.value)" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
         </div>
         <div id="setup-username-check" style="font-size:12px;margin-top:6px;padding-left:4px;"></div>
       </div>
@@ -395,13 +397,13 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <!-- Full name -->
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Full Name</div>
-        <input id="setup-name" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="setup-name" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <!-- Location -->
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From (City, State)</div>
-        <input id="setup-location" type="text" placeholder="Nashville, TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="setup-location" type="text" placeholder="Nashville, TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <div id="setup-error" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:12px;padding:12px 16px;color:#FF3B30;font-size:13px;font-weight:600;"></div>
@@ -425,18 +427,18 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <!-- Contact -->
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.06);">Contact</div>
-        <input id="ac-phone" type="tel" placeholder="Phone number" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="ac-phone" type="tel" placeholder="Phone number" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <!-- Shipping Address -->
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.06);">Shipping Address</div>
-        <input id="ac-address" type="text" placeholder="Street address" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="ac-address" type="text" placeholder="Street address" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
-          <input id="ac-city" type="text" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <input id="ac-city" type="text" placeholder="City" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
           <select id="ac-state" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;"></select>
         </div>
-        <input id="ac-zip" type="text" placeholder="ZIP code" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="ac-zip" type="text" placeholder="ZIP code" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <!-- Payment -->
@@ -449,23 +451,23 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
         <div>
           <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Card Number</div>
           <div style="position:relative;">
-            <input id="ac-card" type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCardNumber(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;letter-spacing:1px;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+            <input id="ac-card" type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCardNumber(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;letter-spacing:1px;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
             <div id="ac-card-type" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:20px;"></div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
             <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Expiry</div>
-            <input id="ac-expiry" type="text" placeholder="MM/YY" maxlength="5" oninput="formatCardExpiry(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+            <input id="ac-expiry" type="text" placeholder="MM/YY" maxlength="5" oninput="formatCardExpiry(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
           </div>
           <div>
             <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">CVV</div>
-            <input id="ac-cvv" type="text" placeholder="123" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+            <input id="ac-cvv" type="text" placeholder="123" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
           </div>
         </div>
         <div>
           <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Name on Card</div>
-          <input id="ac-cardholder" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <input id="ac-cardholder" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
         </div>
       </div>
 
@@ -629,7 +631,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
         oninput="handleSearch(this.value)"
         style="width:100%;background:var(--border);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:13px 16px 13px 42px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;"
         onfocus="this.style.borderColor='rgba(255,59,48,.5)'"
-        onblur="this.style.borderColor='rgba(255,255,255,.12)'">
+        onblur="this.style.borderColor='var(--border)'">
       <button id="search-clear" onclick="clearSearch()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:none;border-radius:8px;width:26px;height:26px;color:var(--text);font-size:14px;cursor:pointer;display:none;">✕</button>
     </div>
 
@@ -777,7 +779,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
       <div id="profile-sb" style="color:#FF3B30;font-weight:900;font-size:42px;font-family:'Space Grotesk',sans-serif;margin-bottom:14px;">0 <span style="font-size:20px;color:rgba(255,59,48,.6);">SB</span></div>
       <button class="rbtn" style="width:auto;padding:12px 24px;font-size:15px;">+ Get SwapBucks</button>
     </div>
-    <div onclick="openInviteShare()" style="background:linear-gradient(135deg,#001A0A,#002D14);border:1px solid rgba(0,200,100,.3);border-radius:20px;padding:18px;margin-bottom:20px;cursor:pointer;display:flex;align-items:center;gap:14px;">
+    <div onclick="openInviteShare()" style="background:linear-gradient(135deg,var(--green-1),var(--green-2));border:1px solid rgba(0,200,100,.3);border-radius:20px;padding:18px;margin-bottom:20px;cursor:pointer;display:flex;align-items:center;gap:14px;">
       <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#00C864,#00A050);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎁</div>
       <div style="flex:1;">
         <div style="color:var(--text);font-weight:800;font-size:15px;margin-bottom:2px;">Invite friends — you both get 25 SB</div>
@@ -1545,21 +1547,21 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Full Name</div>
-        <input id="settings-name" type="text" placeholder="Your full name" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="settings-name" type="text" placeholder="Your full name" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Username</div>
         <div style="position:relative;">
           <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:15px;">@</span>
-          <input id="settings-username" type="text" placeholder="username" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px 14px 32px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'" oninput="checkSettingsUsername(this.value)">
+          <input id="settings-username" type="text" placeholder="username" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px 14px 32px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'" oninput="checkSettingsUsername(this.value)">
         </div>
         <div id="settings-username-check" style="font-size:12px;margin-top:4px;padding-left:4px;"></div>
       </div>
 
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Bio</div>
-        <textarea id="settings-bio" rows="3" placeholder="Tell buyers about yourself..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"></textarea>
+        <textarea id="settings-bio" rows="3" placeholder="Tell buyers about yourself..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;resize:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'"></textarea>
       </div>
 
       <!-- Section: Contact -->
@@ -1573,7 +1575,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Phone (optional)</div>
-        <input id="settings-phone" type="tel" placeholder="+1 (555) 000-0000" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="settings-phone" type="tel" placeholder="+1 (555) 000-0000" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <!-- Section: Shipping -->
@@ -1581,18 +1583,18 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Ships From (City, State)</div>
-        <input id="settings-location" type="text" placeholder="Nashville, TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="settings-location" type="text" placeholder="Nashville, TN" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Street Address (optional)</div>
-        <input id="settings-address" type="text" placeholder="123 Main St" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="settings-address" type="text" placeholder="123 Main St" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
           <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">City</div>
-          <input id="settings-city" type="text" placeholder="Nashville" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <input id="settings-city" type="text" placeholder="Nashville" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
         </div>
         <div>
           <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">State</div>
@@ -1602,7 +1604,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 
       <div>
         <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">ZIP Code (optional)</div>
-        <input id="settings-zip" type="text" placeholder="37201" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        <input id="settings-zip" type="text" placeholder="37201" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
 
       <!-- Section: Security -->
@@ -1642,23 +1644,23 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
           <div>
             <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Card Number</div>
             <div style="position:relative;">
-              <input id="settings-card" type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatSettingsCard(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+              <input id="settings-card" type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatSettingsCard(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 48px 14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
               <div id="settings-card-type" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:18px;"></div>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div>
               <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Expiry</div>
-              <input id="settings-expiry" type="text" placeholder="MM/YY" maxlength="5" oninput="formatSettingsExpiry(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+              <input id="settings-expiry" type="text" placeholder="MM/YY" maxlength="5" oninput="formatSettingsExpiry(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
             </div>
             <div>
               <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">CVV</div>
-              <input id="settings-cvv" type="text" placeholder="123" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+              <input id="settings-cvv" type="text" placeholder="123" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:16px;font-family:'Space Grotesk',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
             </div>
           </div>
           <div>
             <div style="color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Name on Card</div>
-            <input id="settings-cardholder" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+            <input id="settings-cardholder" type="text" placeholder="Dean Klein" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;" onfocus="this.style.borderColor='rgba(255,59,48,.5)'" onblur="this.style.borderColor='var(--border)'">
           </div>
           <button onclick="savePaymentInfo()" style="background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:14px;padding:14px;color:var(--text);font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">Save Card</button>
         </div>
@@ -1893,7 +1895,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 </div>
 <!-- v35-16: server-credited reward arrived (referral rewards) — centered celebration -->
 <div id="modal-reward-arrived" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:910;padding:24px;">
-  <div style="background:linear-gradient(135deg,#001A0A,#002D14);border:1px solid rgba(0,200,100,.3);border-radius:24px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+  <div style="background:linear-gradient(135deg,var(--green-1),var(--green-2));border:1px solid rgba(0,200,100,.3);border-radius:24px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
     <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#00C864,#00A050);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;">🎉</div>
     <div id="reward-arrived-title" style="color:var(--text);font-weight:900;font-size:20px;margin-bottom:8px;">Bonus arrived! 🎉</div>
     <div id="reward-arrived-body" style="color:var(--text-muted);font-size:14px;line-height:1.6;margin-bottom:22px;"></div>
@@ -1903,7 +1905,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 <!-- v35-15: list-5-items earn tip (centered, shown after the referral welcome) -->
 <!-- v35-30: first-purchase reward tip (GREEN). Shown to every new user, BEFORE the red list-5 tip. -->
 <div id="modal-firstbuy-tip" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:901;padding:24px;">
-  <div style="background:linear-gradient(135deg,#001A0A,#002D14);border:1px solid rgba(0,200,100,.3);border-radius:24px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+  <div style="background:linear-gradient(135deg,var(--green-1),var(--green-2));border:1px solid rgba(0,200,100,.3);border-radius:24px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
     <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#00C864,#00A050);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;">🎁</div>
     <div style="color:var(--text);font-weight:900;font-size:20px;margin-bottom:8px;">Your first purchase pays off</div>
     <div style="color:var(--text-muted);font-size:14px;line-height:1.6;margin-bottom:22px;">Make your first purchase and earn a <b style="color:#00C864;">25 SwapBucks</b> welcome bonus — straight to your wallet 🎉</div>
@@ -1920,7 +1922,7 @@ html,body{width:100%;min-height:100%;background:var(--bg);font-family:'DM Sans',
 </div>
 <!-- v35-13: referral-applied welcome (centered, OK to dismiss) -->
 <div id="modal-referral-welcome" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:900;padding:24px;">
-  <div style="background:linear-gradient(135deg,#001A0A,#002D14);border:1px solid rgba(0,200,100,.3);border-radius:24px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+  <div style="background:linear-gradient(135deg,var(--green-1),var(--green-2));border:1px solid rgba(0,200,100,.3);border-radius:24px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
     <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#00C864,#00A050);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;">🎁</div>
     <div style="color:var(--text);font-weight:900;font-size:20px;margin-bottom:8px;">Referral applied!</div>
     <div style="color:var(--text-muted);font-size:14px;line-height:1.6;margin-bottom:22px;">You and your friend both get <b style="color:#00C864;">25 SwapBucks</b> after your first swap. Welcome to OneStopSwap!</div>
@@ -2198,7 +2200,7 @@ function renderFilterPanel() {
       <div style="display:flex;flex-direction:column;gap:8px;">
         ${g.opts.map(([val, lbl]) => { const on = FILTERS[g.dim].includes(val); return `
           <div onclick="toggleFilter('${g.dim}','${String(val).replace(/'/g, "\\'")}')" style="display:flex;align-items:center;justify-content:space-between;background:${on ? 'rgba(255,59,48,.12)' : 'rgba(255,255,255,.04)'};border:1px solid ${on ? 'rgba(255,59,48,.4)' : 'rgba(255,255,255,.1)'};border-radius:12px;padding:12px 14px;cursor:pointer;">
-            <span style="color:${on ? '#fff' : 'rgba(255,255,255,.7)'};font-size:14px;font-weight:600;">${lbl}</span>
+            <span style="color:${on ? 'var(--text)' : 'var(--text-muted)'};font-size:14px;font-weight:600;">${lbl}</span>
             <span style="width:22px;height:22px;border-radius:6px;border:2px solid ${on ? '#FF3B30' : 'rgba(255,255,255,.2)'};background:${on ? '#FF3B30' : 'transparent'};display:flex;align-items:center;justify-content:center;color:var(--text);font-size:13px;font-weight:900;">${on ? '✓' : ''}</span>
           </div>`; }).join('')}
       </div>
@@ -2657,7 +2659,7 @@ function renderAuctionList() {
             </div>
             <div style="text-align:right;">
               <div style="color:var(--text-muted);font-size:10px;">${expired ? 'Status' : 'Ends in'}</div>
-              <div id="timer-${a.id}" class="${(!expired && cd.urgent)?'auction-timer-urgent':''}" style="color:${expired ? '#FFB347' : (cd.urgent?'#FF3B30':'#fff')};font-weight:800;font-size:${expired ? '12' : '15'}px;font-family:'Space Grotesk',sans-serif;">${expired ? 'Ending — settling…' : cd.text}</div>
+              <div id="timer-${a.id}" class="${(!expired && cd.urgent)?'auction-timer-urgent':''}" style="color:${expired ? '#FFB347' : (cd.urgent?'#FF3B30':'var(--text)')};font-weight:800;font-size:${expired ? '12' : '15'}px;font-family:'Space Grotesk',sans-serif;">${expired ? 'Ending — settling…' : cd.text}</div>
             </div>
           </div>
           <div style="margin-top:6px;color:var(--text-muted);font-size:11px;">${a.bidCount} bids · @${a.seller}${(()=>{const _b=tierBadgeFor(a.seller,'sm');return _b?' '+_b:'';})()}</div>
@@ -2792,7 +2794,7 @@ async function openAuction(id) {
   const nextBid = a.currentBid + 1; // v34-2b: flat +1 increment (matches the place_bid server rule)
 
   document.getElementById('auction-body').innerHTML = `
-    <div style="position:sticky;top:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
+    <div style="position:sticky;top:0;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
       <button onclick="go(prevScreen || 'live')" style="background:var(--border);border:none;border-radius:12px;width:38px;height:38px;color:var(--text);font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">←</button>
       <div style="flex:1;">
         <div style="color:var(--text);font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.title}</div>
@@ -2814,7 +2816,7 @@ async function openAuction(id) {
           </div>
           <div style="text-align:right;">
             <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px;">${cd.ended ? 'Status' : 'Ends in'}</div>
-            <div id="detail-timer-${a.id}" class="${(!cd.ended && cd.urgent)?'auction-timer-urgent':''}" style="color:${cd.ended ? '#FFB347' : (cd.urgent?'#FF3B30':'#fff')};font-weight:900;font-size:${cd.ended ? '15' : '24'}px;font-family:'Space Grotesk',sans-serif;">${cd.ended ? 'Ending — settling…' : cd.text}</div>
+            <div id="detail-timer-${a.id}" class="${(!cd.ended && cd.urgent)?'auction-timer-urgent':''}" style="color:${cd.ended ? '#FFB347' : (cd.urgent?'#FF3B30':'var(--text)')};font-weight:900;font-size:${cd.ended ? '15' : '24'}px;font-family:'Space Grotesk',sans-serif;">${cd.ended ? 'Ending — settling…' : cd.text}</div>
           </div>
         </div>
       </div>
@@ -2854,7 +2856,7 @@ async function openAuction(id) {
     </div>
 
     <!-- Bid bar -->
-    <div style="position:fixed;bottom:0;left:0;right:0;padding:12px 16px 32px;background:rgba(10,10,10,.97);border-top:1px solid var(--border);">
+    <div style="position:fixed;bottom:0;left:0;right:0;padding:12px 16px 32px;background:var(--nav-bg);border-top:1px solid var(--border);">
       ${isAucOwner ? `
         <div style="display:flex;gap:10px;">
           <button onclick="openEditAuction('${a.id}')" style="flex:1;background:linear-gradient(135deg,#FF3B30,#C0392B);border:none;border-radius:16px;padding:14px;color:var(--text);font-weight:800;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;">✎ Edit Auction</button>
@@ -4861,7 +4863,7 @@ function renderNotifications(filter) {
         ${!n.read ? '<div style="position:absolute;top:14px;right:14px;width:8px;height:8px;border-radius:50%;background:#FF3B30;"></div>' : ''}
         <div style="width:44px;height:44px;border-radius:14px;background:${n.iconBg};border:1px solid ${n.iconBorder};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${n.icon}</div>
         <div style="flex:1;min-width:0;padding-right:${n.read?'0':'16px'};">
-          <div style="color:${n.read?'rgba(255,255,255,.7)':'#fff'};font-weight:${n.read?'600':'700'};font-size:14px;margin-bottom:3px;">${n.title}</div>
+          <div style="color:${n.read?'var(--text-muted)':'var(--text)'};font-weight:${n.read?'600':'700'};font-size:14px;margin-bottom:3px;">${n.title}</div>
           <div style="color:var(--text-muted);font-size:12px;line-height:1.5;margin-bottom:6px;">${n.body}</div>
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <span style="color:var(--text-muted);font-size:11px;">${n.time}</span>
@@ -5986,7 +5988,7 @@ async function openChat(seller, color, accent, initials) {
   }
 
   document.getElementById('chat-body').innerHTML = `
-    <div style="flex-shrink:0;background:rgba(10,10,10,.97);border-bottom:1px solid var(--border);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;">
+    <div style="flex-shrink:0;background:var(--nav-bg);border-bottom:1px solid var(--border);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;">
       <button onclick="go(_chatReturn)" style="background:var(--border);border:none;border-radius:12px;width:38px;height:38px;color:var(--text);font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">←</button>
       ${avatarHTML(seller, 36, 10)}
       <div style="flex:1;">
@@ -6000,7 +6002,7 @@ async function openChat(seller, color, accent, initials) {
     <div id="chat-messages" style="flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:12px;">
       ${msgs.map(m=>chatBubble(m.f, m.t, m.ts)).join('')}
     </div>
-    <div style="flex-shrink:0;padding:10px 16px calc(env(safe-area-inset-bottom) + 10px);background:rgba(10,10,10,.97);border-top:1px solid var(--border);">
+    <div style="flex-shrink:0;padding:10px 16px calc(env(safe-area-inset-bottom) + 10px);background:var(--nav-bg);border-top:1px solid var(--border);">
       <div style="display:flex;gap:10px;align-items:center;">
         <input id="chat-input" placeholder="Ask about shipping, condition, trades..." 
           style="flex:1;background:var(--border);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:10px 16px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;"
@@ -6336,7 +6338,7 @@ function renderSellerProfile(seller) {
   const pcts = ratingBreakdown(liveReviews, [78, 15, 5, 1, 1]);
 
   document.getElementById('seller-body').innerHTML = `
-    <div style="position:sticky;top:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
+    <div style="position:sticky;top:0;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
       <button onclick="go('${prevScreen}')" style="background:var(--border);border:none;border-radius:12px;width:38px;height:38px;color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
       <div style="flex:1;">
         <div style="color:var(--text);font-weight:700;font-size:16px;">@${seller}</div>
@@ -6506,7 +6508,7 @@ function selectStar(n) {
     }
   });
   document.getElementById('star-label').textContent = STAR_LABELS[n];
-  document.getElementById('star-label').style.color = n >= 4 ? '#FFB347' : n >= 3 ? '#fff' : '#FF3B30';
+  document.getElementById('star-label').style.color = n >= 4 ? '#FFB347' : n >= 3 ? 'var(--text)' : '#FF3B30';
 }
 
 async function submitReview() {
@@ -7537,7 +7539,7 @@ function renderTxnDetail(o, disp, events, listed, listedCur, buyerName) {
           +   '</div>'
           +   '<div style="flex:1;padding-bottom:' + (last ? '0' : '10px') + ';">'
           +     '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">'
-          +       '<span style="color:' + (done ? '#fff' : 'rgba(255,255,255,.4)') + ';font-weight:600;font-size:13px;">' + st[0] + '</span>'
+          +       '<span style="color:' + (done ? 'var(--text)' : 'var(--text-muted)') + ';font-weight:600;font-size:13px;">' + st[0] + '</span>'
           +       '<span style="color:var(--text-muted);font-size:11px;">' + when + '</span>'
           +     '</div>'
           +   '</div>'
@@ -7913,7 +7915,7 @@ function openOrderTracking(orderId) {
   const progress = Math.round((o.timeline.filter(t=>t.done).length / o.timeline.length) * 100);
 
   document.getElementById('order-track-body').innerHTML = `
-    <div style="position:sticky;top:0;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
+    <div style="position:sticky;top:0;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:52px 16px 14px;display:flex;align-items:center;gap:12px;z-index:10;">
       <button onclick="go('my-orders')" style="background:var(--border);border:none;border-radius:12px;width:38px;height:38px;color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
       <div style="flex:1;">
         <div style="color:var(--text);font-weight:700;font-size:15px;">Order ${o.id}</div>
@@ -8001,7 +8003,7 @@ function openOrderTracking(orderId) {
             <div style="padding-left:4px;">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
                 <span style="font-size:16px;">${step.icon}</span>
-                <span style="color:${step.done?'#fff':'rgba(255,255,255,.3)'};font-weight:${step.done?'700':'500'};font-size:14px;">${step.status}</span>
+                <span style="color:${step.done?'var(--text)':'var(--text-muted)'};font-weight:${step.done?'700':'500'};font-size:14px;">${step.status}</span>
                 ${i===currentStep&&!['Delivered','Completed'].includes(o.status)?'<span style="background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.3);border-radius:6px;padding:1px 8px;color:#FF3B30;font-size:10px;font-weight:800;">CURRENT</span>':''}
               </div>
               <div style="color:${step.done?'rgba(255,255,255,.4)':'rgba(255,255,255,.2)'};font-size:12px;padding-left:24px;">${step.date}</div>
@@ -10553,7 +10555,7 @@ function loadProfileSettings() {
   if (cardInfoEl) {
     if (p.card_last4) {
       cardInfoEl.textContent = (p.card_type || 'Card') + ' ending in ' + p.card_last4 + ' · Expires ' + (p.card_expiry || '');
-      cardInfoEl.style.color = '#fff';
+      cardInfoEl.style.color = 'var(--text)';
     } else {
       cardInfoEl.textContent = 'No card on file';
       cardInfoEl.style.color = 'rgba(255,255,255,.3)';
@@ -10623,7 +10625,7 @@ async function savePaymentInfo() {
 
   // Update display
   const cardInfoEl = document.getElementById('settings-card-info');
-  if (cardInfoEl) { cardInfoEl.textContent = cardType + ' ending in ' + last4 + ' · Expires ' + expiry; cardInfoEl.style.color = '#fff'; }
+  if (cardInfoEl) { cardInfoEl.textContent = cardType + ' ending in ' + last4 + ' · Expires ' + expiry; cardInfoEl.style.color = 'var(--text)'; }
 
   // Clear fields and hide form
   document.getElementById('settings-card').value = '';
